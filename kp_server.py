@@ -646,7 +646,34 @@ def manage_wishlist():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
         
-
+@app.route("/save-rates", methods=["POST"])
+def save_rates():
+    user = get_user_from_request()
+    payload = request.get_json(silent=True)
+    
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Request body must contain valid JSON."}), 400
+    
+    values = payload.get("values")
+    
+    if not isinstance(values, list) or len(values) != 11:
+        return jsonify({"error": "Values must be a list of 11 numbers."}), 400
+    
+    try:
+        # Validate all values are numbers
+        values = [float(v) for v in values]
+        
+        # Save to Firebase
+        doc_ref = db.collection('rates').document(user)
+        doc_ref.set({
+            'values': values,
+            'lastUpdated': firestore.SERVER_TIMESTAMP
+        })
+        
+        return jsonify({"ok": True, "message": "Rates saved successfully."}), 200
+    
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
