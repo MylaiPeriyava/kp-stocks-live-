@@ -1,5 +1,5 @@
 # kp_server.py
-# Local server for KP's Stocks (Live) - WITH AUTHENTICATION
+# Local server for KP's Stocks (Live) - WITH FIREBASE
 
 import json
 import os
@@ -10,38 +10,27 @@ import yfinance as yf
 import requests
 from bs4 import BeautifulSoup
 
+# Firebase Admin SDK
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Initialize Firebase
+cred_path = os.path.join(os.path.dirname(__file__), 'firebase-service-account.json')
+cred = credentials.Certificate(cred_path)
+firebase_admin.initialize_app(cred)
+db = firestore.client()
 
 app = Flask(__name__, static_folder=".")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Default files
-DEFAULT_HOLDINGS_FILE = os.path.join(BASE_DIR, "Holdings.json")
-DEFAULT_WISHLIST_FILE = os.path.join(BASE_DIR, "wishlist.txt")
+# Default user
+DEFAULT_USER = "KP"
 
 
-def get_holdings_file_for_user(user):
-    if not user:
-        return DEFAULT_HOLDINGS_FILE
-    user_clean = "".join(c for c in user if c.isalnum() or c in "-_")
-    if not user_clean:
-        return DEFAULT_HOLDINGS_FILE
-    candidate = os.path.join(BASE_DIR, f"Holdings_{user_clean}.json")
-    if os.path.exists(candidate):
-        return candidate
-    return DEFAULT_HOLDINGS_FILE
-
-
-def get_wishlist_file_for_user(user):
-    if not user:
-        return DEFAULT_WISHLIST_FILE
-    user_clean = "".join(c for c in user if c.isalnum() or c in "-_")
-    if not user_clean:
-        return DEFAULT_WISHLIST_FILE
-    candidate = os.path.join(BASE_DIR, f"wishlist_{user_clean}.txt")
-    if os.path.exists(candidate):
-        return candidate
-    return DEFAULT_WISHLIST_FILE
+def get_user_from_request():
+    """Get user from query parameter or default"""
+    return (request.args.get("user") or DEFAULT_USER).strip().upper()
 
 
 def to_yahoo_symbol(symbol):
@@ -132,18 +121,19 @@ def index():
 
 @app.route("/holdings")
 def get_holdings():
-    user = (request.args.get("user") or "").strip()
-    holdings_file = get_holdings_file_for_user(user)
+    user = get_user_from_request()
     try:
-        with open(holdings_file, "r", encoding="utf-8") as file:
-            holdings = json.load(file)
-        if not isinstance(holdings, list):
-            return jsonify({"error": "Holdings file must contain a JSON array."}), 500
-        return jsonify(holdings)
-    except FileNotFoundError:
-        return jsonify({"error": "Holdings file not found: " + os.path.basename(holdings_file)}), 500
-    except json.JSONDecodeError as error:
-        return jsonify({"error": "Invalid JSON: " + str(error)}), 500
+        doc_ref = db.collection('holdings').document(user)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            lots = data.get('lots', [])
+        else:
+            # Return empty list for new users
+            lots = []
+        
+        return jsonify(lots)
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
@@ -348,130 +338,104 @@ def volume_gainers_ar():
     return get_anand_rathi_table("https://anandrathi.com/share-market-today/volume-gainers", "Volume Gainers")
 
 
-def read_wishlist_items(user):
-    wishlist_file = get_wishlist_file_for_user(user)
-    if not os.path.exists(wishlist_file):
-        return []
-    items = []
-    seen_symbols = set()
-    with open(wishlist_file, "r", encoding="utf-8") as file:
-        for line in file:
-            text = line.strip()
-            if not text:
-                continue
-            if text.startswith("#"):
-                heading = text[1:].strip()
-                if heading:
-                    items.append({"type": "heading", "text": heading})
-                continue
-            symbol = text.upper()
-            if symbol in seen_symbols:
-                continue
-            seen_symbols.add(symbol)
-            items.append({"type": "symbol", "symbol": symbol})
-    return items
-
-
 @app.route("/wishlist")
 def wishlist():
-    user = (request.args.get("user") or "").strip()
-    items = read_wishlist_items(user)
-    rows = []
-    for item in items:
-        if item["type"] == "heading":
-            rows.append({"type": "heading", "text": item["text"]})
-            continue
-        symbol = item["symbol"]
-        yahoo_symbol = to_yahoo_symbol(symbol)
-        row = {"type": "symbol", "symbol": symbol, "yahooSymbol": yahoo_symbol, "price": None, "change": None, "changePercent": None, "dayHigh": None, "dayLow": None, "week52High": None, "week52Low": None, "volume": None, "at52WeekLow": False, "error": None}
-        try:
-            ticker = yf.Ticker(yahoo_symbol)
-            fast_info = ticker.fast_info
-            price = safe_number(fast_info.get("lastPrice"))
-            previous_close = safe_number(fast_info.get("previousClose"))
-            day_high = safe_number(fast_info.get("dayHigh"))
-            day_low = safe_number(fast_info.get("dayLow"))
-            week52_high = safe_number(fast_info.get("yearHigh"))
-            week52_low = safe_number(fast_info.get("yearLow"))
-            volume = safe_number(fast_info.get("lastVolume"))
-            if price is None:
-                info = ticker.info
-                price = safe_number(info.get("regularMarketPrice") or info.get("currentPrice"))
-                previous_close = safe_number(info.get("regularMarketPreviousClose") or info.get("previousClose"))
-                day_high = safe_number(info.get("regularMarketDayHigh") or info.get("dayHigh"))
-                day_low = safe_number(info.get("regularMarketDayLow") or info.get("dayLow"))
-                week52_high = safe_number(info.get("fiftyTwoWeekHigh"))
-                week52_low = safe_number(info.get("fiftyTwoWeekLow"))
-                volume = safe_number(info.get("regularMarketVolume") or info.get("volume"))
-            change = None
-            change_percent = None
-            if price is not None and previous_close not in (None, 0):
-                change = price - previous_close
-                change_percent = (change / previous_close) * 100
-            at_52_week_low = day_low is not None and week52_low is not None and abs(day_low - week52_low) < 0.01
-            row.update({"price": price, "change": change, "changePercent": change_percent, "dayHigh": day_high, "dayLow": day_low, "week52High": week52_high, "week52Low": week52_low, "volume": volume, "at52WeekLow": at_52_week_low})
-        except Exception as error:
-            row["error"] = str(error)
-        rows.append(row)
-    return jsonify({"count": len(rows), "rows": rows})
+    user = get_user_from_request()
+    try:
+        doc_ref = db.collection('wishlist').document(user)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            lines = data.get('lines', [])
+        else:
+            lines = []
+        
+        rows = []
+        for item in lines:
+            if item.get("type") == "heading":
+                rows.append({"type": "heading", "text": item["text"]})
+                continue
+            symbol = item.get("symbol", "")
+            yahoo_symbol = to_yahoo_symbol(symbol)
+            row = {"type": "symbol", "symbol": symbol, "yahooSymbol": yahoo_symbol, "price": None, "change": None, "changePercent": None, "dayHigh": None, "dayLow": None, "week52High": None, "week52Low": None, "volume": None, "at52WeekLow": False, "error": None}
+            try:
+                ticker = yf.Ticker(yahoo_symbol)
+                fast_info = ticker.fast_info
+                price = safe_number(fast_info.get("lastPrice"))
+                previous_close = safe_number(fast_info.get("previousClose"))
+                day_high = safe_number(fast_info.get("dayHigh"))
+                day_low = safe_number(fast_info.get("dayLow"))
+                week52_high = safe_number(fast_info.get("yearHigh"))
+                week52_low = safe_number(fast_info.get("yearLow"))
+                volume = safe_number(fast_info.get("lastVolume"))
+                if price is None:
+                    info = ticker.info
+                    price = safe_number(info.get("regularMarketPrice") or info.get("currentPrice"))
+                    previous_close = safe_number(info.get("regularMarketPreviousClose") or info.get("previousClose"))
+                    day_high = safe_number(info.get("regularMarketDayHigh") or info.get("dayHigh"))
+                    day_low = safe_number(info.get("regularMarketDayLow") or info.get("dayLow"))
+                    week52_high = safe_number(info.get("fiftyTwoWeekHigh"))
+                    week52_low = safe_number(info.get("fiftyTwoWeekLow"))
+                    volume = safe_number(info.get("regularMarketVolume") or info.get("volume"))
+                change = None
+                change_percent = None
+                if price is not None and previous_close not in (None, 0):
+                    change = price - previous_close
+                    change_percent = (change / previous_close) * 100
+                at_52_week_low = day_low is not None and week52_low is not None and abs(day_low - week52_low) < 0.01
+                row.update({"price": price, "change": change, "changePercent": change_percent, "dayHigh": day_high, "dayLow": day_low, "week52High": week52_high, "week52Low": week52_low, "volume": volume, "at52WeekLow": at_52_week_low})
+            except Exception as error:
+                row["error"] = str(error)
+            rows.append(row)
+        return jsonify({"count": len(rows), "rows": rows})
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
 
 
 @app.route("/rates")
 def get_rates():
-    user = (request.args.get("user") or "").strip()
-    if user:
-        user_clean = "".join(c for c in user if c.isalnum() or c in "-_")
-        if user_clean:
-            candidate = os.path.join(BASE_DIR, f"Rates_{user_clean}.txt")
-            if os.path.exists(candidate):
-                try:
-                    with open(candidate, "r", encoding="utf-8") as f:
-                        lines = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
-                    if len(lines) != 11:
-                        raise ValueError("Rates file must have exactly 11 numeric lines.")
-                    values = [float(x) for x in lines]
-                    return "\n".join(str(v) for v in values), 200, {"Content-Type": "text/plain"}
-                except Exception as error:
-                    return "Error reading rates: " + str(error), 500, {"Content-Type": "text/plain"}
-    default_file = os.path.join(BASE_DIR, "DefaultRates.txt")
+    user = get_user_from_request()
     try:
-        with open(default_file, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
-        if len(lines) != 11:
-            raise ValueError("DefaultRates.txt must have exactly 11 numeric lines.")
-        values = [float(x) for x in lines]
+        doc_ref = db.collection('rates').document(user)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            values = data.get('values', [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3])
+        else:
+            # Default rates
+            values = [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3]
+        
         return "\n".join(str(v) for v in values), 200, {"Content-Type": "text/plain"}
     except Exception as error:
-        return "Error reading default rates: " + str(error), 500, {"Content-Type": "text/plain"}
+        return "Error reading rates: " + str(error), 500, {"Content-Type": "text/plain"}
 
 
 # ============ VALIDATE ENDPOINT FOR AUTHENTICATION ============
 @app.route("/validate")
 def validate_user_files():
-    user = (request.args.get("user") or "").strip()
+    user = (request.args.get("user") or "").strip().upper()
     check_file = (request.args.get("check") or "").strip()
-    if not user or not check_file:
+    
+    if not user:
         return jsonify({"exists": False}), 404
-    user_clean = "".join(c for c in user if c.isalnum() or c in "-_")
-    if not user_clean:
-        return jsonify({"exists": False}), 404
-    file_path = os.path.join(BASE_DIR, check_file)
-    if os.path.exists(file_path):
-        return jsonify({"exists": True}), 200
-    else:
-        return jsonify({"exists": False}), 404
+    
+    # Check if user exists in Firebase
+    # We check holdings collection as the primary indicator
+    try:
+        doc_ref = db.collection('holdings').document(user)
+        doc = doc_ref.get()
+        
+        # User exists if they have any data in holdings
+        exists = doc.exists
+        
+        return jsonify({"exists": exists}), 200 if exists else 404
+    except Exception as error:
+        return jsonify({"exists": False, "error": str(error)}), 500
 
 
 # ============ MANAGE HOLDINGS ============
-def get_holdings_file_for_edit(user):
-    if not user:
-        return DEFAULT_HOLDINGS_FILE
-    user_clean = "".join(c for c in user if c.isalnum() or c in "-_")
-    if not user_clean:
-        return DEFAULT_HOLDINGS_FILE
-    return os.path.join(BASE_DIR, f"Holdings_{user_clean}.json")
-
-
 def parse_holding_buydate(value):
     if not isinstance(value, str):
         return datetime.max
@@ -505,44 +469,39 @@ def normalise_and_sort_holdings(lots):
     return sorted(clean_lots, key=lambda lot: (parse_holding_buydate(lot["buydate"]), lot["symbol"], lot["qty"], lot["avgPrice"]))
 
 
-def load_holdings_for_edit(user):
-    holdings_file = get_holdings_file_for_edit(user)
-    if not os.path.exists(holdings_file):
-        return []
-    try:
-        with open(holdings_file, "r", encoding="utf-8") as file:
-            lots = json.load(file)
-        if not isinstance(lots, list):
-            raise ValueError("Holdings file must contain a JSON array.")
-        return lots
-    except json.JSONDecodeError as error:
-        raise ValueError("Invalid JSON: " + str(error))
-
-
-def save_holdings_for_edit(user, lots):
-    holdings_file = get_holdings_file_for_edit(user)
-    sorted_lots = normalise_and_sort_holdings(lots)
-    with open(holdings_file, "w", encoding="utf-8") as file:
-        json.dump(sorted_lots, file, indent=2, ensure_ascii=False)
-    return sorted_lots, holdings_file
-
-
 @app.route("/manage-holdings", methods=["POST"])
 def manage_holdings():
-    user = (request.args.get("user") or "").strip()
+    user = get_user_from_request()
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Request body must contain valid JSON."}), 400
     action = payload.get("action")
+    
     try:
-        lots = load_holdings_for_edit(user)
+        # Get current holdings from Firebase
+        doc_ref = db.collection('holdings').document(user)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            lots = doc.to_dict().get('lots', [])
+        else:
+            lots = []
+        
         if action == "remove":
             index = payload.get("index")
             if not isinstance(index, int) or isinstance(index, bool) or index < 0 or index >= len(lots):
                 return jsonify({"error": "Invalid holding lot index."}), 400
             removed_lot = lots.pop(index)
-            saved_lots, holdings_file = save_holdings_for_edit(user, lots)
-            return jsonify({"ok": True, "message": "Holding lot removed.", "removedLot": removed_lot, "count": len(saved_lots), "file": os.path.basename(holdings_file)})
+            
+            # Save back to Firebase
+            sorted_lots = normalise_and_sort_holdings(lots)
+            doc_ref.set({
+                'lots': sorted_lots,
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            })
+            
+            return jsonify({"ok": True, "message": "Holding lot removed.", "removedLot": removed_lot, "count": len(sorted_lots), "file": f"Holdings_{user}.json"})
+        
         if action == "add":
             lot = payload.get("lot")
             if not isinstance(lot, dict):
@@ -568,14 +527,21 @@ def manage_holdings():
                 return jsonify({"error": "Average price must be greater than zero."}), 400
             new_lot = {"buydate": buydate, "symbol": symbol, "qty": qty, "avgPrice": round(avg_price, 2)}
             lots.append(new_lot)
-            saved_lots, holdings_file = save_holdings_for_edit(user, lots)
-            return jsonify({"ok": True, "message": "Holding lot added.", "addedLot": new_lot, "count": len(saved_lots), "file": os.path.basename(holdings_file)})
+            
+            # Save back to Firebase
+            sorted_lots = normalise_and_sort_holdings(lots)
+            doc_ref.set({
+                'lots': sorted_lots,
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            })
+            
+            return jsonify({"ok": True, "message": "Holding lot added.", "addedLot": new_lot, "count": len(sorted_lots), "file": f"Holdings_{user}.json"})
+        
         return jsonify({"error": "Invalid action. Use 'add' or 'remove'."}), 400
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 500
+    
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
