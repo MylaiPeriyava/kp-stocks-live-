@@ -424,26 +424,47 @@ def get_rates():
 
 
 # ============ VALIDATE ENDPOINT FOR AUTHENTICATION ============
+# Whitelist of valid users - add new usernames here
+VALID_USERS = {"KP", "PK"}  # Add more users like: {"KP", "RA", "ADMIN"}
+
 @app.route("/validate")
 def validate_user_files():
     user = (request.args.get("user") or "").strip().upper()
-    check_file = (request.args.get("check") or "").strip()
     
-    if not user:
-        return jsonify({"exists": False}), 404
+    # Check if user is in whitelist
+    if user not in VALID_USERS:
+        return jsonify({"exists": False, "error": "User not found. Please check spelling or contact admin."}), 404
     
-    # Check if user exists in Firebase
-    # We check holdings collection as the primary indicator
-    try:
-        doc_ref = db.collection('holdings').document(user)
-        doc = doc_ref.get()
-        
-        # User exists if they have any data in holdings
-        exists = doc.exists
-        
-        return jsonify({"exists": exists}), 200 if exists else 404
-    except Exception as error:
-        return jsonify({"exists": False, "error": str(error)}), 500
+    # User is valid - check if they have data in Firestore
+    holdings_doc = db.collection('holdings').document(user).get()
+    
+    if not holdings_doc.exists:
+        # First time login - auto-create empty documents with default values
+        try:
+            # Create holdings document
+            db.collection('holdings').document(user).set({
+                'lots': [],
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            })
+            
+            # Create rates document with default values
+            db.collection('rates').document(user).set({
+                'values': [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3],
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            })
+            
+            # Create wishlist document
+            db.collection('wishlist').document(user).set({
+                'lines': [],
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            })
+            
+            print(f"Auto-created Firestore documents for new user: {user}")
+        except Exception as e:
+            print(f"Error auto-creating documents for {user}: {e}")
+            return jsonify({"exists": False, "error": "Failed to initialize user data"}), 500
+    
+    return jsonify({"exists": True}), 200
 
 
 # ============ MANAGE HOLDINGS ============
