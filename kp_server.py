@@ -575,6 +575,66 @@ def manage_holdings():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+@app.route("/manage-wishlist", methods=["POST"])
+def manage_wishlist():
+    user = get_user_from_request()
+    payload = request.get_json(silent=True)
+    
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Request body must contain valid JSON."}), 400
+    
+    action = payload.get("action")
+    symbol = payload.get("symbol", "").strip().upper()
+    
+    if not symbol:
+        return jsonify({"error": "Symbol is required."}), 400
+    
+    try:
+        # Get current wishlist from Firebase
+        doc_ref = db.collection('wishlist').document(user)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            lines = data.get('lines', [])
+        else:
+            lines = []
+        
+        if action == "add":
+            # Check if symbol already exists
+            existing_symbols = [item.get('symbol') for item in lines if item.get('type') == 'symbol']
+            if symbol in existing_symbols:
+                return jsonify({"error": "Symbol already exists in wishlist."}), 400
+            
+            # Add new symbol
+            lines.append({"type": "symbol", "symbol": symbol})
+            
+            # Save back to Firebase
+            doc_ref.set({
+                'lines': lines,
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            })
+            
+            return jsonify({"ok": True, "message": "Symbol added.", "count": len(lines)}), 200
+        
+        elif action == "remove":
+            # Remove symbol
+            lines = [item for item in lines if item.get('symbol') != symbol or item.get('type') != 'symbol']
+            
+            # Save back to Firebase
+            doc_ref.set({
+                'lines': lines,
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            })
+            
+            return jsonify({"ok": True, "message": "Symbol removed.", "count": len(lines)}), 200
+        
+        else:
+            return jsonify({"error": "Invalid action. Use 'add' or 'remove'."}), 400
+    
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
