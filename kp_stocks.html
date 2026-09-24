@@ -1488,6 +1488,7 @@
         <a href="javascript:void(0)" onclick="showSection('analysisSection')">Analyse</a>
         <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
         <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
+        <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
     </nav>
 
     <p class="note">
@@ -6235,8 +6236,272 @@ function showSection(sectionId) {
     })();
 // ========== END AUTH ==========
 
+/* ========== Wishlist Management ========== */
 
+let wishlistSymbols = [];
+
+async function loadWishlistSymbols() {
+    const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+    
+    try {
+        const response = await fetch(API_BASE + "/wishlist" + userParam);
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+        
+        const data = await response.json();
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+        
+        // Extract symbols from rows
+        wishlistSymbols = rows
+            .filter(row => row.type === "symbol" && row.symbol)
+            .map(row => row.symbol);
+        
+        populateWishlistRemoveSelect();
+        renderWishlistSymbolsList();
+        
+        return wishlistSymbols;
+    } catch (error) {
+        console.warn("Could not load wishlist:", error);
+        wishlistSymbols = [];
+        populateWishlistRemoveSelect();
+        renderWishlistSymbolsList();
+        return [];
+    }
+}
+
+function populateWishlistRemoveSelect() {
+    const select = document.getElementById("wishlistRemoveSelect");
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- Choose --</option>';
+    
+    wishlistSymbols.forEach(symbol => {
+        const option = document.createElement("option");
+        option.value = symbol;
+        option.textContent = symbol;
+        select.appendChild(option);
+    });
+}
+
+function renderWishlistSymbolsList() {
+    const listDiv = document.getElementById("wishlistSymbolsList");
+    if (!listDiv) return;
+    
+    if (wishlistSymbols.length === 0) {
+        listDiv.textContent = "No symbols in wishlist yet.";
+        return;
+    }
+    
+    listDiv.innerHTML = wishlistSymbols
+        .map(symbol => `<span style="display:inline-block;margin:4px 8px 4px 0;padding:4px 10px;background:#f1f6fc;border:1px solid #d7e3f0;border-radius:6px;font-size:13px;">${escapeHtml(symbol)}</span>`)
+        .join("");
+}
+
+async function addWishlistSymbol() {
+    const symbolInput = document.getElementById("wishlistSymbol");
+    const status = document.getElementById("wishlistManageStatus");
+    
+    const symbol = (symbolInput?.value || "").trim().toUpperCase();
+    
+    if (!symbol) {
+        alert("Please enter a symbol.");
+        return;
+    }
+    
+    // Check if already exists
+    if (wishlistSymbols.includes(symbol)) {
+        alert("Symbol already exists in wishlist.");
+        return;
+    }
+    
+    try {
+        const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+        
+        // Save to Firebase via wishlist endpoint (we'll create a new endpoint)
+        const response = await fetch(
+            API_BASE + "/manage-wishlist" + userParam,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "add",
+                    symbol: symbol
+                })
+            }
+        );
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || ("HTTP " + response.status));
+        }
+        
+        status.textContent = "Symbol added at " + formatTime(new Date()) + ".";
+        status.className = "manage-status positive";
+        
+        symbolInput.value = "";
+        
+        // Reload wishlist
+        await loadWishlistSymbols();
+        await refreshWishlist(true);
+        
+    } catch (error) {
+        status.textContent = "Add failed: " + error.message;
+        status.className = "manage-status negative";
+        alert("Could not add symbol: " + error.message);
+    }
+}
+
+async function removeWishlistSymbol() {
+    const select = document.getElementById("wishlistRemoveSelect");
+    const status = document.getElementById("wishlistManageStatus");
+    
+    const symbol = select?.value || "";
+    
+    if (!symbol) {
+        alert("Please select a symbol to remove.");
+        return;
+    }
+    
+    try {
+        const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+        
+        const response = await fetch(
+            API_BASE + "/manage-wishlist" + userParam,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "remove",
+                    symbol: symbol
+                })
+            }
+        );
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || ("HTTP " + response.status));
+        }
+        
+        status.textContent = "Symbol removed at " + formatTime(new Date()) + ".";
+        status.className = "manage-status positive";
+        
+        // Reload wishlist
+        await loadWishlistSymbols();
+        await refreshWishlist(true);
+        
+    } catch (error) {
+        status.textContent = "Remove failed: " + error.message;
+        status.className = "manage-status negative";
+        alert("Could not remove symbol: " + error.message);
+    }
+}
+
+async function refreshWishlistManage() {
+    const status = document.getElementById("wishlistManageStatus");
+    status.textContent = "Refreshing...";
+    
+    await loadWishlistSymbols();
+    
+    status.textContent = "Refreshed at " + formatTime(new Date()) + ".";
+    status.className = "manage-status positive";
+}
+
+// Load wishlist symbols on page load
+(async function initWishlistManage() {
+    if (typeof CURRENT_USER !== 'undefined') {
+        await loadWishlistSymbols();
+    }
+})();
+    
 
 </script>
+
+
+<!-- Wishlist Management -->
+
+<div class="section-block">
+<section id="wishlistManageSection" class="section-anchor">
+
+    <div class="card manage-card">
+        <div class="manage-title-row">
+            <h2>Manage Wishlist</h2>
+            <span>Add or remove symbols from your wishlist</span>
+        </div>
+
+        <p class="manage-help">
+            Add NSE symbols to your personal wishlist. These symbols will appear in the Wishlist table and can be used for charts and analysis.
+            Use <strong>Remove</strong> to delete a symbol. Symbols are saved to Firebase.
+        </p>
+
+        <div class="manage-grid">
+            <div>
+                <label for="wishlistSymbol">Symbol</label>
+                <input id="wishlistSymbol" type="text" placeholder="Example: RELIANCE or TCS-EQ">
+            </div>
+
+            <div>
+                <label>&nbsp;</label>
+                <button
+                    type="button"
+                    class="add-btn"
+                    onclick="addWishlistSymbol()"
+                >
+                    Add to Wishlist
+                </button>
+            </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <label for="wishlistRemoveSelect">Remove Symbol</label>
+            <select id="wishlistRemoveSelect">
+                <option value="">-- Choose --</option>
+            </select>
+        </div>
+
+        <div class="manage-grid" style="margin-top: 14px;">
+            <div>
+                <label>&nbsp;</label>
+                <button
+                    type="button"
+                    class="reset-btn"
+                    onclick="removeWishlistSymbol()"
+                >
+                    Remove Selected
+                </button>
+            </div>
+
+            <div>
+                <label>&nbsp;</label>
+                <button
+                    type="button"
+                    onclick="refreshWishlistManage()"
+                >
+                    Refresh List
+                </button>
+            </div>
+        </div>
+
+        <div class="manage-actions">
+            <span class="manage-status" id="wishlistManageStatus">
+                Wishlist management ready.
+            </span>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <label>Current Wishlist Symbols:</label>
+            <div id="wishlistSymbolsList" style="margin-top: 8px; color: #4b5563; font-size: 14px;">
+                Loading...
+            </div>
+        </div>
+    </div>
+
+</section>
+</div>
+    
 </body>
 </html>
