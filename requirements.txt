@@ -1,4 +1,1 @@
 flask
-yfinance
-requests
-beautifulsoup4
