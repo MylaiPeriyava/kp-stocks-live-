@@ -2,8 +2,4 @@ services:
   - type: web
     name: kp-stocks-live
     env: python
-    buildCommand: ""
-    startCommand: python kp_server.py
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
+    startCommand: python main.py
