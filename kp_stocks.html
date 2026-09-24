@@ -2924,7 +2924,7 @@ function readSettingsFromInputs() {
     };
 }
 
-function applySettings() {
+async function applySettings() {
     const read = readSettingsFromInputs();
     const status = document.getElementById("settingsStatus");
 
@@ -2977,12 +2977,53 @@ function applySettings() {
         calculateTrade();
     }
 
-    status.textContent =
-        "Rates applied at " +
-        formatTime(new Date()) +
-        ". All calculations and STOP LOSS alerts were recalculated.";
-
-    status.className = "settings-status positive";
+    // Save rates to Firebase
+    try {
+        const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+        
+        const response = await fetch(
+            API_BASE + "/save-rates" + userParam,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    values: [
+                        settings.buyBrokerage,
+                        settings.sellBrokerage,
+                        settings.exchangeTxPct,
+                        settings.clearingPct,
+                        settings.sebiPct,
+                        settings.ipfPct,
+                        settings.gstPct,
+                        settings.stampBuyPct,
+                        settings.sttBuyPct,
+                        settings.sttSellPct,
+                        settings.stopLossPct
+                    ]
+                })
+            }
+        );
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || ("HTTP " + response.status));
+        }
+        
+        status.textContent =
+            "Rates saved to Firebase at " +
+            formatTime(new Date()) +
+            ". All calculations and STOP LOSS alerts were recalculated.";
+        
+        status.className = "settings-status positive";
+        
+    } catch (error) {
+        status.textContent =
+            "Rates applied locally but failed to save to Firebase: " + error.message;
+        
+        status.className = "settings-status negative";
+    }
 }
 
 function resetSettings() {
