@@ -1,4 +1,4 @@
-flask==3.0.0
-yfinance==0.2.31
-requests==2.31.0
-beautifulsoup4==4.12.2
+flask
+yfinance
+requests
+beautifulsoup4
