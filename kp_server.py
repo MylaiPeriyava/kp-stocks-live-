@@ -13,12 +13,23 @@ from bs4 import BeautifulSoup
 # Firebase Admin SDK
 import firebase_admin
 from firebase_admin import credentials, firestore
+import json
+import os
 
-# Initialize Firebase
-cred_path = os.path.join(os.path.dirname(__file__), 'firebase-service-account.json')
-cred = credentials.Certificate(cred_path)
+# Initialize Firebase from environment variable
+firebase_config = os.environ.get('FIREBASE_SERVICE_ACCOUNT')
+
+if firebase_config:
+    cred_dict = json.loads(firebase_config)
+    cred = credentials.Certificate(cred_dict)
+else:
+    # Fallback for local development
+    cred_path = os.path.join(os.path.dirname(__file__), 'firebase-service-account.json')
+    cred = credentials.Certificate(cred_path)
+
 firebase_admin.initialize_app(cred)
 db = firestore.client()
+
 
 app = Flask(__name__, static_folder=".")
 
