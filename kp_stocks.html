@@ -1,0 +1,6242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KP's Stocks (Live)</title>
+
+<!-- TradingView Lightweight Charts library -->
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+<style>
+    :root {
+        --blue: #0b5cab;
+        --green: #137333;
+        --red: #b3261e;
+        --dark-red: #7d1c17;
+        --orange: #c66a00;
+        --purple: #6336a4;
+        --teal: #0f766e;
+        --bg: #f4f7fb;
+        --card: #ffffff;
+        --border: #d7dee8;
+        --menu-height: 48px;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: calc(var(--menu-height) + 14px);
+    }
+
+    body {
+        margin: 0;
+        padding: 20px;
+        background: var(--bg);
+        color: #1f2937;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .wrap {
+        max-width: 1250px;
+        margin: auto;
+    }
+
+    .header-row {
+        display: grid;
+        grid-template-columns: 100px 1fr 100px;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 18px;
+        margin-bottom: 0;
+        border-radius: 12px 12px 0 0;
+        color: white;
+        background: linear-gradient(135deg, #0b5cab, #137333, #f59e0b);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .15);
+    }
+
+    .header-img {
+        width: 80px;
+        height: 80px;
+        display: block;
+        object-fit: cover;
+        border: 2px solid #ffffff;
+        border-radius: 10px;
+        background: white;
+    }
+
+    .header-title {
+        margin: 0;
+        color: white;
+        text-align: center;
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+    }
+
+    .top-menu {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        min-height: var(--menu-height);
+        overflow-x: auto;
+        margin: 0 0 18px;
+        padding: 5px 10px;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, .10);
+        white-space: nowrap;
+        scrollbar-width: thin;
+    }
+
+    .top-menu a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        margin-right: 6px;
+        padding: 7px 13px;
+        color: #173b63;
+        background: #f1f6fc;
+        border: 1px solid #d7e3f0;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .top-menu a:hover {
+        color: #ffffff;
+        background: var(--blue);
+        border-color: var(--blue);
+    }
+
+    .top-menu a.menu-top {
+        color: #ffffff;
+        background: var(--green);
+        border-color: var(--green);
+    }
+
+    .top-menu a.menu-top:hover {
+        background: #0f5a28;
+        border-color: #0f5a28;
+    }
+
+    .section-anchor {
+        scroll-margin-top: calc(var(--menu-height) + 16px);
+    }
+
+    .note {
+        margin: 0 0 18px;
+        color: #4b5563;
+        font-size: 14px;
+        line-height: 1.45;
+    }
+
+    .card {
+        padding: 18px;
+        margin-bottom: 18px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+    }
+
+    .row-label {
+        margin-bottom: 8px;
+        color: #52606d;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 14px;
+        align-items: end;
+    }
+
+    .holdings-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto;
+        gap: 10px;
+        align-items: end;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 6px;
+        color: #374151;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    input,
+    select,
+    button {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 10px;
+        border: 1px solid #b9c4d0;
+        border-radius: 6px;
+        font-size: 15px;
+    }
+
+    input[readonly] {
+        background: #f7fafc;
+        color: #34495e;
+    }
+
+    button {
+        border: 0;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        background: var(--blue);
+    }
+
+    button:hover {
+        background: #084b8b;
+    }
+
+    .add-btn {
+        background: var(--green);
+    }
+
+    .add-btn:hover {
+        background: #0f5a28;
+    }
+
+    .reset-btn {
+        background: #6b7280;
+    }
+
+    .reset-btn:hover {
+        background: #4b5563;
+    }
+
+    .trade-calc-btn {
+        background: var(--orange);
+    }
+
+    .trade-calc-btn:hover {
+        background: #9e5200;
+    }
+
+    .chart-load-btn {
+        background: var(--teal);
+    }
+
+    .chart-load-btn:hover {
+        background: #0a5c56;
+    }
+
+    .holdings-info {
+        margin-top: 8px;
+        color: #4b5563;
+        font-size: 13px;
+    }
+
+    .refresh-controls,
+    .screener-controls,
+    .wishlist-controls,
+    .settings-actions,
+    .manage-actions,
+    .target-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .refresh-controls button,
+    .screener-controls button,
+    .wishlist-controls button,
+    .settings-actions button,
+    .manage-actions button,
+    .target-actions button {
+        width: auto;
+        min-width: 190px;
+    }
+
+    .auto-refresh-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        color: #374151;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .auto-refresh-label input {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .refresh-status,
+    .screener-refresh-status,
+    .wishlist-refresh-status,
+    .settings-status,
+    .chart-status,
+    .manage-status,
+    .target-status {
+        margin-top: 8px;
+        color: #52606d;
+        font-size: 13px;
+    }
+
+    /* Settings */
+
+    .settings-card {
+        border-color: #c8d7ef;
+    }
+
+    .settings-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        margin: -18px -18px 14px;
+        color: #173b63;
+        background: #eaf2fb;
+        border-bottom: 1px solid #c8d7ef;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .settings-title-row h2 {
+        margin: 0;
+        color: #173b63;
+        font-size: 18px;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        align-items: end;
+    }
+
+    .settings-grid label {
+        font-size: 12px;
+    }
+
+    .settings-grid input {
+        min-height: 38px;
+        font-size: 14px;
+    }
+
+    .settings-help {
+        margin: 0;
+        color: #52606d;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .settings-reset-btn {
+        background: #6b7280;
+    }
+
+    .settings-reset-btn:hover {
+        background: #4b5563;
+    }
+
+    .holdings-summary {
+        margin-top: 14px;
+        padding: 12px;
+        background: #f2f7fc;
+        border: 1px solid #d1d9e6;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .holdings-summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 6px;
+    }
+
+    .holdings-summary-row:last-child {
+        margin-bottom: 0;
+        font-weight: bold;
+    }
+
+    .hs-label {
+        color: #3b4a5a;
+    }
+
+    .hs-value {
+        color: #0b3a5f;
+        font-weight: bold;
+    }
+
+    /* Stop loss */
+
+    .stop-loss-box {
+        margin-top: 14px;
+        overflow: hidden;
+        border: 1px solid #e4a6a3;
+        border-radius: 8px;
+        background: #fff8f8;
+    }
+
+    .stop-loss-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        color: #ffffff;
+        background: linear-gradient(90deg, #b3261e, #7d1c17);
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    .stop-loss-subtitle {
+        color: #ffe5e5;
+        font-size: 12px;
+        font-weight: normal;
+    }
+
+    .stop-loss-safe {
+        padding: 12px 14px;
+        color: #176b34;
+        background: #effaf2;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .stop-loss-table-wrap {
+        overflow-x: auto;
+        max-height: 500px;
+    }
+
+    .stop-loss-table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+        background: #fffafa;
+    }
+
+    .stop-loss-table th,
+    .stop-loss-table td {
+        padding: 9px 10px;
+        border-bottom: 1px solid #f0d4d3;
+        font-size: 13px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .stop-loss-table th {
+        color: #7d1c17;
+        background: #fdeaea;
+        font-weight: bold;
+    }
+
+    .stop-loss-table th:first-child,
+    .stop-loss-table td:first-child {
+        text-align: left;
+    }
+
+    .stop-loss-table td:first-child {
+        color: #7d1c17;
+        font-weight: bold;
+    }
+
+    .stop-loss-table tr:hover td {
+        background: #fff0f0;
+    }
+
+    .stop-loss-pct {
+        color: var(--red);
+        font-weight: bold;
+    }
+
+    .average-down-row td {
+        color: #594477;
+        background: #f7f1ff;
+        border-bottom: 2px solid #d9c7f0;
+        font-size: 12px;
+    }
+
+    .average-down-row td:first-child {
+        color: #6336a4;
+        font-weight: bold;
+    }
+
+    .average-down-label {
+        display: inline-block;
+        margin-right: 5px;
+        padding: 2px 6px;
+        color: #ffffff;
+        background: #6336a4;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: bold;
+    }
+
+    .average-down-note {
+        display: block;
+        margin-top: 3px;
+        color: #70558f;
+        font-size: 10px;
+        font-weight: normal;
+        white-space: normal;
+    }
+
+    .scenario-pnl-negative {
+        color: #8d2b27 !important;
+        font-weight: bold;
+    }
+
+    .pnl-box,
+    .quote-box,
+    .position-info {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .pnl-box,
+    .quote-box {
+        background: #f7fafc;
+        border: 1px solid #d1d9e6;
+    }
+
+    .position-info {
+        margin-top: 0;
+        margin-bottom: 14px;
+        background: #fff9e6;
+        border: 1px solid #f5d88a;
+    }
+
+    .pnl-row,
+    .quote-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 7px;
+    }
+
+    .pnl-row:last-child,
+    .quote-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .pnl-label,
+    .quote-label {
+        color: #52606d;
+    }
+
+    .pnl-value,
+    .quote-value {
+        color: #172b4d;
+        font-weight: bold;
+        text-align: right;
+    }
+
+    .positive {
+        color: var(--green) !important;
+    }
+
+    .negative {
+        color: var(--red) !important;
+    }
+
+    .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .btn-row button {
+        width: auto;
+        min-width: 160px;
+    }
+
+    h2 {
+        margin: 0 0 12px;
+        color: #12375b;
+        font-size: 19px;
+    }
+
+    .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+        gap: 12px;
+    }
+
+    .box {
+        padding: 13px;
+        background: #fbfdff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
+    .box .title {
+        margin-bottom: 7px;
+        color: #52606d;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .box .value {
+        color: #172b4d;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+        max-height: 620px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
+    table {
+        width: 100%;
+        min-width: 880px;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    th,
+    td {
+        padding: 10px;
+        border-bottom: 1px solid #e6ebf1;
+        font-size: 14px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        color: #173b63;
+        background: #eaf2fb;
+    }
+
+    th:first-child,
+    td:first-child {
+        text-align: left;
+    }
+
+    tr:hover {
+        background: #f7fbff;
+    }
+
+    .break-even-row {
+        background: #fff6cf !important;
+        font-weight: bold;
+    }
+
+    .small {
+        margin: 10px 0 0;
+        color: #5c6875;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    /* Screeners */
+
+    .screeners-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .screener-controls {
+        margin: 12px 0 16px;
+    }
+
+    .screener-card {
+        overflow: hidden;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+    }
+
+    .screener-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        color: #173b63;
+        background: #eaf2fb;
+        border-bottom: 1px solid var(--border);
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    .screener-title {
+        padding: 0;
+        margin: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .screener-refresh-btn {
+        width: auto;
+        min-width: 90px;
+        min-height: 32px;
+        padding: 6px 12px;
+        font-size: 12px;
+        background: #0b5cab;
+    }
+
+    .screener-table-wrap {
+        overflow-x: auto;
+        max-height: 520px;
+    }
+
+    .screener-table {
+        width: 100%;
+        min-width: 600px;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .screener-table th,
+    .screener-table td {
+        padding: 8px 10px;
+        text-align: left;
+        font-size: 13px;
+    }
+
+    .screener-table th {
+        background: #f5f8fc;
+    }
+
+    .gainer-table td:nth-child(3),
+    .gainer-table td:nth-child(4) {
+        color: var(--green);
+        font-weight: bold;
+    }
+
+    .loser-table td:nth-child(3),
+    .loser-table td:nth-child(4) {
+        color: var(--red);
+        font-weight: bold;
+    }
+
+    /* Wishlist */
+
+    .wishlist-card {
+        border-color: #b9d7c2;
+    }
+
+    .wishlist-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        color: #155d2d;
+        background: #eaf8ee;
+        border-bottom: 1px solid #b9d7c2;
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    .wishlist-title-row h2 {
+        margin: 0;
+        color: #155d2d;
+        font-size: 17px;
+    }
+
+    .wishlist-table-wrap {
+        overflow-x: auto;
+        max-height: 620px;
+    }
+
+    .wishlist-table {
+        min-width: 1100px;
+    }
+
+    .wishlist-table th,
+    .wishlist-table td {
+        padding: 9px 10px;
+        font-size: 13px;
+        text-align: right;
+    }
+
+    .wishlist-table th:first-child,
+    .wishlist-table td:first-child {
+        text-align: left;
+    }
+
+    .wishlist-table th {
+        background: #f2fbf4;
+        color: #155d2d;
+    }
+
+    .wishlist-symbol {
+        color: #12375b;
+        font-weight: bold;
+    }
+
+    .wishlist-group-heading td {
+        padding: 9px 12px;
+        color: #ffffff;
+        background: linear-gradient(90deg, #0b5cab, #137333);
+        border-bottom: 1px solid #ffffff;
+        font-size: 13px;
+        font-weight: bold;
+        letter-spacing: .2px;
+        text-align: left !important;
+    }
+
+    .wishlist-at-52w-low td {
+        background: #fff3cd !important;
+        border-top: 1px solid #f2c94c;
+        border-bottom: 1px solid #f2c94c;
+    }
+
+    .wishlist-at-52w-low td:first-child {
+        color: #8a5600;
+        font-weight: 800;
+    }
+
+    .wishlist-at-52w-low:hover td {
+        background: #ffe9a6 !important;
+    }
+
+    .wishlist-low-badge {
+        display: inline-block;
+        margin-left: 7px;
+        padding: 2px 6px;
+        color: #7c4a00;
+        background: #ffdb70;
+        border: 1px solid #eab93e;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: bold;
+        vertical-align: middle;
+    }
+
+    .wishlist-error {
+        color: var(--red);
+        font-size: 12px;
+    }
+
+    .wishlist-empty {
+        padding: 16px;
+        color: #52606d;
+        font-size: 14px;
+    }
+
+    /* Trade calculator */
+
+    .trade-calculator-card {
+        border-color: #f0c27b;
+    }
+
+    .trade-calculator-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        margin: -18px -18px 16px;
+        color: #7b4500;
+        background: #fff3e0;
+        border-bottom: 1px solid #f0c27b;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .trade-calculator-title h2 {
+        margin: 0;
+        color: #7b4500;
+        font-size: 18px;
+    }
+
+    .trade-input-row {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(150px, 1fr));
+        gap: 14px;
+        align-items: end;
+    }
+
+    .trade-type-options {
+        display: flex;
+        min-height: 40px;
+        align-items: center;
+        gap: 14px;
+        padding: 6px 10px;
+        background: #f8fafc;
+        border: 1px solid #b9c4d0;
+        border-radius: 6px;
+    }
+
+    .trade-type-options label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+        color: #374151;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .trade-type-options input {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .trade-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .trade-result-box {
+        padding: 12px;
+        background: #fffdf9;
+        border: 1px solid #f0d6ae;
+        border-radius: 8px;
+    }
+
+    .trade-result-box .trade-result-label {
+        margin-bottom: 6px;
+        color: #70522f;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .trade-result-box .trade-result-value {
+        color: #422c10;
+        font-size: 21px;
+        font-weight: bold;
+    }
+
+    .trade-result-box.trade-total-buy {
+        background: #eaf8ee;
+        border-color: #a9d8b6;
+    }
+
+    .trade-result-box.trade-total-sell {
+        background: #eaf2fb;
+        border-color: #b7cde6;
+    }
+
+    .trade-result-box.trade-total-buy .trade-result-label {
+        color: #155d2d;
+    }
+
+    .trade-result-box.trade-total-buy .trade-result-value {
+        color: #137333;
+    }
+
+    .trade-result-box.trade-total-sell .trade-result-label {
+        color: #12375b;
+    }
+
+    .trade-result-box.trade-total-sell .trade-result-value {
+        color: #0b5cab;
+    }
+
+    .trade-charge-details {
+        margin-top: 16px;
+        overflow-x: auto;
+        border: 1px solid #f0d6ae;
+        border-radius: 8px;
+    }
+
+    .trade-charge-details table {
+        min-width: 600px;
+    }
+
+    .trade-charge-details th {
+        background: #fff3e0;
+        color: #7b4500;
+    }
+
+    /* Holding period */
+
+    .holding-period-box {
+        margin-top: 14px;
+        padding: 12px;
+        background: #f5f0ff;
+        border: 1px solid #d9c7f0;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .holding-period-title {
+        margin-bottom: 8px;
+        color: var(--purple);
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .holding-period-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 6px;
+    }
+
+    .holding-period-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .holding-period-label {
+        color: #594477;
+    }
+
+    .holding-period-value {
+        color: #43266f;
+        font-weight: bold;
+        text-align: right;
+    }
+
+    /* Chart + RSI */
+
+    .chart-card {
+        border-color: #abd6d1;
+    }
+
+    .chart-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        margin: -18px -18px 16px;
+        color: #0b5e58;
+        background: #e8f8f6;
+        border-bottom: 1px solid #abd6d1;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .chart-title-row h2 {
+        margin: 0;
+        color: #0b5e58;
+        font-size: 18px;
+    }
+
+    .chart-controls {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(140px, 1fr));
+        gap: 14px;
+        align-items: end;
+    }
+
+    .chart-controls label {
+        font-size: 12px;
+    }
+
+    .chart-controls input,
+    .chart-controls select {
+        min-height: 40px;
+        font-size: 14px;
+    }
+
+    .chart-controls button {
+        min-height: 40px;
+    }
+
+    .chart-symbol-note {
+        margin-top: 8px;
+        color: #4c6663;
+        font-size: 12px;
+    }
+
+    .chart-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .chart-summary-box {
+        padding: 11px;
+        background: #f7fffe;
+        border: 1px solid #cce9e5;
+        border-radius: 8px;
+    }
+
+    .chart-summary-label {
+        margin-bottom: 5px;
+        color: #356c67;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .chart-summary-value {
+        color: #084c47;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .chart-panel {
+        margin-top: 16px;
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid #cce9e5;
+        border-radius: 8px;
+    }
+
+    .chart-panel-title {
+        padding: 8px 12px;
+        color: #0b5e58;
+        background: #f0fbfa;
+        border-bottom: 1px solid #cce9e5;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .chart-container {
+        width: 100%;
+        height: 380px;
+        position: relative;
+    }
+
+    .rsi-chart-container {
+        width: 100%;
+        height: 220px;
+        position: relative;
+    }
+
+    .chart-empty {
+        padding: 20px;
+        color: #52606d;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    /* Analysis section */
+
+    .analysis-card {
+        border-color: #c4b5fd;
+    }
+
+    .analysis-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        margin: -18px -18px 16px;
+        color: #4c1d95;
+        background: #f5f3ff;
+        border-bottom: 1px solid #c4b5fd;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .analysis-title-row h2 {
+        margin: 0;
+        color: #4c1d95;
+        font-size: 18px;
+    }
+
+    .analysis-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .analysis-controls button {
+        width: auto;
+        min-width: 160px;
+    }
+
+    .analysis-status {
+        margin-top: 8px;
+        color: #52606d;
+        font-size: 13px;
+    }
+
+    .analysis-content {
+        margin-top: 16px;
+        padding: 14px;
+        background: #faf7ff;
+        border: 1px solid #e9e3f5;
+        border-radius: 8px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .analysis-content h3 {
+        margin: 16px 0 8px;
+        color: #4c1d95;
+        font-size: 16px;
+    }
+
+    .analysis-content h3:first-child {
+        margin-top: 0;
+    }
+
+    .analysis-content ul {
+        margin: 8px 0 16px 20px;
+        padding: 0;
+    }
+
+    .analysis-content li {
+        margin-bottom: 6px;
+    }
+
+    .analysis-content .muted {
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    /* Manage holdings section */
+
+    .manage-card {
+        border-color: #a7b3c7;
+    }
+
+    .manage-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        margin: -18px -18px 16px;
+        color: #1f3a5f;
+        background: #eef3fa;
+        border-bottom: 1px solid #a7b3c7;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .manage-title-row h2 {
+        margin: 0;
+        color: #1f3a5f;
+        font-size: 18px;
+    }
+
+    .manage-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        align-items: end;
+    }
+
+    .manage-grid label {
+        font-size: 13px;
+    }
+
+    .manage-grid input,
+    .manage-grid select {
+        min-height: 40px;
+        font-size: 14px;
+    }
+
+    .manage-help {
+        margin: 0;
+        color: #52606d;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    /* Target calculator section */
+
+    .target-card {
+        border-color: #c792ea;
+    }
+
+    .target-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        margin: -18px -18px 16px;
+        color: #4a148c;
+        background: #f3e5f5;
+        border-bottom: 1px solid #c792ea;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .target-title-row h2 {
+        margin: 0;
+        color: #4a148c;
+        font-size: 18px;
+    }
+
+    .target-input-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+        gap: 14px;
+        align-items: end;
+    }
+
+    .target-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .target-result-box {
+        padding: 12px;
+        background: #fbf7ff;
+        border: 1px solid #e1bee7;
+        border-radius: 8px;
+    }
+
+    .target-result-box .target-result-label {
+        margin-bottom: 6px;
+        color: #6a1b9a;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .target-result-box .target-result-value {
+        color: #4a148c;
+        font-size: 21px;
+        font-weight: bold;
+    }
+
+    .target-result-box.target-highlight {
+        background: #ede7f6;
+        border-color: #b39ddb;
+    }
+
+    .target-result-box.target-highlight .target-result-label {
+        color: #4527a0;
+    }
+
+    .target-result-box.target-highlight .target-result-value {
+        color: #311b92;
+    }
+
+    .target-charge-details {
+        margin-top: 16px;
+        overflow-x: auto;
+        border: 1px solid #e1bee7;
+        border-radius: 8px;
+    }
+
+    .target-charge-details table {
+        min-width: 600px;
+    }
+
+    .target-charge-details th {
+        background: #f3e5f5;
+        color: #4a148c;
+    }
+
+    .portfolio-targets-details { overflow-x: auto; }
+    .portfolio-targets-table { min-width: 1700px !important; font-size: 12px; }
+    .portfolio-targets-table th, .portfolio-targets-table td { padding: 7px 8px; text-align: right; white-space: nowrap; }
+    .portfolio-targets-table th:first-child, .portfolio-targets-table td:first-child { text-align: left; }
+    .portfolio-targets-table th { position: sticky; top: 0; z-index: 2; }
+    .portfolio-targets-table td.target-reached { color: #075b2a; font-weight: 800; background: #e9f7ed; }
+    .portfolio-targets-table td.target-loss { color: #b3261e; font-weight: 800; background: #fce4e2; }
+    .portfolio-targets-table td.portfolio-final-target { color: #4a148c; font-weight: 800; background: #f3e5f5; }
+
+    /* Section visibility control */
+    .section-block { display: none; }
+    .section-block.active { display: block; }
+
+    @media (max-width: 1100px) {
+        .chart-controls {
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+        }
+    }
+
+    @media (max-width: 1000px) {
+        .trade-input-row {
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+        }
+    }
+
+    @media (max-width: 900px) {
+        .holdings-row {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 700px) {
+        :root {
+            --menu-height: 44px;
+        }
+
+        body {
+            padding: 12px;
+        }
+
+        .header-row {
+            grid-template-columns: 60px 1fr 60px;
+            gap: 8px;
+            padding: 10px 12px;
+        }
+
+        .header-img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .header-title {
+            font-size: 21px;
+        }
+
+        .top-menu {
+            margin-bottom: 14px;
+            padding: 5px 7px;
+        }
+
+        .top-menu a {
+            min-height: 30px;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .holdings-summary-row,
+        .pnl-row,
+        .quote-row,
+        .holding-period-row {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .pnl-value,
+        .quote-value,
+        .holding-period-value {
+            text-align: left;
+        }
+
+        .screener-title-row,
+        .wishlist-title-row,
+        .trade-calculator-title,
+        .stop-loss-header,
+        .settings-title-row,
+        .chart-title-row,
+        .analysis-title-row,
+        .manage-title-row,
+        .target-title-row {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .trade-input-row,
+        .chart-controls,
+        .manage-grid,
+        .target-input-row {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-container {
+            height: 320px;
+        }
+
+        .rsi-chart-container {
+            height: 200px;
+        }
+    }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+    <div id="top"></div>
+
+    <div class="header-row">
+        <img
+            src="https://www.ganesasarma.com/MPS1.jpg"
+            alt="KP Stocks left header image"
+            class="header-img"
+        >
+
+        <h1 class="header-title">KP's Stocks (Live)</h1>
+
+        <img
+            src="https://www.ganesasarma.com/MPS2.jpg"
+            alt="KP Stocks right header image"
+            class="header-img"
+        >
+    </div>
+
+    <nav class="top-menu" aria-label="Dashboard navigation">
+        <a class="menu-top" href="#top">↑ Top</a>
+        <a href="javascript:void(0)" onclick="showSection('settingsSection')">Rates</a>
+        <a href="javascript:void(0)" onclick="showSection('holdingsSection')">Holdings</a>
+        <a href="javascript:void(0)" onclick="showSection('calculatorSection')">Calculator</a>
+        <a href="javascript:void(0)" onclick="showSection('resultsSection')">Results</a>
+        <a href="javascript:void(0)" onclick="showSection('screenersSection')">Screeners</a>
+        <a href="javascript:void(0)" onclick="showSection('wishlistSection')">Wishlist</a>
+        <a href="javascript:void(0)" onclick="showSection('tradeCalcSection')">Trade Calc</a>
+        <a href="javascript:void(0)" onclick="showSection('chartSection')">Chart + RSI</a>
+        <a href="javascript:void(0)" onclick="showSection('analysisSection')">Analyse</a>
+        <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
+        <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
+    </nav>
+
+    <p class="note">
+        Intended for Indian equity delivery trades. Holdings and prices are loaded from your local server.
+        Rates below are editable for the current browser session. Existing holdings charges are calculated separately for every original purchase lot.
+    </p>
+
+    <!-- Rates and Defaults -->
+
+    <div class="section-block">
+<section id="settingsSection" class="section-anchor">
+        <div class="card settings-card">
+            <div class="settings-title-row">
+                <h2>Rates & Defaults</h2>
+                <span>Change values only when your broker or statutory charges differ</span>
+            </div>
+
+            <p class="settings-help">
+                Enter percentage values in normal form. Example: enter <strong>0.00307</strong> for 0.00307%,
+                <strong>0.015</strong> for 0.015%, <strong>0.1</strong> for 0.1%, and <strong>18</strong> for GST 18%.
+                Enter Stop Loss as a positive number, such as <strong>3</strong>; it triggers at P/L of −3% or worse.
+            </p>
+
+            <div class="settings-grid">
+                <div>
+                    <label for="setBuyBrokerage">Buy Brokerage (₹ / lot)</label>
+                    <input id="setBuyBrokerage" type="number" min="0" step="0.01" value="20">
+                </div>
+
+                <div>
+                    <label for="setSellBrokerage">Sell Brokerage (₹ / order)</label>
+                    <input id="setSellBrokerage" type="number" min="0" step="0.01" value="20">
+                </div>
+
+                <div>
+                    <label for="setExchangeTx">Exchange Charge (%)</label>
+                    <input id="setExchangeTx" type="number" min="0" step="0.000001" value="0.00307">
+                </div>
+
+                <div>
+                    <label for="setClearing">Clearing Charge (%)</label>
+                    <input id="setClearing" type="number" min="0" step="0.000001" value="0.000075">
+                </div>
+
+                <div>
+                    <label for="setSebi">SEBI Fee (%)</label>
+                    <input id="setSebi" type="number" min="0" step="0.000001" value="0.0001">
+                </div>
+
+                <div>
+                    <label for="setIpf">Investor Protection Fund (%)</label>
+                    <input id="setIpf" type="number" min="0" step="0.000001" value="0.0001">
+                </div>
+
+                <div>
+                    <label for="setGst">GST (%)</label>
+                    <input id="setGst" type="number" min="0" step="0.01" value="18">
+                </div>
+
+                <div>
+                    <label for="setStampBuy">Stamp Duty on Buy (%)</label>
+                    <input id="setStampBuy" type="number" min="0" step="0.000001" value="0.015">
+                </div>
+
+                <div>
+                    <label for="setSttBuy">STT on Buy (%)</label>
+                    <input id="setSttBuy" type="number" min="0" step="0.000001" value="0.1">
+                </div>
+
+                <div>
+                    <label for="setSttSell">STT on Sell (%)</label>
+                    <input id="setSttSell" type="number" min="0" step="0.000001" value="0.1">
+                </div>
+
+                <div>
+                    <label for="setStopLoss">STOP LOSS (%)</label>
+                    <input id="setStopLoss" type="number" min="0.01" step="0.01" value="3">
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button type="button" onclick="applySettings()">
+                    Apply Changes & Recalculate
+                </button>
+
+                <button type="button" class="settings-reset-btn" onclick="resetSettings()">
+                    Reset Defaults
+                </button>
+            </div>
+
+            <div class="settings-status" id="settingsStatus">
+                Default rates are active.
+            </div>
+        </div>
+    </section>
+</div>
+
+    <!-- Holdings -->
+
+    <div class="section-block active">
+<section id="holdingsSection" class="section-anchor">
+        <div class="card">
+            <div class="row-label">Holdings (live from server)</div>
+
+            <div class="holdings-row">
+                <div>
+                    <label for="symbolSelect">Select Symbol</label>
+                    <select id="symbolSelect">
+                        <option value="">-- Choose --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="livePrice">Live Price (₹)</label>
+                    <input id="livePrice" type="text" readonly>
+                </div>
+
+                <div>
+                    <button type="button" onclick="refreshSelectedPrice()">
+                        Refresh Selected Price
+                    </button>
+                </div>
+            </div>
+
+            <div class="holdings-info" id="holdingsInfo">
+                Loading holdings from server...
+            </div>
+
+            <div class="refresh-controls">
+                <button type="button" onclick="refreshAllPrices()">
+                    Refresh All Prices Now
+                </button>
+
+                <label class="auto-refresh-label" for="autoRefreshToggle">
+                    <input
+                        type="checkbox"
+                        id="autoRefreshToggle"
+                        checked
+                        onchange="setAutoRefresh(this.checked)"
+                    >
+                    Auto refresh prices every 60 seconds
+                </label>
+            </div>
+
+            <div class="refresh-status" id="refreshStatus">
+                Initial price loading in progress...
+            </div>
+
+            <div class="holdings-summary" id="holdingsSummary" style="display:none;">
+                <div class="holdings-summary-row">
+                    <span class="hs-label">Total Investment (Price × Qty):</span>
+                    <span class="hs-value" id="hsTotalInvestment">₹0.00</span>
+                </div>
+
+                <div class="holdings-summary-row">
+                    <span class="hs-label">Estimated Total Buy Charges (per original lot):</span>
+                    <span class="hs-value" id="hsTotalCharges">₹0.00</span>
+                </div>
+
+                <div class="holdings-summary-row">
+                    <span class="hs-label">Grand Total Invested:</span>
+                    <span class="hs-value" id="hsGrandTotal">₹0.00</span>
+                </div>
+
+                <div class="holdings-summary-row">
+                    <span class="hs-label">Total Current Value (live):</span>
+                    <span class="hs-value" id="hsTotalCurrentValue">₹0.00</span>
+                </div>
+
+                <div class="holdings-summary-row">
+                    <span class="hs-label">Total Profit / Loss:</span>
+                    <span class="hs-value" id="hsTotalPnL">₹0.00</span>
+                </div>
+
+                <div class="holdings-summary-row">
+                    <span class="hs-label">Total Profit / Loss %:</span>
+                    <span class="hs-value" id="hsTotalPnLPercent">0.00%</span>
+                </div>
+            </div>
+
+            <div class="stop-loss-box" id="stopLossBox" style="display:none;">
+                <div class="stop-loss-header">
+                    <span>STOP LOSS</span>
+                    <span class="stop-loss-subtitle" id="stopLossSubtitle">
+                        Holdings with simple P/L of −3.00% or below
+                    </span>
+                </div>
+
+                <div class="stop-loss-safe" id="stopLossSafeMessage">
+                    No holdings currently below −3.00%.
+                </div>
+
+                <div class="stop-loss-table-wrap" id="stopLossTableWrap" style="display:none;">
+                    <table class="stop-loss-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol / Scenario</th>
+                                <th>Qty</th>
+                                <th>Avg Buy Price</th>
+                                <th>Current Price</th>
+                                <th>Profit / Loss</th>
+                                <th>Profit / Loss %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stopLossRows"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="pnl-box" id="pnlBox" style="display:none;">
+                <div class="pnl-row">
+                    <span class="pnl-label">Symbol:</span>
+                    <span class="pnl-value" id="pnlSymbol">-</span>
+                </div>
+
+                <div class="pnl-row">
+                    <span class="pnl-label">Holding Quantity:</span>
+                    <span class="pnl-value" id="pnlQty">-</span>
+                </div>
+
+                <div class="pnl-row">
+                    <span class="pnl-label">Holding Average Price:</span>
+                    <span class="pnl-value" id="pnlAvgHold">-</span>
+                </div>
+
+                <div class="pnl-row">
+                    <span class="pnl-label">Effective Avg Cost Including Buy Charges:</span>
+                    <span class="pnl-value" id="pnlEffectiveAvgCost">-</span>
+                </div>
+
+                <div class="pnl-row">
+                    <span class="pnl-label">Current Market Price:</span>
+                    <span class="pnl-value" id="pnlCmp">-</span>
+                </div>
+
+                <div class="pnl-row">
+                    <span class="pnl-label">Current Value:</span>
+                    <span class="pnl-value" id="pnlCurrentValue">-</span>
+                </div>
+
+                <div class="pnl-row">
+                    <span class="pnl-label">Price-only Profit / Loss:</span>
+                    <span class="pnl-value" id="pnlValue">-</span>
+                </div>
+
+                <div class="pnl-row">
+                    <span class="pnl-label">Price-only Profit / Loss %:</span>
+                    <span class="pnl-value" id="pnlPercent">-</span>
+                </div>
+            </div>
+
+            <div class="holding-period-box" id="holdingPeriodBox" style="display:none;">
+                <div class="holding-period-title">Holding Period</div>
+
+                <div class="holding-period-row">
+                    <span class="holding-period-label">Holding Since:</span>
+                    <span class="holding-period-value" id="holdingSince">-</span>
+                </div>
+
+                <div class="holding-period-row">
+                    <span class="holding-period-label">Holding Days:</span>
+                    <span class="holding-period-value" id="holdingDays">-</span>
+                </div>
+
+                <div class="holding-period-row">
+                    <span class="holding-period-label">Price-only Profit / Loss During Holding Period:</span>
+                    <span class="holding-period-value" id="holdingPeriodPnL">-</span>
+                </div>
+
+                <div class="holding-period-row">
+                    <span class="holding-period-label">Price-only Profit / Loss % During Holding Period:</span>
+                    <span class="holding-period-value" id="holdingPeriodPnLPercent">-</span>
+                </div>
+            </div>
+
+            <div class="quote-box" id="quoteBox" style="display:none;">
+                <div class="quote-row">
+                    <span class="quote-label">Google Finance symbol:</span>
+                    <span class="quote-value" id="gfSymbol">-</span>
+                </div>
+
+                <div class="quote-row">
+                    <button type="button" onclick="openGoogleFinance()">
+                        View on Google Finance
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+    <!-- Position Calculator -->
+
+    <div class="section-block">
+<section id="calculatorSection" class="section-anchor">
+
+        <div class="card">
+            <div class="row-label">Stock 1 (Initial position)</div>
+
+            <div class="inputs">
+                <div>
+                    <label for="symbol1">Symbol</label>
+                    <select id="symbol1">
+                        <option value="">-- Choose --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="qty1">Quantity</label>
+                    <input id="qty1" type="number" min="0" step="1" value="0">
+                </div>
+
+                <div>
+                    <label for="price1">Buy Price per Share (₹)</label>
+                    <input id="price1" type="number" min="0.01" step="0.01" value="0">
+                </div>
+
+                <div>
+                    <label for="brokerageBuy1">Buy Brokerage (₹)</label>
+                    <input id="brokerageBuy1" type="number" min="0" step="0.01" value="20">
+                </div>
+
+                <div>
+                    <label for="brokerageSell1">Sell Brokerage (₹)</label>
+                    <input id="brokerageSell1" type="number" min="0" step="0.01" value="20">
+                </div>
+
+                <div>
+                    <button type="button" onclick="initStock1()">
+                        Set as Initial Position
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="row-label">Add stocks (Stock 2, 3, …)</div>
+
+            <div class="inputs">
+                <div>
+                    <label for="symbol2">Symbol</label>
+                    <select id="symbol2">
+                        <option value="">-- Choose --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="qty2">Quantity</label>
+                    <input id="qty2" type="number" min="0" step="1" value="0">
+                </div>
+
+                <div>
+                    <label for="price2">Buy Price per Share (₹)</label>
+                    <input id="price2" type="number" min="0.01" step="0.01" value="0">
+                </div>
+
+                <div>
+                    <label for="brokerageBuy2">Buy Brokerage (₹)</label>
+                    <input id="brokerageBuy2" type="number" min="0" step="0.01" value="20">
+                </div>
+
+                <div>
+                    <label for="brokerageSell2">Sell Brokerage (₹)</label>
+                    <input id="brokerageSell2" type="number" min="0" step="0.01" value="20">
+                </div>
+
+                <div>
+                    <button type="button" class="add-btn" onclick="addStock()">
+                        Add to Position
+                    </button>
+                </div>
+            </div>
+
+            <p class="small">
+                Initial Position uses the price-only weighted-average holding price. Its buy charges are calculated using the brokerage field shown above.
+                Add to Position starts with quantity 0 and the latest available live price.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="position-info" id="positionInfo">
+                No position yet. Set Stock 1 or add stocks to begin.
+            </div>
+
+            <div class="btn-row">
+                <button type="button" class="reset-btn" onclick="resetAll()">Reset All</button>
+                <button type="button" onclick="recalcTable()">Refresh Table</button>
+            </div>
+        </div>
+
+    </section>
+</div>
+
+    <!-- Results -->
+
+    <div class="section-block">
+<section id="resultsSection" class="section-anchor">
+
+        <div class="card">
+            <h2>Key Results (Combined Position)</h2>
+
+            <div class="summary">
+                <div class="box">
+                    <div class="title">Total Quantity</div>
+                    <div class="value" id="totalQty">0</div>
+                </div>
+
+                <div class="box">
+                    <div class="title">Total Invested</div>
+                    <div class="value" id="totalInvested">₹0.00</div>
+                </div>
+
+                <div class="box">
+                    <div class="title">Effective Avg Buy Price</div>
+                    <div class="value" id="avgBuyPrice">₹0.00</div>
+                </div>
+
+                <div class="box">
+                    <div class="title">Break-even Sell Price / Share</div>
+                    <div class="value positive" id="breakEvenPrice">₹0.00</div>
+                </div>
+
+                <div class="box">
+                    <div class="title">Break-even Gross Sell Value</div>
+                    <div class="value positive" id="breakEvenValue">₹0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Buy Charges (Last Added Lot)</h2>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Charge</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyChargeRows">
+                        <tr>
+                            <td>No lot data yet</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Break-even, Loss and Gain Table</h2>
+
+            <p class="note">
+                Each row changes sell price by ₹1. The range starts 25% below and ends 25% above the effective average buy price.
+            </p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sell Price / Share</th>
+                            <th>Gross Sell Value</th>
+                            <th>Sell Charges</th>
+                            <th>Net Amount Received</th>
+                            <th>Profit / Loss</th>
+                            <th>Profit / Loss %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultRows">
+                        <tr>
+                            <td colspan="6">No position yet. Set Stock 1 or add stocks to begin.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Rates Currently Used</h2>
+            <p class="small" id="ratesUsedText">Loading current rates...</p>
+        </div>
+
+    </section>
+</div>
+
+    <!-- Screeners -->
+
+    <div class="section-block">
+<section id="screenersSection" class="section-anchor">
+
+        <div class="card">
+            <div class="row-label">Market Screeners (live)</div>
+
+            <p class="small">
+                Anand Rathi market lists are fetched through the local server.
+                Use an individual Refresh button for one table or Refresh All Screeners for all five tables.
+            </p>
+
+            <div class="screener-controls">
+                <button type="button" onclick="refreshAllScreeners()">
+                    Refresh All Screeners
+                </button>
+
+                <span class="screener-refresh-status" id="screenerRefreshStatus">
+                    Screeners load when the page opens.
+                </span>
+            </div>
+
+            <div class="screeners-grid">
+
+                <div class="screener-card">
+                    <div class="screener-title-row">
+                        <span class="screener-title">Anand Rathi – 52 Weeks Low</span>
+                        <button type="button" class="screener-refresh-btn" onclick="load52WeekLowAR()">Refresh</button>
+                    </div>
+                    <div class="screener-table-wrap">
+                        <table class="screener-table" id="tableAR">
+                            <thead><tr><th>Loading...</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="screener-card">
+                    <div class="screener-title-row">
+                        <span class="screener-title">Anand Rathi – Top Losers Today</span>
+                        <button type="button" class="screener-refresh-btn" onclick="loadTopLosersAR()">Refresh</button>
+                    </div>
+                    <div class="screener-table-wrap">
+                        <table class="screener-table loser-table" id="tableTopLosers">
+                            <thead><tr><th>Loading...</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="screener-card">
+                    <div class="screener-title-row">
+                        <span class="screener-title">Anand Rathi – 52 Weeks High</span>
+                        <button type="button" class="screener-refresh-btn" onclick="load52WeekHighAR()">Refresh</button>
+                    </div>
+                    <div class="screener-table-wrap">
+                        <table class="screener-table gainer-table" id="table52WeekHigh">
+                            <thead><tr><th>Loading...</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="screener-card">
+                    <div class="screener-title-row">
+                        <span class="screener-title">Anand Rathi – Top Gainers Today</span>
+                        <button type="button" class="screener-refresh-btn" onclick="loadTopGainersAR()">Refresh</button>
+                    </div>
+                    <div class="screener-table-wrap">
+                        <table class="screener-table gainer-table" id="tableTopGainers">
+                            <thead><tr><th>Loading...</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="screener-card">
+                    <div class="screener-title-row">
+                        <span class="screener-title">Anand Rathi – Volume Gainers</span>
+                        <button type="button" class="screener-refresh-btn" onclick="loadVolumeGainersAR()">Refresh</button>
+                    </div>
+                    <div class="screener-table-wrap">
+                        <table class="screener-table" id="tableVolumeGainers">
+                            <thead><tr><th>Loading...</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+</div>
+
+    <!-- Wishlist -->
+
+    <div class="section-block">
+<section id="wishlistSection" class="section-anchor">
+
+        <div class="card wishlist-card">
+            <div class="wishlist-title-row">
+                <h2>Wishlist (Live)</h2>
+                <span>Symbols and groups from wishlist.txt</span>
+            </div>
+
+            <p class="small">
+                Add one NSE symbol per line in <strong>wishlist.txt</strong>.
+                Lines beginning with <strong>#</strong> appear as coloured group headings.
+                A yellow row with a <strong>52W LOW</strong> badge means the current Day Low is equal to the reported 52-week low.
+            </p>
+
+            <div class="wishlist-controls">
+                <button type="button" class="add-btn" onclick="refreshWishlist()">
+                    Refresh Wishlist Now
+                </button>
+
+                <span class="wishlist-refresh-status" id="wishlistRefreshStatus">
+                    Wishlist loading...
+                </span>
+            </div>
+
+            <div class="wishlist-table-wrap">
+                <table class="wishlist-table" id="wishlistTable">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Current Price</th>
+                            <th>Change</th>
+                            <th>Change %</th>
+                            <th>Day High</th>
+                            <th>Day Low</th>
+                            <th>52W High</th>
+                            <th>52W Low</th>
+                            <th>Volume</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wishlistRows">
+                        <tr>
+                            <td colspan="10" class="wishlist-empty">Loading wishlist...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </section>
+</div>
+
+    <!-- Trade Calculator -->
+
+    <div class="section-block">
+<section id="tradeCalcSection" class="section-anchor">
+
+        <div class="card trade-calculator-card">
+            <div class="trade-calculator-title">
+                <h2>Buy / Sell Trade Calculator</h2>
+                <span>Uses the current Rates & Defaults settings</span>
+            </div>
+
+            <div class="trade-input-row">
+                <div>
+                    <label for="tradeSharePrice">Share Value / Price (₹)</label>
+                    <input
+                        id="tradeSharePrice"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Example: 225.50"
+                        onkeydown="if(event.key === 'Enter') calculateTrade()"
+                    >
+                </div>
+
+                <div>
+                    <label for="tradeQty">Quantity</label>
+                    <input
+                        id="tradeQty"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Example: 10"
+                        onkeydown="if(event.key === 'Enter') calculateTrade()"
+                    >
+                </div>
+
+                <div>
+                    <label>Trade Type</label>
+                    <div class="trade-type-options">
+                        <label>
+                            <input type="radio" name="tradeType" value="buy" checked>
+                            Buy
+                        </label>
+
+                        <label>
+                            <input type="radio" name="tradeType" value="sell">
+                            Sell
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="tradeBrokerage">Brokerage (₹)</label>
+                    <input
+                        id="tradeBrokerage"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value="20"
+                        onkeydown="if(event.key === 'Enter') calculateTrade()"
+                    >
+                </div>
+
+                <div>
+                    <label>&nbsp;</label>
+                    <button
+                        type="button"
+                        class="trade-calc-btn"
+                        onclick="calculateTrade()"
+                    >
+                        Calculate
+                    </button>
+                </div>
+            </div>
+
+            <div class="trade-results">
+                <div class="trade-result-box">
+                    <div class="trade-result-label">Total Value</div>
+                    <div class="trade-result-value" id="tradeTotalValue">₹0.00</div>
+                </div>
+
+                <div class="trade-result-box">
+                    <div class="trade-result-label">Brokerage</div>
+                    <div class="trade-result-value" id="tradeBrokerageResult">₹0.00</div>
+                </div>
+
+                <div class="trade-result-box">
+                    <div class="trade-result-label">Other Charges</div>
+                    <div class="trade-result-value" id="tradeOtherCharges">₹0.00</div>
+                </div>
+
+                <div class="trade-result-box">
+                    <div class="trade-result-label">Total Charges</div>
+                    <div class="trade-result-value" id="tradeTotalCharges">₹0.00</div>
+                </div>
+
+                <div class="trade-result-box trade-total-buy" id="tradeValueBox">
+                    <div class="trade-result-label" id="tradeValueLabel">Total Trade Value</div>
+                    <div class="trade-result-value" id="tradeFinalValue">₹0.00</div>
+                </div>
+
+                <div class="trade-result-box">
+                    <div class="trade-result-label" id="tradePerShareLabel">Effective Per Share Value</div>
+                    <div class="trade-result-value" id="tradePerShareValue">₹0.00</div>
+                </div>
+            </div>
+
+            <div class="trade-charge-details">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Charge</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradeChargeRows">
+                        <tr>
+                            <td>Enter Share Value and Quantity, then click Calculate.</td>
+                            <td>—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="small">
+                Buy result = Total Value + Total Charges. Sell result = Total Value − Total Charges.
+                Effective Per Share Value is Total Trade Value divided by Quantity.
+                Broker-specific minimum charges, order-level conditions, statutory changes and rounding can make actual charges differ.
+            </p>
+        </div>
+
+    </section>
+</div>
+
+    <!-- Chart + RSI -->
+
+    <div class="section-block">
+<section id="chartSection" class="section-anchor">
+
+        <div class="card chart-card">
+            <div class="chart-title-row">
+                <h2>Chart + RSI</h2>
+                <span>Candlestick chart with RSI based on Yahoo Finance historical data</span>
+            </div>
+
+            <div class="chart-controls">
+                <div>
+                    <label for="chartWishlistSymbol">Wishlist Symbol</label>
+                    <select id="chartWishlistSymbol" onchange="useWishlistSymbolForChart()">
+                        <option value="">-- Select from Wishlist --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="chartManualSymbol">Or Enter NSE Symbol</label>
+                    <input
+                        id="chartManualSymbol"
+                        type="text"
+                        placeholder="Example: RELIANCE or RELIANCE-EQ"
+                        onkeydown="if(event.key === 'Enter') loadChartData()"
+                    >
+                </div>
+
+                <div>
+                    <label for="chartInterval">Candle Interval</label>
+                    <select id="chartInterval" onchange="onChartIntervalChange()">
+                        <option value="30m">30 Minutes</option>
+                        <option value="60m">1 Hour</option>
+                        <option value="1d" selected>1 Day</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="chartPeriod">Chart Period</label>
+                    <select id="chartPeriod">
+                        <!-- Filled dynamically by JS based on interval -->
+                    </select>
+                </div>
+
+                <div>
+                    <label for="chartRsiPeriod">RSI Period</label>
+                    <input
+                        id="chartRsiPeriod"
+                        type="number"
+                        min="2"
+                        max="50"
+                        step="1"
+                        value="14"
+                        onkeydown="if(event.key === 'Enter') loadChartData()"
+                    >
+                </div>
+
+                <div>
+                    <label>&nbsp;</label>
+                    <button
+                        type="button"
+                        class="chart-load-btn"
+                        onclick="loadChartData()"
+                    >
+                        Load / Refresh Chart
+                    </button>
+                </div>
+            </div>
+
+            <div class="chart-symbol-note">
+                Select a symbol from Wishlist or type any NSE symbol. Examples accepted:
+                <strong>RELIANCE</strong>, <strong>RELIANCE-EQ</strong>, or <strong>RELIANCE.NS</strong>.
+                30-minute and 1-hour candles are available for 5 Days and 1 Month; 1-day candles for up to 1 Year.
+            </div>
+
+            <div class="chart-status" id="chartStatus">
+                Select or enter a symbol, then click Load / Refresh Chart.
+            </div>
+
+            <div class="chart-summary" id="chartSummary" style="display:none;">
+                <div class="chart-summary-box">
+                    <div class="chart-summary-label">Chart Symbol</div>
+                    <div class="chart-summary-value" id="chartSymbolDisplay">—</div>
+                </div>
+
+                <div class="chart-summary-box">
+                    <div class="chart-summary-label">Latest Close</div>
+                    <div class="chart-summary-value" id="chartLatestClose">—</div>
+                </div>
+
+                <div class="chart-summary-box">
+                    <div class="chart-summary-label">Latest RSI</div>
+                    <div class="chart-summary-value" id="chartLatestRsi">—</div>
+                </div>
+
+                <div class="chart-summary-box">
+                    <div class="chart-summary-label">Candles Loaded</div>
+                    <div class="chart-summary-value" id="chartCandleCount">—</div>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <div class="chart-panel-title">Candlestick Price Chart</div>
+                <div id="candleChartContainer" class="chart-container">
+                    <div class="chart-empty">No chart loaded yet.</div>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <div class="chart-panel-title">RSI</div>
+                <div id="rsiChartContainer" class="rsi-chart-container">
+                    <div class="chart-empty">RSI will appear after chart data is loaded.</div>
+                </div>
+            </div>
+
+            <!-- Analyse button -->
+            <div class="analysis-controls" style="margin-top: 16px;">
+                <button
+                    type="button"
+                    class="chart-load-btn"
+                    onclick="loadStockAnalysis()"
+                >
+                    Analyse
+                </button>
+                <span class="analysis-status" id="analysisStatus">
+                    Click “Analyse” after loading a chart to see company overview, fundamentals and trends.
+                </span>
+            </div>
+
+            <p class="small">
+                RSI is calculated from closing prices of the selected interval. RSI below 30 can indicate an oversold condition and RSI above 70 can indicate an overbought condition,
+                but neither is a buy or sell recommendation by itself.
+            </p>
+        </div>
+    </section>
+</div>
+
+    <!-- Analysis section -->
+
+    <div class="section-block">
+<section id="analysisSection" class="section-anchor">
+
+        <div class="card analysis-card">
+            <div class="analysis-title-row">
+                <h2>Stock Analysis</h2>
+                <span>Company overview, fundamentals and trends</span>
+            </div>
+
+            <div class="analysis-controls">
+                <button
+                    type="button"
+                    class="chart-load-btn"
+                    onclick="loadStockAnalysis()"
+                >
+                    Refresh Analysis
+                </button>
+                <span class="analysis-status" id="analysisSectionStatus">
+                    Analysis loads for the same symbol as the current chart.
+                </span>
+            </div>
+
+            <div class="analysis-content" id="analysisContent" style="display:none;">
+                <!-- Filled dynamically by JS -->
+            </div>
+
+            <p class="small">
+                This analysis is generated automatically from public data and simple rules. It is for information only and not a recommendation to buy or sell.
+            </p>
+        </div>
+
+    </section>
+</div>
+
+    <!-- Manage Holdings -->
+
+    <div class="section-block">
+<section id="manageSection" class="section-anchor">
+
+        <div class="card manage-card">
+            <div class="manage-title-row">
+                <h2>Manage Holdings</h2>
+                <span>Add or remove lots from Holdings_<USER>.json</span>
+            </div>
+
+            <p class="manage-help">
+                The dropdown shows each lot as “Symbol – Buy Date – Qty – Avg Price”.
+                Use <strong>Remove Selected</strong> to delete a lot.
+                Use <strong>Add Stock</strong> to append a new lot. The file is always saved sorted by buy date.
+            </p>
+
+            <div class="manage-grid">
+                <div>
+                    <label for="manageLotSelect">Select Lot to Remove</label>
+                    <select id="manageLotSelect">
+                        <option value="">-- Choose --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>&nbsp;</label>
+                    <button
+                        type="button"
+                        class="reset-btn"
+                        onclick="removeSelectedLot()"
+                    >
+                        Remove Selected
+                    </button>
+                </div>
+            </div>
+
+            <div class="manage-grid" style="margin-top: 16px;">
+                <div>
+                    <label for="addSymbol">Symbol</label>
+                    <input id="addSymbol" type="text" placeholder="Example: LICI-EQ">
+                </div>
+
+                <div>
+                    <label for="addBuyDate">Buy Date (DD/MM/YYYY)</label>
+                    <input id="addBuyDate" type="text" placeholder="Example: 04/05/2022">
+                </div>
+
+                <div>
+                    <label for="addQty">Quantity</label>
+                    <input id="addQty" type="number" min="1" step="1" placeholder="Example: 50">
+                </div>
+
+                <div>
+                    <label for="addAvgPrice">Average Price (₹)</label>
+                    <input id="addAvgPrice" type="number" min="0.01" step="0.01" placeholder="Example: 450.00">
+                </div>
+
+                <div>
+                    <label>&nbsp;</label>
+                    <button
+                        type="button"
+                        class="add-btn"
+                        onclick="addNewLot()"
+                    >
+                        Add Stock
+                    </button>
+                </div>
+            </div>
+
+            <div class="manage-actions">
+                <span class="manage-status" id="manageStatus">
+                    Manage holdings section ready.
+                </span>
+            </div>
+        </div>
+
+    </section>
+</div>
+
+    <!-- Target Calculator -->
+
+    <div class="section-block">
+<section id="targetSection" class="section-anchor">
+
+        <div class="card target-card">
+            <div class="target-title-row">
+                <h2>Target Calculator</h2>
+                <span>Find the sell price needed to achieve your desired net profit %</span>
+            </div>
+
+            <p class="small">
+                Enter the price at which you bought, the quantity, and the net profit % you want after all buy and sell charges.
+                The calculator uses the same Rates & Defaults as the rest of the app.
+            </p>
+
+            <div class="target-input-row">
+                <div>
+                    <label for="targetBoughtPrice">Stock Bought Price (₹)</label>
+                    <input
+                        id="targetBoughtPrice"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Example: 220.50"
+                    >
+                </div>
+
+                <div>
+                    <label for="targetQty">Quantity</label>
+                    <input
+                        id="targetQty"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Example: 100"
+                    >
+                </div>
+
+                <div>
+                    <label for="targetPercent">Required Net Profit (%)</label>
+                    <input
+                        id="targetPercent"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Example: 5"
+                    >
+                </div>
+
+                <div>
+                    <label>&nbsp;</label>
+                    <button
+                        type="button"
+                        class="trade-calc-btn"
+                        onclick="calculateTarget()"
+                    >
+                        Calculate Target
+                    </button>
+                </div>
+            </div>
+
+            <div class="target-results" id="targetResults" style="display:none;">
+                <div class="target-result-box target-highlight">
+                    <div class="target-result-label">Target Sell Price / Share</div>
+                    <div class="target-result-value" id="targetPricePerShare">₹0.00</div>
+                </div>
+
+                <div class="target-result-box">
+                    <div class="target-result-label">Gross Sell Value</div>
+                    <div class="target-result-value" id="targetGrossSellValue">₹0.00</div>
+                </div>
+
+                <div class="target-result-box">
+                    <div class="target-result-label">Total Buy Charges</div>
+                    <div class="target-result-value" id="targetTotalBuyCharges">₹0.00</div>
+                </div>
+
+                <div class="target-result-box">
+                    <div class="target-result-label">Total Sell Charges</div>
+                    <div class="target-result-value" id="targetTotalSellCharges">₹0.00</div>
+                </div>
+
+                <div class="target-result-box">
+                    <div class="target-result-label">Net Profit</div>
+                    <div class="target-result-value" id="targetNetProfit">₹0.00</div>
+                </div>
+
+                <div class="target-result-box">
+                    <div class="target-result-label">Net Profit %</div>
+                    <div class="target-result-value" id="targetNetProfitPercent">0.00%</div>
+                </div>
+            </div>
+
+            <div class="target-charge-details" id="targetChargeDetails" style="display:none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Charge</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="targetChargeRows">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Portfolio Targets / Ready Reckoner -->
+            <div class="target-charge-details portfolio-targets-details" id="portfolioTargetsBox" style="display:block; margin-top: 16px;">
+                <table class="portfolio-targets-table">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th><th>Bought Price</th><th>Qty</th><th>CMP</th>
+                            <th>0%</th><th>+/- 1%</th><th>+/- 2%</th><th>+/- 3%</th><th>+/- 4%</th>
+                            <th>+/- 5%</th><th>+/- 6%</th><th>+/- 7%</th><th>+/- 8%</th><th>+/- 9%</th><th>+/- 10%</th>
+                            <th>Target Price</th><th>Bought Price</th><th>Symbol</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolioTargetRows">
+                        <tr><td colspan="18">Holdings targets load automatically.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="target-actions">
+                <span class="target-status" id="targetStatus">
+                    Enter bought price, quantity and required profit %, then click Calculate Target.
+                </span>
+            </div>
+
+            <p class="small">
+                Target price is solved so that:
+                Net Profit % = (Net Profit / Total Cost Including Buy Charges) × 100,
+                where Net Profit = Net Sell Proceeds − (Buy Value + Buy Charges).
+                Brokerage, STT, exchange, clearing, SEBI, IPF, GST and stamp duty are all included as per your settings.
+            </p>
+        </div>
+
+    </section>
+</div>
+
+</div>
+
+<script>
+const API_BASE = "";
+const AUTO_REFRESH_MS = 60000;
+
+// Current user (from prompt); empty string means default files
+let CURRENT_USER = "";
+
+let DEFAULT_SETTINGS = {
+    buyBrokerage: 20,
+    sellBrokerage: 20,
+    exchangeTxPct: 0.00307,
+    clearingPct: 0.000075,
+    sebiPct: 0.0001,
+    ipfPct: 0.0001,
+    gstPct: 18,
+    stampBuyPct: 0.015,
+    sttBuyPct: 0.1,
+    sttSellPct: 0.1,
+    stopLossPct: 3
+};
+
+let settings = { ...DEFAULT_SETTINGS };
+
+let rawHoldingsLots = [];
+let holdingsList = [];
+let selectedHolding = null;
+let currentGfSymbol = "";
+let autoRefreshTimer = null;
+let isRefreshingPrices = false;
+let isRefreshingWishlist = false;
+
+let wishlistSymbolsForChart = [];
+
+let candleChart = null;
+let candleSeries = null;
+let rsiChart = null;
+let rsiSeries = null;
+let rsi30Line = null;
+let rsi70Line = null;
+let chartResizeHandlerAdded = false;
+
+let position = {
+    qty: 0,
+    totalInvested: 0,
+    avgPrice: 0,
+    sellBrokerage: DEFAULT_SETTINGS.sellBrokerage,
+    exchange: "nse"
+};
+
+let lastLot = null;
+
+// Track last chart symbol & data for analysis
+let lastChartSymbol = "";
+let lastChartData = null;
+
+/* ---------- Basic helpers ---------- */
+
+function money(value) {
+    if (value === null || value === undefined || value === "") {
+        return "—";
+    }
+
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return "—";
+    }
+
+    return "₹" + n.toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function numberOrZero(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function formatNumber(value) {
+    if (value === null || value === undefined || value === "") {
+        return "—";
+    }
+
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return "—";
+    }
+
+    return n.toLocaleString("en-IN", {
+        maximumFractionDigits: 0
+    });
+}
+
+function formatTime(date) {
+    return date.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    });
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function getHolding(symbol) {
+    return holdingsList.find(h => h.symbol === symbol) || null;
+}
+
+function getRates() {
+    return {
+        exchangeTx: settings.exchangeTxPct / 100,
+        clearing: settings.clearingPct / 100,
+        sebi: settings.sebiPct / 100,
+        ipf: settings.ipfPct / 100,
+        gst: settings.gstPct / 100,
+        stampBuy: settings.stampBuyPct / 100,
+        sttBuy: settings.sttBuyPct / 100,
+        sttSell: settings.sttSellPct / 100
+    };
+}
+
+///* ---------- User prompt on load ---------- */
+
+//function askUserName() {
+//    const stored = sessionStorage.getItem("kp_stocks_user");
+//    if (stored !== null) {
+//        CURRENT_USER = stored;
+//        return;
+//    }
+
+//    const name = window.prompt(
+//        "Enter a user name for this session (leave blank for default):\n\n" +
+//        "Example: KP, RA, etc.\n" +
+//        "If left blank, Holdings.json and wishlist.txt will be used."
+//    ) || "";
+
+//    CURRENT_USER = (name || "").trim();
+//    sessionStorage.setItem("kp_stocks_user", CURRENT_USER);
+//}
+
+function buildPageTitle(user) {
+    let name = (user || "").trim().toUpperCase();
+    if (!name || name === "KP") {
+        return "KP's Stocks (Live)";
+    }
+    return name + "'s Stocks (Live)";
+}
+
+/* ---------- Rates-file loading ---------- */
+
+function parseRatesText(rateText) {
+    const numericLines = String(rateText)
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line && !line.startsWith("#"));
+
+    if (numericLines.length !== 11) {
+        throw new Error("Rates file must contain exactly 11 numeric values (comments and blank lines are ignored).");
+    }
+
+    const values = numericLines.map(value => Number(value));
+    if (values.some(value => !Number.isFinite(value) || value < 0)) {
+        throw new Error("Rates file contains an invalid or negative number.");
+    }
+    if (values[10] <= 0) {
+        throw new Error("STOP LOSS must be greater than zero.");
+    }
+
+    return {
+        buyBrokerage: values[0],
+        sellBrokerage: values[1],
+        exchangeTxPct: values[2],
+        clearingPct: values[3],
+        sebiPct: values[4],
+        ipfPct: values[5],
+        gstPct: values[6],
+        stampBuyPct: values[7],
+        sttBuyPct: values[8],
+        sttSellPct: values[9],
+        stopLossPct: values[10]
+    };
+}
+
+async function loadRatesFromServer() {
+    const userParam = CURRENT_USER
+        ? "?user=" + encodeURIComponent(CURRENT_USER)
+        : "";
+
+    try {
+        const response = await fetch(API_BASE + "/rates" + userParam);
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const rateText = await response.text();
+        const loadedSettings = parseRatesText(rateText);
+
+        DEFAULT_SETTINGS = { ...loadedSettings };
+        settings = { ...loadedSettings };
+
+        return true;
+    } catch (error) {
+        console.warn("Could not load rates file. Built-in defaults are being used.", error);
+        return false;
+    }
+}
+
+/* ---------- Settings ---------- */
+
+function setSettingsInputsFromValues() {
+    document.getElementById("setBuyBrokerage").value = settings.buyBrokerage;
+    document.getElementById("setSellBrokerage").value = settings.sellBrokerage;
+    document.getElementById("setExchangeTx").value = settings.exchangeTxPct;
+    document.getElementById("setClearing").value = settings.clearingPct;
+    document.getElementById("setSebi").value = settings.sebiPct;
+    document.getElementById("setIpf").value = settings.ipfPct;
+    document.getElementById("setGst").value = settings.gstPct;
+    document.getElementById("setStampBuy").value = settings.stampBuyPct;
+    document.getElementById("setSttBuy").value = settings.sttBuyPct;
+    document.getElementById("setSttSell").value = settings.sttSellPct;
+    document.getElementById("setStopLoss").value = settings.stopLossPct;
+}
+
+function readSettingsFromInputs() {
+    const proposed = {
+        buyBrokerage: Number(document.getElementById("setBuyBrokerage").value),
+        sellBrokerage: Number(document.getElementById("setSellBrokerage").value),
+        exchangeTxPct: Number(document.getElementById("setExchangeTx").value),
+        clearingPct: Number(document.getElementById("setClearing").value),
+        sebiPct: Number(document.getElementById("setSebi").value),
+        ipfPct: Number(document.getElementById("setIpf").value),
+        gstPct: Number(document.getElementById("setGst").value),
+        stampBuyPct: Number(document.getElementById("setStampBuy").value),
+        sttBuyPct: Number(document.getElementById("setSttBuy").value),
+        sttSellPct: Number(document.getElementById("setSttSell").value),
+        stopLossPct: Number(document.getElementById("setStopLoss").value)
+    };
+
+    for (const value of Object.values(proposed)) {
+        if (!Number.isFinite(value) || value < 0) {
+            return {
+                error: "Please enter valid zero-or-positive values for all rates."
+            };
+        }
+    }
+
+    if (proposed.stopLossPct <= 0) {
+        return {
+            error: "STOP LOSS percentage must be greater than zero."
+        };
+    }
+
+    return {
+        values: proposed
+    };
+}
+
+function applySettings() {
+    const read = readSettingsFromInputs();
+    const status = document.getElementById("settingsStatus");
+
+    if (read.error) {
+        status.textContent = read.error;
+        status.className = "settings-status negative";
+        return;
+    }
+
+    settings = read.values;
+
+    document.getElementById("brokerageBuy1").value = settings.buyBrokerage;
+    document.getElementById("brokerageSell1").value = settings.sellBrokerage;
+    document.getElementById("brokerageBuy2").value = settings.buyBrokerage;
+    document.getElementById("brokerageSell2").value = settings.sellBrokerage;
+    document.getElementById("tradeBrokerage").value = settings.buyBrokerage;
+
+    rebuildHoldingsFromRawLots();
+
+    if (selectedHolding) {
+        selectedHolding = getHolding(selectedHolding.symbol);
+    }
+
+    updateHoldingsSummary();
+    updateStopLossAlerts();
+    updateRatesUsedText();
+
+    if (selectedHolding) {
+        updatePnLWithHolding(selectedHolding);
+        updateHoldingPeriod(selectedHolding);
+    }
+
+    if (position.qty > 0) {
+        recalcTable();
+    }
+
+    if (lastLot) {
+        renderBuyCharges(lastLot);
+    }
+
+    const tradePrice = numberOrZero(
+        document.getElementById("tradeSharePrice").value
+    );
+
+    const tradeQty = numberOrZero(
+        document.getElementById("tradeQty").value
+    );
+
+    if (tradePrice > 0 && tradeQty > 0) {
+        calculateTrade();
+    }
+
+    status.textContent =
+        "Rates applied at " +
+        formatTime(new Date()) +
+        ". All calculations and STOP LOSS alerts were recalculated.";
+
+    status.className = "settings-status positive";
+}
+
+function resetSettings() {
+    settings = { ...DEFAULT_SETTINGS };
+    setSettingsInputsFromValues();
+
+    document.getElementById("settingsStatus").textContent =
+        "Defaults restored. Click Apply Changes & Recalculate to use them.";
+
+    document.getElementById("settingsStatus").className =
+        "settings-status";
+}
+
+function updateRatesUsedText() {
+    document.getElementById("ratesUsedText").textContent =
+        "Buy brokerage: " + money(settings.buyBrokerage) + " per original purchase lot. " +
+        "Sell brokerage: " + money(settings.sellBrokerage) + " per sell order. " +
+        "Exchange transaction charge: " + settings.exchangeTxPct + "%. " +
+        "Clearing charge: " + settings.clearingPct + "%. " +
+        "SEBI turnover fee: " + settings.sebiPct + "%. " +
+        "Investor Protection Fund: " + settings.ipfPct + "%. " +
+        "GST: " + settings.gstPct + "%. " +
+        "Stamp duty on buy: " + settings.stampBuyPct + "%. " +
+        "STT: " + settings.sttBuyPct + "% on buy and " +
+        settings.sttSellPct + "% on sell. " +
+        "STOP LOSS alert: −" + settings.stopLossPct.toFixed(2) + "% or below.";
+}
+
+/* ---------- Date helpers ---------- */
+
+function parseBuyDate(value) {
+    if (!value || typeof value !== "string") {
+        return null;
+    }
+
+    const parts = value.trim().split("/");
+
+    if (parts.length !== 3) {
+        return null;
+    }
+
+    const day = Number(parts[0]);
+    const month = Number(parts[1]);
+    const year = Number(parts[2]);
+
+    if (
+        !Number.isInteger(day) ||
+        !Number.isInteger(month) ||
+        !Number.isInteger(year) ||
+        year < 1900 ||
+        month < 1 ||
+        month > 12 ||
+        day < 1 ||
+        day > 31
+    ) {
+        return null;
+    }
+
+    const date = new Date(year, month - 1, day);
+
+    if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+    ) {
+        return null;
+    }
+
+    date.setHours(0, 0, 0, 0);
+
+    return date;
+}
+
+function holdingDaysFromDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+    const difference = Math.floor(
+        (today.getTime() - date.getTime()) / millisecondsPerDay
+    );
+
+    return Math.max(0, difference);
+}
+
+function formatBuyDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return "Not recorded";
+    }
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return day + "/" + month + "/" + year;
+}
+
+/* ---------- Buy / sell calculations ---------- */
+
+function calcBuy(qty, price, brokerage, exchange) {
+    if (qty <= 0 || price <= 0) {
+        return null;
+    }
+
+    const r = getRates();
+    const value = qty * price;
+
+    const exchangeTx = value * r.exchangeTx;
+    const clearing = value * r.clearing;
+    const sebi = value * r.sebi;
+    const ipf = value * r.ipf;
+
+    const gst =
+        (brokerage + exchangeTx + clearing + sebi + ipf) *
+        r.gst;
+
+    const stamp = value * r.stampBuy;
+    const stt = value * r.sttBuy;
+
+    const charges =
+        brokerage +
+        exchangeTx +
+        clearing +
+        sebi +
+        ipf +
+        gst +
+        stamp +
+        stt;
+
+    return {
+        qty,
+        price,
+        brokerage,
+        exchange,
+        value,
+        exchangeTx,
+        clearing,
+        sebi,
+        ipf,
+        gst,
+        stamp,
+        stt,
+        charges,
+        total: value + charges
+    };
+}
+
+function calcSell(qty, price, brokerage, exchange) {
+    const r = getRates();
+    const value = qty * price;
+
+    const exchangeTx = value * r.exchangeTx;
+    const clearing = value * r.clearing;
+    const sebi = value * r.sebi;
+    const ipf = value * r.ipf;
+
+    const gst =
+        (brokerage + exchangeTx + clearing + sebi + ipf) *
+        r.gst;
+
+    const stt = value * r.sttSell;
+
+    const charges =
+        brokerage +
+        exchangeTx +
+        clearing +
+        sebi +
+        ipf +
+        gst +
+        stt;
+
+    return {
+        value,
+        brokerage,
+        exchangeTx,
+        clearing,
+        sebi,
+        ipf,
+        gst,
+        stt,
+        charges,
+        netReceived: value - charges
+    };
+}
+
+/* ---------- Holdings: original lots -> combined holdings ---------- */
+
+function rebuildHoldingsFromRawLots() {
+    const previousLivePrices = {};
+
+    holdingsList.forEach(h => {
+        if (
+            h.livePrice !== null &&
+            h.livePrice !== undefined
+        ) {
+            previousLivePrices[h.symbol] = h.livePrice;
+        }
+    });
+
+    const combined = {};
+
+    rawHoldingsLots.forEach(rawLot => {
+        const symbol = String(rawLot.symbol || "")
+            .trim()
+            .toUpperCase();
+
+        const qty = numberOrZero(rawLot.qty);
+        const avgPrice = numberOrZero(rawLot.avgPrice);
+        const buyDate = parseBuyDate(rawLot.buydate);
+
+        if (!symbol || qty <= 0 || avgPrice <= 0) {
+            return;
+        }
+
+        const lot = calcBuy(
+            qty,
+            avgPrice,
+            settings.buyBrokerage,
+            "nse"
+        );
+
+        if (!lot) {
+            return;
+        }
+
+        if (!combined[symbol]) {
+            combined[symbol] = {
+                symbol: symbol,
+                totalQty: 0,
+                grossValue: 0,
+                totalBuyCharges: 0,
+                totalInvestedWithCharges: 0,
+                oldestBuyDate: null
+            };
+        }
+
+        combined[symbol].totalQty += qty;
+        combined[symbol].grossValue += lot.value;
+        combined[symbol].totalBuyCharges += lot.charges;
+        combined[symbol].totalInvestedWithCharges += lot.total;
+
+        if (
+            buyDate &&
+            (
+                !combined[symbol].oldestBuyDate ||
+                buyDate.getTime() <
+                    combined[symbol].oldestBuyDate.getTime()
+            )
+        ) {
+            combined[symbol].oldestBuyDate = buyDate;
+        }
+    });
+
+    holdingsList = Object.values(combined).map(item => ({
+        symbol: item.symbol,
+        qty: item.totalQty,
+        avgPrice: item.grossValue / item.totalQty,
+        grossValue: item.grossValue,
+        totalBuyCharges: item.totalBuyCharges,
+        totalInvestedWithCharges: item.totalInvestedWithCharges,
+        effectiveAvgCost: item.totalInvestedWithCharges / item.totalQty,
+        buyDate: item.oldestBuyDate
+            ? formatBuyDate(item.oldestBuyDate)
+            : "",
+        buyDateObject: item.oldestBuyDate,
+        livePrice: previousLivePrices[item.symbol] ?? null
+    }));
+}
+
+/* ---------- Calculator field filling ---------- */
+
+function fillStock1(symbol) {
+    const h = getHolding(symbol);
+
+    if (!h) {
+        document.getElementById("qty1").value = 0;
+        document.getElementById("price1").value = 0;
+        document.getElementById("brokerageBuy1").value =
+            settings.buyBrokerage;
+
+        document.getElementById("brokerageSell1").value =
+            settings.sellBrokerage;
+
+        return;
+    }
+
+    document.getElementById("qty1").value = numberOrZero(h.qty);
+    document.getElementById("price1").value =
+        numberOrZero(h.avgPrice).toFixed(2);
+
+    document.getElementById("brokerageBuy1").value =
+        settings.buyBrokerage;
+
+    document.getElementById("brokerageSell1").value =
+        settings.sellBrokerage;
+}
+
+function fillStock2(symbol) {
+    const h = getHolding(symbol);
+
+    if (!h) {
+        document.getElementById("qty2").value = 0;
+        document.getElementById("price2").value = 0;
+        document.getElementById("brokerageBuy2").value =
+            settings.buyBrokerage;
+
+        document.getElementById("brokerageSell2").value =
+            settings.sellBrokerage;
+
+        return;
+    }
+
+    const priceToUse =
+        h.livePrice !== null &&
+        h.livePrice !== undefined &&
+        numberOrZero(h.livePrice) > 0
+            ? numberOrZero(h.livePrice)
+            : numberOrZero(h.avgPrice);
+
+    document.getElementById("qty2").value = 0;
+    document.getElementById("price2").value =
+        priceToUse.toFixed(2);
+
+    document.getElementById("brokerageBuy2").value =
+        settings.buyBrokerage;
+
+    document.getElementById("brokerageSell2").value =
+        settings.sellBrokerage;
+}
+
+/* ---------- Holdings loading ---------- */
+
+function populateSymbolDropdowns() {
+    const selectedMain = document.getElementById("symbolSelect").value;
+    const selectedOne = document.getElementById("symbol1").value;
+    const selectedTwo = document.getElementById("symbol2").value;
+
+    const mainSel = document.getElementById("symbolSelect");
+    const sel1 = document.getElementById("symbol1");
+    const sel2 = document.getElementById("symbol2");
+
+    [mainSel, sel1, sel2].forEach(select => {
+        select.innerHTML = '<option value="">-- Choose --</option>';
+
+        holdingsList.forEach(h => {
+            const option = document.createElement("option");
+            option.value = h.symbol;
+            option.textContent = h.symbol;
+            select.appendChild(option);
+        });
+    });
+
+    if (getHolding(selectedMain)) {
+        mainSel.value = selectedMain;
+    }
+
+    if (getHolding(selectedOne)) {
+        sel1.value = selectedOne;
+    }
+
+    if (getHolding(selectedTwo)) {
+        sel2.value = selectedTwo;
+    }
+
+    mainSel.onchange = function() {
+        const symbol = this.value;
+
+        if (!symbol) {
+            selectedHolding = null;
+            currentGfSymbol = "";
+
+            sel1.value = "";
+            sel2.value = "";
+
+            document.getElementById("livePrice").value = "";
+            document.getElementById("pnlBox").style.display = "none";
+            document.getElementById("holdingPeriodBox").style.display = "none";
+            document.getElementById("quoteBox").style.display = "none";
+
+            fillStock1("");
+            fillStock2("");
+            return;
+        }
+
+        selectedHolding = getHolding(symbol);
+
+        sel1.value = symbol;
+        sel2.value = symbol;
+
+        fillStock1(symbol);
+        fillStock2(symbol);
+
+        if (selectedHolding) {
+            document.getElementById("livePrice").value =
+                selectedHolding.livePrice !== null &&
+                selectedHolding.livePrice !== undefined
+                    ? numberOrZero(selectedHolding.livePrice).toFixed(2)
+                    : "Loading...";
+
+            updatePnLWithHolding(selectedHolding);
+            updateHoldingPeriod(selectedHolding);
+            updateGoogleFinanceInfo(symbol);
+        }
+    };
+
+    sel1.onchange = function() {
+        fillStock1(this.value);
+    };
+
+    sel2.onchange = function() {
+        fillStock2(this.value);
+    };
+}
+
+async function loadHoldings() {
+    try {
+        const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+        const response = await fetch(API_BASE + "/holdings" + userParam);
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error(
+                data && data.error
+                    ? data.error
+                    : "Holdings response is not a list."
+            );
+        }
+
+        rawHoldingsLots = data;
+
+        // Sort rawHoldingsLots by buydate (DD/MM/YYYY) before using
+        function parseBuyDateForSort(buydate) {
+            if (!buydate || typeof buydate !== "string") {
+                return new Date(0);
+            }
+            const parts = buydate.trim().split("/");
+            if (parts.length !== 3) {
+                return new Date(0);
+            }
+            const day = Number(parts[0]);
+            const month = Number(parts[1]);
+            const year = Number(parts[2]);
+            if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) {
+                return new Date(0);
+            }
+            return new Date(year, month - 1, day);
+        }
+
+        rawHoldingsLots.sort((a, b) => {
+            const da = parseBuyDateForSort(a.buydate);
+            const db = parseBuyDateForSort(b.buydate);
+            return da.getTime() - db.getTime();
+        });
+
+        rebuildHoldingsFromRawLots();
+
+        populateSymbolDropdowns();
+        updateHoldingsInfo();
+        updateRatesUsedText();
+
+        populateManageLotSelect();
+        computeAndRenderPortfolioTargets(0);
+
+        await refreshAllPrices(true);
+    } catch (error) {
+        document.getElementById("holdingsInfo").textContent =
+            "Error loading holdings from server: " + error.message;
+
+        document.getElementById("refreshStatus").textContent =
+            "Live-price loading could not start.";
+    }
+}
+
+function updateHoldingsInfo() {
+    const info = document.getElementById("holdingsInfo");
+
+    if (holdingsList.length === 0) {
+        info.textContent = "No valid holdings loaded from server.";
+        return;
+    }
+
+    const withDateCount = holdingsList.filter(
+        h => h.buyDateObject instanceof Date
+    ).length;
+
+    const userInfo = CURRENT_USER
+        ? " (user: " + CURRENT_USER + ")"
+        : " (default)";
+
+    info.textContent =
+        "Loaded " + rawHoldingsLots.length +
+        " original lot(s), combined into " +
+        holdingsList.length +
+        " unique holding(s)." +
+        userInfo +
+        " Buy charges are estimated separately for every original lot. " +
+        withDateCount +
+        " holding(s) have a recorded buy date.";
+}
+
+/* ---------- Price refresh ---------- */
+
+async function loadAllLivePrices() {
+    await Promise.all(
+        holdingsList.map(async h => {
+            try {
+                const response = await fetch(
+                    API_BASE + "/price?symbol=" +
+                    encodeURIComponent(h.symbol)
+                );
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const livePrice = Number(data.price);
+
+                if (Number.isFinite(livePrice) && livePrice > 0) {
+                    h.livePrice = livePrice;
+                }
+            } catch (error) {
+                console.warn("Price unavailable for " + h.symbol, error);
+            }
+        })
+    );
+
+    updateHoldingsSummary();
+    updateStopLossAlerts();
+    computeAndRenderPortfolioTargets(numberOrZero(document.getElementById("targetPercent")?.value));
+
+    const mainSymbol = document.getElementById("symbolSelect").value;
+    const symbol1 = document.getElementById("symbol1").value;
+    const symbol2 = document.getElementById("symbol2").value;
+
+    if (mainSymbol) {
+        selectedHolding = getHolding(mainSymbol);
+
+        if (selectedHolding) {
+            document.getElementById("livePrice").value =
+                selectedHolding.livePrice !== null &&
+                selectedHolding.livePrice !== undefined
+                    ? numberOrZero(selectedHolding.livePrice).toFixed(2)
+                    : "N/A";
+
+            updatePnLWithHolding(selectedHolding);
+            updateHoldingPeriod(selectedHolding);
+        }
+    }
+
+    if (symbol1) {
+        fillStock1(symbol1);
+    }
+
+    if (symbol2) {
+        fillStock2(symbol2);
+    }
+}
+
+async function refreshAllPrices(isInitialLoad = false) {
+    if (isRefreshingPrices || holdingsList.length === 0) {
+        return;
+    }
+
+    const status = document.getElementById("refreshStatus");
+
+    isRefreshingPrices = true;
+
+    status.textContent = isInitialLoad
+        ? "Loading current prices..."
+        : "Refreshing all current prices...";
+
+    try {
+        await loadAllLivePrices();
+        await refreshWishlist(true);
+
+        const autoOn = document.getElementById("autoRefreshToggle").checked;
+
+        status.textContent =
+            "Prices last refreshed: " +
+            formatTime(new Date()) +
+            ". Auto refresh is " +
+            (autoOn ? "ON (every 60 seconds)." : "OFF.");
+
+    } catch (error) {
+        status.textContent =
+            "Price refresh failed: " + error.message;
+    } finally {
+        isRefreshingPrices = false;
+    }
+}
+
+function setAutoRefresh(enabled) {
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+
+    if (enabled) {
+        autoRefreshTimer = setInterval(() => {
+            refreshAllPrices(false);
+        }, AUTO_REFRESH_MS);
+
+        document.getElementById("refreshStatus").textContent =
+            "Auto refresh is ON. Prices will refresh every 60 seconds.";
+    } else {
+        document.getElementById("refreshStatus").textContent =
+            "Auto refresh is OFF. Use “Refresh All Prices Now” whenever required.";
+    }
+}
+
+function startAutoRefresh() {
+    const toggle = document.getElementById("autoRefreshToggle");
+
+    if (toggle && toggle.checked) {
+        setAutoRefresh(true);
+    }
+}
+
+async function refreshSelectedPrice() {
+    if (!selectedHolding) {
+        alert("Please select a symbol first.");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            API_BASE + "/price?symbol=" +
+            encodeURIComponent(selectedHolding.symbol)
+        );
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+        const livePrice = Number(data.price);
+
+        if (!Number.isFinite(livePrice) || livePrice <= 0) {
+            throw new Error("Invalid price returned by the server");
+        }
+
+        selectedHolding.livePrice = livePrice;
+
+        const h = getHolding(selectedHolding.symbol);
+
+        if (h) {
+            h.livePrice = livePrice;
+        }
+
+        document.getElementById("livePrice").value =
+            livePrice.toFixed(2);
+
+        updatePnLWithHolding(selectedHolding);
+        updateHoldingPeriod(selectedHolding);
+        updateHoldingsSummary();
+        updateStopLossAlerts();
+
+        if (document.getElementById("symbol2").value === selectedHolding.symbol) {
+            fillStock2(selectedHolding.symbol);
+        }
+
+        document.getElementById("refreshStatus").textContent =
+            selectedHolding.symbol +
+            " refreshed at " +
+            formatTime(new Date()) +
+            ".";
+    } catch (error) {
+        alert("Could not refresh selected price: " + error.message);
+    }
+}
+
+/* ---------- Holdings summary ---------- */
+
+function estimateHoldingsSummary() {
+    let totalGrossInvestment = 0;
+    let totalBuyCharges = 0;
+    let totalCurrentValue = 0;
+
+    holdingsList.forEach(h => {
+        totalGrossInvestment += numberOrZero(h.grossValue);
+        totalBuyCharges += numberOrZero(h.totalBuyCharges);
+
+        const marketPrice =
+            h.livePrice !== null &&
+            h.livePrice !== undefined &&
+            numberOrZero(h.livePrice) > 0
+                ? numberOrZero(h.livePrice)
+                : numberOrZero(h.avgPrice);
+
+        totalCurrentValue +=
+            marketPrice * numberOrZero(h.qty);
+    });
+
+    const grandTotal = totalGrossInvestment + totalBuyCharges;
+    const totalPnL = totalCurrentValue - grandTotal;
+
+    const totalPnLPercent =
+        grandTotal > 0
+            ? (totalPnL / grandTotal) * 100
+            : 0;
+
+    return {
+        totalGrossInvestment,
+        totalBuyCharges,
+        grandTotal,
+        totalCurrentValue,
+        totalPnL,
+        totalPnLPercent
+    };
+}
+
+function updateHoldingsSummary() {
+    const summaryBox = document.getElementById("holdingsSummary");
+
+    if (holdingsList.length === 0) {
+        summaryBox.style.display = "none";
+        return;
+    }
+
+    const s = estimateHoldingsSummary();
+
+    document.getElementById("hsTotalInvestment").textContent =
+        money(s.totalGrossInvestment);
+
+    document.getElementById("hsTotalCharges").textContent =
+        money(s.totalBuyCharges);
+
+    document.getElementById("hsGrandTotal").textContent =
+        money(s.grandTotal);
+
+    document.getElementById("hsTotalCurrentValue").textContent =
+        money(s.totalCurrentValue);
+
+    const pnl = document.getElementById("hsTotalPnL");
+    const pnlPct = document.getElementById("hsTotalPnLPercent");
+
+    pnl.textContent =
+        (s.totalPnL >= 0 ? "+" : "") +
+        money(s.totalPnL);
+
+    pnlPct.textContent =
+        (s.totalPnLPercent >= 0 ? "+" : "") +
+        s.totalPnLPercent.toFixed(2) +
+        "%";
+
+    pnl.className =
+        "hs-value " +
+        (s.totalPnL >= 0 ? "positive" : "negative");
+
+    pnlPct.className =
+        "hs-value " +
+        (s.totalPnLPercent >= 0 ? "positive" : "negative");
+
+    summaryBox.style.display = "block";
+}
+
+/* ---------- Stop loss ---------- */
+
+function updateStopLossAlerts() {
+    const box = document.getElementById("stopLossBox");
+    const safeMessage = document.getElementById("stopLossSafeMessage");
+    const tableWrap = document.getElementById("stopLossTableWrap");
+    const tbody = document.getElementById("stopLossRows");
+    const subtitle = document.getElementById("stopLossSubtitle");
+
+    const stopLossThreshold = -Math.abs(settings.stopLossPct);
+
+    subtitle.textContent =
+        "Holdings with simple P/L of " +
+        stopLossThreshold.toFixed(2) +
+        "% or below";
+
+    if (holdingsList.length === 0) {
+        box.style.display = "none";
+        return;
+    }
+
+    const alerts = holdingsList
+        .filter(h => {
+            const avg = numberOrZero(h.avgPrice);
+            const current = numberOrZero(h.livePrice);
+
+            if (avg <= 0 || current <= 0) {
+                return false;
+            }
+
+            const pnlPercent =
+                ((current - avg) / avg) * 100;
+
+            return pnlPercent <= stopLossThreshold;
+        })
+        .map(h => {
+            const avg = numberOrZero(h.avgPrice);
+            const current = numberOrZero(h.livePrice);
+            const qty = numberOrZero(h.qty);
+
+            const currentPnlValue =
+                (current - avg) * qty;
+
+            const currentPnlPercent =
+                ((current - avg) / avg) * 100;
+
+            const additionalLot = calcBuy(
+                qty,
+                current,
+                settings.buyBrokerage,
+                "nse"
+            );
+
+            const existingCost =
+                numberOrZero(h.totalInvestedWithCharges);
+
+            const additionalCost = additionalLot
+                ? additionalLot.total
+                : current * qty;
+
+            const newQty = qty + qty;
+
+            const newTotalInvested =
+                existingCost + additionalCost;
+
+            const newAveragePrice =
+                newTotalInvested / newQty;
+
+            const scenarioCurrentValue =
+                current * newQty;
+
+            const scenarioPnlValue =
+                scenarioCurrentValue - newTotalInvested;
+
+            const scenarioPnlPercent =
+                newTotalInvested > 0
+                    ? (scenarioPnlValue / newTotalInvested) * 100
+                    : 0;
+
+            return {
+                symbol: h.symbol,
+                qty: qty,
+                avgPrice: avg,
+                currentPrice: current,
+                currentPnlValue: currentPnlValue,
+                currentPnlPercent: currentPnlPercent,
+                additionalLotCost: additionalCost,
+                additionalLotCharges: additionalLot
+                    ? additionalLot.charges
+                    : 0,
+                newQty: newQty,
+                newAveragePrice: newAveragePrice,
+                scenarioPnlValue: scenarioPnlValue,
+                scenarioPnlPercent: scenarioPnlPercent
+            };
+        })
+        .sort((a, b) => a.currentPnlPercent - b.currentPnlPercent);
+
+    box.style.display = "block";
+
+    if (alerts.length === 0) {
+        safeMessage.style.display = "block";
+
+        safeMessage.textContent =
+            "No holdings currently below " +
+            stopLossThreshold.toFixed(2) +
+            "%.";
+
+        tableWrap.style.display = "none";
+        tbody.innerHTML = "";
+        return;
+    }
+
+    safeMessage.style.display = "none";
+    tableWrap.style.display = "block";
+
+    let html = "";
+
+    alerts.forEach(item => {
+        html +=
+            "<tr>" +
+            "<td>" + escapeHtml(item.symbol) + "</td>" +
+            "<td>" + item.qty + "</td>" +
+            "<td>" + money(item.avgPrice) + "</td>" +
+            "<td>" + money(item.currentPrice) + "</td>" +
+            '<td class="negative">' +
+                (item.currentPnlValue >= 0 ? "+" : "") +
+                money(item.currentPnlValue) +
+            "</td>" +
+            '<td class="stop-loss-pct">' +
+                item.currentPnlPercent.toFixed(2) +
+                "%" +
+            "</td>" +
+            "</tr>";
+
+        html +=
+            '<tr class="average-down-row">' +
+            "<td>" +
+                '<span class="average-down-label">SCENARIO</span>' +
+                "If adding same qty at current price" +
+                '<span class="average-down-note">' +
+                    "Buy " + item.qty +
+                    " more at " + money(item.currentPrice) +
+                    " | estimated additional charges " +
+                    money(item.additionalLotCharges) +
+                    " | additional trade cost " +
+                    money(item.additionalLotCost) +
+                "</span>" +
+            "</td>" +
+            "<td>" + item.newQty + "</td>" +
+            "<td>" + money(item.newAveragePrice) + "</td>" +
+            "<td>" + money(item.currentPrice) + "</td>" +
+            '<td class="' +
+                (item.scenarioPnlValue >= 0
+                    ? "positive"
+                    : "scenario-pnl-negative") +
+            '">' +
+                (item.scenarioPnlValue >= 0 ? "+" : "") +
+                money(item.scenarioPnlValue) +
+            "</td>" +
+            '<td class="' +
+                (item.scenarioPnlPercent >= 0
+                    ? "positive"
+                    : "scenario-pnl-negative") +
+            '">' +
+                item.scenarioPnlPercent.toFixed(2) +
+                "%" +
+            "</td>" +
+            "</tr>";
+    });
+
+    tbody.innerHTML = html;
+}
+
+/* ---------- Selected holding P&L ---------- */
+
+function updatePnLWithHolding(h) {
+    const pnlBox = document.getElementById("pnlBox");
+
+    if (!h) {
+        pnlBox.style.display = "none";
+        return;
+    }
+
+    pnlBox.style.display = "block";
+
+    document.getElementById("pnlSymbol").textContent = h.symbol;
+
+    document.getElementById("pnlQty").textContent =
+        numberOrZero(h.qty);
+
+    document.getElementById("pnlAvgHold").textContent =
+        money(h.avgPrice);
+
+    document.getElementById("pnlEffectiveAvgCost").textContent =
+        money(h.effectiveAvgCost);
+
+    if (h.livePrice === null || h.livePrice === undefined) {
+        document.getElementById("pnlCmp").textContent = "Loading...";
+        document.getElementById("pnlCurrentValue").textContent = "-";
+        document.getElementById("pnlValue").textContent = "-";
+        document.getElementById("pnlPercent").textContent = "-";
+        return;
+    }
+
+    const currentValue =
+        numberOrZero(h.livePrice) *
+        numberOrZero(h.qty);
+
+    const priceOnlyCost =
+        numberOrZero(h.avgPrice) *
+        numberOrZero(h.qty);
+
+    const pnlValue = currentValue - priceOnlyCost;
+
+    const pnlPercent =
+        priceOnlyCost > 0
+            ? (pnlValue / priceOnlyCost) * 100
+            : 0;
+
+    document.getElementById("pnlCmp").textContent =
+        money(h.livePrice);
+
+    document.getElementById("pnlCurrentValue").textContent =
+        money(currentValue);
+
+    const pnlEl = document.getElementById("pnlValue");
+    const pnlPctEl = document.getElementById("pnlPercent");
+
+    pnlEl.textContent =
+        (pnlValue >= 0 ? "+" : "") +
+        money(pnlValue);
+
+    pnlPctEl.textContent =
+        (pnlPercent >= 0 ? "+" : "") +
+        pnlPercent.toFixed(2) +
+        "%";
+
+    pnlEl.className =
+        "pnl-value " +
+        (pnlValue >= 0 ? "positive" : "negative");
+
+    pnlPctEl.className =
+        "pnl-value " +
+        (pnlPercent >= 0 ? "positive" : "negative");
+}
+
+/* ---------- Holding period ---------- */
+
+function updateHoldingPeriod(h) {
+    const box = document.getElementById("holdingPeriodBox");
+
+    if (!h || !(h.buyDateObject instanceof Date)) {
+        box.style.display = "none";
+        return;
+    }
+
+    const holdingDays = holdingDaysFromDate(h.buyDateObject);
+
+    document.getElementById("holdingSince").textContent =
+        formatBuyDate(h.buyDateObject);
+
+    document.getElementById("holdingDays").textContent =
+        holdingDays === 0
+            ? "0 days (bought today)"
+            : holdingDays + (holdingDays === 1 ? " day" : " days");
+
+    const pnlEl = document.getElementById("holdingPeriodPnL");
+    const pnlPctEl = document.getElementById("holdingPeriodPnLPercent");
+
+    if (
+        h.livePrice === null ||
+        h.livePrice === undefined ||
+        numberOrZero(h.livePrice) <= 0
+    ) {
+        pnlEl.textContent = "Waiting for live price";
+        pnlPctEl.textContent = "Waiting for live price";
+
+        pnlEl.className = "holding-period-value";
+        pnlPctEl.className = "holding-period-value";
+
+        box.style.display = "block";
+        return;
+    }
+
+    const currentValue =
+        numberOrZero(h.livePrice) *
+        numberOrZero(h.qty);
+
+    const priceOnlyCost =
+        numberOrZero(h.avgPrice) *
+        numberOrZero(h.qty);
+
+    const pnlValue = currentValue - priceOnlyCost;
+
+    const pnlPercent =
+        priceOnlyCost > 0
+            ? (pnlValue / priceOnlyCost) * 100
+            : 0;
+
+    pnlEl.textContent =
+        (pnlValue >= 0 ? "+" : "") +
+        money(pnlValue);
+
+    pnlPctEl.textContent =
+        (pnlPercent >= 0 ? "+" : "") +
+        pnlPercent.toFixed(2) +
+        "%";
+
+    pnlEl.className =
+        "holding-period-value " +
+        (pnlValue >= 0 ? "positive" : "negative");
+
+    pnlPctEl.className =
+        "holding-period-value " +
+        (pnlPercent >= 0 ? "positive" : "negative");
+
+    box.style.display = "block";
+}
+
+/* ---------- Google Finance ---------- */
+
+function toGoogleFinanceSymbol(symbol) {
+    let base = symbol || "";
+
+    if (base.endsWith("-EQ") || base.endsWith("-BE")) {
+        base = base.slice(0, -3);
+    }
+
+    return base + ":NSE";
+}
+
+function updateGoogleFinanceInfo(symbol) {
+    if (!symbol) {
+        currentGfSymbol = "";
+        document.getElementById("quoteBox").style.display = "none";
+        return;
+    }
+
+    currentGfSymbol = toGoogleFinanceSymbol(symbol);
+
+    document.getElementById("gfSymbol").textContent =
+        currentGfSymbol;
+
+    document.getElementById("quoteBox").style.display = "block";
+}
+
+function openGoogleFinance() {
+    if (!currentGfSymbol) {
+        alert("Please select a symbol first.");
+        return;
+    }
+
+    window.open(
+        "https://www.google.com/finance/quote/" +
+        encodeURIComponent(currentGfSymbol),
+        "_blank"
+    );
+}
+
+/* ---------- Position calculator ---------- */
+
+function findBreakEven(
+    qty,
+    totalInvested,
+    sellBrokerage,
+    exchange,
+    basePrice
+) {
+    if (qty <= 0 || totalInvested <= 0) {
+        return 0;
+    }
+
+    let low = basePrice * 0.5;
+    let high = Math.max(basePrice * 2, 1);
+
+    while (
+        calcSell(qty, high, sellBrokerage, exchange).netReceived <
+        totalInvested
+    ) {
+        high *= 1.5;
+    }
+
+    for (let i = 0; i < 100; i++) {
+        const mid = (low + high) / 2;
+
+        const net = calcSell(
+            qty,
+            mid,
+            sellBrokerage,
+            exchange
+        ).netReceived;
+
+        if (net < totalInvested) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+
+    return high;
+}
+
+function updatePositionInfo() {
+    const info = document.getElementById("positionInfo");
+
+    if (position.qty <= 0) {
+        info.textContent =
+            "No position yet. Set Stock 1 or add stocks to begin.";
+        return;
+    }
+
+    info.innerHTML =
+        "Current position: <strong>" +
+        position.qty +
+        "</strong> shares, total invested <strong>" +
+        money(position.totalInvested) +
+        "</strong>, effective average buy price <strong>" +
+        money(position.avgPrice) +
+        "</strong>. Sell brokerage used for break-even: <strong>" +
+        money(position.sellBrokerage) +
+        "</strong>.";
+}
+
+function updateKeyResults(breakEvenPrice, breakEvenValue) {
+    document.getElementById("totalQty").textContent =
+        position.qty;
+
+    document.getElementById("totalInvested").textContent =
+        money(position.totalInvested);
+
+    document.getElementById("avgBuyPrice").textContent =
+        money(position.avgPrice);
+
+    document.getElementById("breakEvenPrice").textContent =
+        money(breakEvenPrice);
+
+    document.getElementById("breakEvenValue").textContent =
+        money(breakEvenValue);
+}
+
+function renderBuyCharges(lot) {
+    const tbody = document.getElementById("buyChargeRows");
+
+    if (!lot) {
+        tbody.innerHTML =
+            "<tr><td>No lot data yet</td><td></td></tr>";
+        return;
+    }
+
+    const rows = [
+        ["Buy value", lot.value],
+        ["Brokerage", lot.brokerage],
+        ["Exchange transaction charge", lot.exchangeTx],
+        ["Clearing charge", lot.clearing],
+        ["SEBI turnover fee", lot.sebi],
+        ["Investor Protection Fund", lot.ipf],
+        ["GST (" + settings.gstPct + "%)", lot.gst],
+        ["Stamp duty", lot.stamp],
+        ["STT", lot.stt],
+        ["Total buy charges", lot.charges],
+        ["Total cost for this lot", lot.total]
+    ];
+
+    tbody.innerHTML = rows.map((row, index) => {
+        const style =
+            index >= rows.length - 2
+                ? ' style="font-weight:bold;background:#eef6ff"'
+                : "";
+
+        return (
+            "<tr" + style + ">" +
+            "<td>" + row[0] + "</td>" +
+            "<td>" + money(row[1]) + "</td>" +
+            "</tr>"
+        );
+    }).join("");
+}
+
+function recalcTable() {
+    const tbody = document.getElementById("resultRows");
+
+    if (position.qty <= 0) {
+        tbody.innerHTML =
+            "<tr><td colspan='6'>No position yet. Set Stock 1 or add stocks to begin.</td></tr>";
+
+        updateKeyResults(0, 0);
+        return;
+    }
+
+    const breakEvenPrice = findBreakEven(
+        position.qty,
+        position.totalInvested,
+        position.sellBrokerage,
+        position.exchange,
+        position.avgPrice
+    );
+
+    const breakEvenSell = calcSell(
+        position.qty,
+        breakEvenPrice,
+        position.sellBrokerage,
+        position.exchange
+    );
+
+    updateKeyResults(
+        breakEvenPrice,
+        breakEvenSell.value
+    );
+
+    const start = Math.max(
+        1,
+        Math.floor(position.avgPrice * 0.75)
+    );
+
+    const end = Math.ceil(position.avgPrice * 1.25);
+
+    let rows = "";
+
+    for (
+        let sellPrice = start;
+        sellPrice <= end;
+        sellPrice += 1
+    ) {
+        const sell = calcSell(
+            position.qty,
+            sellPrice,
+            position.sellBrokerage,
+            position.exchange
+        );
+
+        const profitLoss =
+            sell.netReceived - position.totalInvested;
+
+        const profitLossPct =
+            (profitLoss / position.totalInvested) * 100;
+
+        const breakEvenClass =
+            Math.abs(sellPrice - breakEvenPrice) < 0.5
+                ? "break-even-row"
+                : "";
+
+        rows +=
+            '<tr class="' + breakEvenClass + '">' +
+            "<td>" + money(sellPrice) + "</td>" +
+            "<td>" + money(sell.value) + "</td>" +
+            "<td>" + money(sell.charges) + "</td>" +
+            "<td>" + money(sell.netReceived) + "</td>" +
+            '<td class="' +
+            (profitLoss >= 0 ? "positive" : "negative") +
+            '">' +
+            (profitLoss >= 0 ? "+" : "") +
+            money(profitLoss) +
+            "</td>" +
+            '<td class="' +
+            (profitLossPct >= 0 ? "positive" : "negative") +
+            '">' +
+            (profitLossPct >= 0 ? "+" : "") +
+            profitLossPct.toFixed(2) +
+            "%" +
+            "</td>" +
+            "</tr>";
+    }
+
+    tbody.innerHTML = rows;
+}
+
+function initStock1() {
+    const symbol = document.getElementById("symbol1").value;
+
+    const qty = numberOrZero(
+        document.getElementById("qty1").value
+    );
+
+    const price = numberOrZero(
+        document.getElementById("price1").value
+    );
+
+    const brokerageBuy = numberOrZero(
+        document.getElementById("brokerageBuy1").value
+    );
+
+    const brokerageSell = numberOrZero(
+        document.getElementById("brokerageSell1").value
+    );
+
+    if (
+        !symbol ||
+        qty <= 0 ||
+        price <= 0 ||
+        brokerageBuy < 0 ||
+        brokerageSell < 0
+    ) {
+        alert(
+            "Please select a symbol and enter valid quantity, price, and brokerage for Stock 1."
+        );
+        return;
+    }
+
+    const lot = calcBuy(
+        qty,
+        price,
+        brokerageBuy,
+        "nse"
+    );
+
+    if (!lot) {
+        alert("Invalid Stock 1 values.");
+        return;
+    }
+
+    position = {
+        qty: lot.qty,
+        totalInvested: lot.total,
+        avgPrice: lot.total / lot.qty,
+        sellBrokerage: brokerageSell,
+        exchange: "nse"
+    };
+
+    lastLot = lot;
+
+    updatePositionInfo();
+    renderBuyCharges(lastLot);
+    recalcTable();
+}
+
+function addStock() {
+    const symbol = document.getElementById("symbol2").value;
+
+    const qty = numberOrZero(
+        document.getElementById("qty2").value
+    );
+
+    const price = numberOrZero(
+        document.getElementById("price2").value
+    );
+
+    const brokerageBuy = numberOrZero(
+        document.getElementById("brokerageBuy2").value
+    );
+
+    const brokerageSell = numberOrZero(
+        document.getElementById("brokerageSell2").value
+    );
+
+    if (
+        !symbol ||
+        qty <= 0 ||
+        price <= 0 ||
+        brokerageBuy < 0 ||
+        brokerageSell < 0
+    ) {
+        alert(
+            "Please select a symbol and enter a valid quantity, price, and brokerage."
+        );
+        return;
+    }
+
+    const lot = calcBuy(
+        qty,
+        price,
+        brokerageBuy,
+        "nse"
+    );
+
+    if (!lot) {
+        alert("Invalid Add to Position values.");
+        return;
+    }
+
+    const newQty = position.qty + lot.qty;
+    const newInvested =
+        position.totalInvested + lot.total;
+
+    position.qty = newQty;
+    position.totalInvested = newInvested;
+    position.avgPrice = newInvested / newQty;
+    position.sellBrokerage = brokerageSell;
+    position.exchange = "nse";
+
+    lastLot = lot;
+
+    updatePositionInfo();
+    renderBuyCharges(lastLot);
+    recalcTable();
+}
+
+function resetAll() {
+    position = {
+        qty: 0,
+        totalInvested: 0,
+        avgPrice: 0,
+        sellBrokerage: settings.sellBrokerage,
+        exchange: "nse"
+    };
+
+    lastLot = null;
+
+    updatePositionInfo();
+    renderBuyCharges(null);
+    recalcTable();
+}
+
+/* ---------- Anand Rathi screeners ---------- */
+
+async function loadScreenerTable(endpoint, tableId, loadingText) {
+    const table = document.getElementById(tableId);
+    const thead = table.querySelector("thead");
+    const tbody = table.querySelector("tbody");
+
+    thead.innerHTML =
+        "<tr><th>" + escapeHtml(loadingText) + "</th></tr>";
+
+    tbody.innerHTML = "";
+
+    try {
+        const response = await fetch(API_BASE + endpoint);
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        const rows = data.rows;
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+            thead.innerHTML =
+                "<tr><th>No data available</th></tr>";
+            return;
+        }
+
+        const header = rows[0];
+
+        thead.innerHTML =
+            "<tr>" +
+            header.map(
+                cell => "<th>" + escapeHtml(cell) + "</th>"
+            ).join("") +
+            "</tr>";
+
+        tbody.innerHTML = rows.slice(1).map(
+            row =>
+                "<tr>" +
+                row.map(
+                    cell => "<td>" + escapeHtml(cell) + "</td>"
+                ).join("") +
+                "</tr>"
+        ).join("");
+
+    } catch (error) {
+        thead.innerHTML =
+            "<tr><th>Error loading data</th></tr>";
+
+        tbody.innerHTML =
+            "<tr><td>" +
+            escapeHtml(error.message) +
+            "</td></tr>";
+    }
+}
+
+function load52WeekLowAR() {
+    return loadScreenerTable(
+        "/52week-low-ar",
+        "tableAR",
+        "Loading Anand Rathi 52-week-low data..."
+    );
+}
+
+function loadTopLosersAR() {
+    return loadScreenerTable(
+        "/top-losers-ar",
+        "tableTopLosers",
+        "Loading Anand Rathi top-losers data..."
+    );
+}
+
+function load52WeekHighAR() {
+    return loadScreenerTable(
+        "/52week-high-ar",
+        "table52WeekHigh",
+        "Loading Anand Rathi 52-week-high data..."
+    );
+}
+
+function loadTopGainersAR() {
+    return loadScreenerTable(
+        "/top-gainers-ar",
+        "tableTopGainers",
+        "Loading Anand Rathi top-gainers data..."
+    );
+}
+
+function loadVolumeGainersAR() {
+    return loadScreenerTable(
+        "/volume-gainers-ar",
+        "tableVolumeGainers",
+        "Loading Anand Rathi volume-gainers data..."
+    );
+}
+
+async function refreshAllScreeners() {
+    const status = document.getElementById("screenerRefreshStatus");
+
+    status.textContent =
+        "Refreshing all five market screeners...";
+
+    await Promise.all([
+        load52WeekLowAR(),
+        loadTopLosersAR(),
+        load52WeekHighAR(),
+        loadTopGainersAR(),
+        loadVolumeGainersAR()
+    ]);
+
+    status.textContent =
+        "All screeners last refreshed: " +
+        formatTime(new Date()) +
+        ".";
+}
+
+/* ---------- Wishlist ---------- */
+
+function formatSignedMoney(value) {
+    if (value === null || value === undefined) {
+        return "—";
+    }
+
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return "—";
+    }
+
+    return (n > 0 ? "+" : "") + money(n);
+}
+
+function formatSignedPercent(value) {
+    if (value === null || value === undefined) {
+        return "—";
+    }
+
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return "—";
+    }
+
+    return (n > 0 ? "+" : "") + n.toFixed(2) + "%";
+}
+
+function positiveNegativeClass(value) {
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return "";
+    }
+
+    if (n > 0) {
+        return "positive";
+    }
+
+    if (n < 0) {
+        return "negative";
+    }
+
+    return "";
+}
+
+function updateChartWishlistDropdown(rows) {
+    const dropdown = document.getElementById("chartWishlistSymbol");
+    const currentSelection = dropdown.value;
+
+    const symbols = rows
+        .filter(row => row.type === "symbol" && row.symbol)
+        .map(row => row.symbol);
+
+    wishlistSymbolsForChart = [...new Set(symbols)];
+
+    dropdown.innerHTML =
+        '<option value="">-- Select from Wishlist --</option>' +
+        wishlistSymbolsForChart.map(symbol =>
+            '<option value="' + escapeHtml(symbol) + '">' +
+            escapeHtml(symbol) +
+            '</option>'
+        ).join("");
+
+    if (wishlistSymbolsForChart.includes(currentSelection)) {
+        dropdown.value = currentSelection;
+    }
+}
+
+function useWishlistSymbolForChart() {
+    const selected = document.getElementById("chartWishlistSymbol").value;
+
+    if (!selected) {
+        return;
+    }
+
+    document.getElementById("chartManualSymbol").value = selected;
+}
+
+async function refreshWishlist(silent = false) {
+    if (isRefreshingWishlist) {
+        return;
+    }
+
+    const tbody = document.getElementById("wishlistRows");
+    const status = document.getElementById("wishlistRefreshStatus");
+
+    isRefreshingWishlist = true;
+
+    if (!silent) {
+        status.textContent = "Refreshing wishlist...";
+    }
+
+    try {
+        const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+        const response = await fetch(API_BASE + "/wishlist" + userParam);
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+
+        updateChartWishlistDropdown(rows);
+
+        if (rows.length === 0) {
+            tbody.innerHTML =
+                '<tr><td colspan="10" class="wishlist-empty">' +
+                "No symbols found. Create wishlist.txt (or wishlist_<USER>.txt) in the server folder and add one NSE symbol per line." +
+                "</td></tr>";
+
+            status.textContent =
+                "Wishlist is empty. Last checked: " +
+                formatTime(new Date()) +
+                ".";
+
+            return;
+        }
+
+        tbody.innerHTML = rows.map(row => {
+            if (row.type === "heading") {
+                return (
+                    '<tr class="wishlist-group-heading">' +
+                    '<td colspan="10">' +
+                    escapeHtml(row.text) +
+                    "</td>" +
+                    "</tr>"
+                );
+            }
+
+            const changeClass = positiveNegativeClass(row.change);
+            const percentClass = positiveNegativeClass(row.changePercent);
+
+            const at52WeekLow = row.at52WeekLow === true;
+            const rowClass = at52WeekLow
+                ? "wishlist-at-52w-low"
+                : "";
+
+            const lowBadge = at52WeekLow
+                ? '<span class="wishlist-low-badge">>52W LOW</span>'
+                : "";
+
+            const resultStatus = row.error
+                ? '<span class="wishlist-error">' +
+                    escapeHtml(row.error) +
+                    "</span>"
+                : at52WeekLow
+                    ? "Day Low = 52W Low"
+                    : "OK";
+
+            return (
+                '<tr class="' + rowClass + '">' +
+                '<td class="wishlist-symbol">' +
+                    escapeHtml(row.symbol) +
+                    lowBadge +
+                    "</td>" +
+                "<td>" + money(row.price) + "</td>" +
+                '<td class="' + changeClass + '">' +
+                    formatSignedMoney(row.change) +
+                    "</td>" +
+                '<td class="' + percentClass + '">' +
+                    formatSignedPercent(row.changePercent) +
+                    "</td>" +
+                "<td>" + money(row.dayHigh) + "</td>" +
+                "<td>" + money(row.dayLow) + "</td>" +
+                "<td>" + money(row.week52High) + "</td>" +
+                "<td>" + money(row.week52Low) + "</td>" +
+                "<td>" + formatNumber(row.volume) + "</td>" +
+                "<td>" + resultStatus + "</td>" +
+                "</tr>"
+            );
+        }).join("");
+
+        const symbolCount = rows.filter(
+            row => row.type === "symbol"
+        ).length;
+
+        const userInfo = CURRENT_USER
+            ? " (user: " + CURRENT_USER + ")"
+            : " (default)";
+
+        status.textContent =
+            "Wishlist last refreshed: " +
+            formatTime(new Date()) +
+            "." +
+            userInfo +
+            " " +
+            symbolCount +
+            " symbol(s) loaded.";
+
+    } catch (error) {
+        tbody.innerHTML =
+            '<tr><td colspan="10" class="wishlist-error">' +
+            "Could not load wishlist: " +
+            escapeHtml(error.message) +
+            "</td></tr>";
+
+        status.textContent =
+            "Wishlist refresh failed: " +
+            error.message;
+    } finally {
+        isRefreshingWishlist = false;
+    }
+}
+
+/* ---------- Trade calculator ---------- */
+
+function getSelectedTradeType() {
+    const selected = document.querySelector(
+        'input[name="tradeType"]:checked'
+    );
+
+    return selected ? selected.value : "buy";
+}
+
+function calculateTrade() {
+    const price = numberOrZero(
+        document.getElementById("tradeSharePrice").value
+    );
+
+    const qty = numberOrZero(
+        document.getElementById("tradeQty").value
+    );
+
+    const brokerage = numberOrZero(
+        document.getElementById("tradeBrokerage").value
+    );
+
+    const tradeType = getSelectedTradeType();
+
+    if (price <= 0 || qty <= 0 || brokerage < 0) {
+        alert(
+            "Please enter a valid Share Value, Quantity, and Brokerage."
+        );
+        return;
+    }
+
+    const result = tradeType === "buy"
+        ? calcBuy(qty, price, brokerage, "nse")
+        : calcSell(qty, price, brokerage, "nse");
+
+    if (!result) {
+        alert("Unable to calculate the trade. Please check the values.");
+        return;
+    }
+
+    const totalValue = result.value;
+    const totalCharges = result.charges;
+    const otherCharges = totalCharges - brokerage;
+
+    const finalTradeValue = tradeType === "buy"
+        ? totalValue + totalCharges
+        : totalValue - totalCharges;
+
+    const effectivePerShare = finalTradeValue / qty;
+
+    document.getElementById("tradeTotalValue").textContent =
+        money(totalValue);
+
+    document.getElementById("tradeBrokerageResult").textContent =
+        money(brokerage);
+
+    document.getElementById("tradeOtherCharges").textContent =
+        money(otherCharges);
+
+    document.getElementById("tradeTotalCharges").textContent =
+        money(totalCharges);
+
+    document.getElementById("tradeFinalValue").textContent =
+        money(finalTradeValue);
+
+    document.getElementById("tradePerShareValue").textContent =
+        money(effectivePerShare);
+
+    const valueBox = document.getElementById("tradeValueBox");
+    const valueLabel = document.getElementById("tradeValueLabel");
+    const perShareLabel = document.getElementById("tradePerShareLabel");
+
+    if (tradeType === "buy") {
+        valueBox.className =
+            "trade-result-box trade-total-buy";
+
+        valueLabel.textContent =
+            "Total Trade Value (Amount Payable)";
+
+        perShareLabel.textContent =
+            "Effective Buy Cost / Share";
+    } else {
+        valueBox.className =
+            "trade-result-box trade-total-sell";
+
+        valueLabel.textContent =
+            "Total Trade Value (Net Receivable)";
+
+        perShareLabel.textContent =
+            "Effective Sell Proceeds / Share";
+    }
+
+    renderStandaloneTradeCharges(
+        tradeType,
+        result,
+        brokerage,
+        totalValue,
+        totalCharges,
+        finalTradeValue
+    );
+}
+
+function renderStandaloneTradeCharges(
+    tradeType,
+    result,
+    brokerage,
+    totalValue,
+    totalCharges,
+    finalTradeValue
+) {
+    const tbody = document.getElementById("tradeChargeRows");
+
+    let rows = [
+        ["Gross Share Value", totalValue],
+        ["Brokerage", brokerage],
+        ["Exchange Transaction Charge", result.exchangeTx],
+        ["Clearing Charge", result.clearing],
+        ["SEBI Turnover Fee", result.sebi],
+        ["Investor Protection Fund", result.ipf],
+        ["GST (" + settings.gstPct + "%)", result.gst]
+    ];
+
+    if (tradeType === "buy") {
+        rows.push(["Stamp Duty", result.stamp]);
+        rows.push(["STT", result.stt]);
+        rows.push(["Total Charges", totalCharges]);
+        rows.push(["Total Amount Payable", finalTradeValue]);
+    } else {
+        rows.push(["STT", result.stt]);
+        rows.push(["Total Charges", totalCharges]);
+        rows.push(["Net Amount Receivable", finalTradeValue]);
+    }
+
+    tbody.innerHTML = rows.map((row, index) => {
+        const isFinal =
+            index >= rows.length - 2;
+
+        const style = isFinal
+            ? ' style="font-weight:bold;background:#fff3e0"'
+            : "";
+
+        return (
+            "<tr" + style + ">" +
+            "<td>" + escapeHtml(row[0]) + "</td>" +
+            "<td>" + money(row[1]) + "</td>" +
+            "</tr>"
+        );
+    }).join("");
+}
+
+/* ---------- Chart + RSI ---------- */
+
+function getAvailablePeriodsForInterval(interval) {
+    if (interval === "30m" || interval === "60m") {
+        return [
+            { value: "5d", label: "5 Days" },
+            { value: "1mo", label: "1 Month" }
+        ];
+    }
+
+    // 1d
+    return [
+        { value: "1mo", label: "1 Month" },
+        { value: "3mo", label: "3 Months" },
+        { value: "6mo", label: "6 Months" },
+        { value: "1y", label: "1 Year" }
+    ];
+}
+
+function onChartIntervalChange() {
+    const interval = document.getElementById("chartInterval").value;
+    const periodSelect = document.getElementById("chartPeriod");
+    const currentPeriod = periodSelect.value;
+
+    const options = getAvailablePeriodsForInterval(interval);
+
+    periodSelect.innerHTML = options.map(opt =>
+        '<option value="' + opt.value + '">' + opt.label + '</option>'
+    ).join("");
+
+    let chosenPeriod = "1mo";
+
+    if (options.some(o => o.value === chosenPeriod)) {
+        periodSelect.value = chosenPeriod;
+    } else {
+        periodSelect.value = options[0].value;
+    }
+}
+
+function getChartRequestedSymbol() {
+    const manual = document.getElementById("chartManualSymbol")
+        .value
+        .trim();
+
+    if (manual) {
+        return manual;
+    }
+
+    return document.getElementById("chartWishlistSymbol")
+        .value
+        .trim();
+}
+
+function clearChartContainers() {
+    const candleContainer = document.getElementById(
+        "candleChartContainer"
+    );
+
+    const rsiContainer = document.getElementById(
+        "rsiChartContainer"
+    );
+
+    if (candleChart) {
+        candleChart.remove();
+        candleChart = null;
+        candleSeries = null;
+    }
+
+    if (rsiChart) {
+        rsiChart.remove();
+        rsiChart = null;
+        rsiSeries = null;
+        rsi30Line = null;
+        rsi70Line = null;
+    }
+
+    candleContainer.innerHTML = "";
+    rsiContainer.innerHTML = "";
+}
+
+function createCharts(candles, rsiData, interval, ema9Data, ema21Data) {
+    const candleContainer = document.getElementById(
+        "candleChartContainer"
+    );
+
+    const rsiContainer = document.getElementById(
+        "rsiChartContainer"
+    );
+
+    clearChartContainers();
+
+    if (
+        typeof LightweightCharts === "undefined" ||
+        !LightweightCharts.createChart
+    ) {
+        candleContainer.innerHTML =
+            '<div class="chart-empty">Chart library could not load. Check your internet connection, then refresh the page.</div>';
+
+        rsiContainer.innerHTML =
+            '<div class="chart-empty">RSI chart unavailable because the chart library did not load.</div>';
+
+        return;
+    }
+
+    const useUnixTime = (interval === "30m" || interval === "60m");
+
+    const commonOptions = {
+        layout: {
+            background: {
+                type: "solid",
+                color: "#ffffff"
+            },
+            textColor: "#374151"
+        },
+        grid: {
+            vertLines: {
+                color: "#edf2f7"
+            },
+            horzLines: {
+                color: "#edf2f7"
+            }
+        },
+        rightPriceScale: {
+            borderColor: "#d7dee8"
+        },
+        timeScale: {
+            borderColor: "#d7dee8",
+            timeVisible: useUnixTime,
+            secondsVisible: false,
+            tickMarkFormatter: useUnixTime
+                ? (time) => {
+                    const date = new Date(time * 1000);
+                    const day = String(date.getDate()).padStart(2, "0");
+                    const month = String(date.getMonth() + 1).padStart(2, "0");
+                    const year = date.getFullYear();
+                    const hours = String(date.getHours()).padStart(2, "0");
+                    const minutes = String(date.getMinutes()).padStart(2, "0");
+                    return day + "/" + month + "/" + year + " " + hours + ":" + minutes;
+                }
+                : undefined
+        },
+        crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal
+        }
+    };
+
+    candleChart = LightweightCharts.createChart(
+        candleContainer,
+        {
+            ...commonOptions,
+            width: candleContainer.clientWidth,
+            height: candleContainer.clientHeight
+        }
+    );
+
+    candleSeries = candleChart.addSeries(
+        LightweightCharts.CandlestickSeries,
+        {
+            upColor: "#137333",
+            downColor: "#b3261e",
+            borderUpColor: "#137333",
+            borderDownColor: "#b3261e",
+            wickUpColor: "#137333",
+            wickDownColor: "#b3261e",
+            priceFormat: {
+                type: "price",
+                precision: 2,
+                minMove: 0.01
+            }
+        }
+    );
+
+    candleSeries.setData(candles);
+    candleChart.timeScale().fitContent();
+
+    const ema9Series = candleChart.addSeries(
+        LightweightCharts.LineSeries,
+        {
+            title: "EMA 9",
+            color: "#2563eb",
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: true,
+            priceFormat: {
+                type: "price",
+                precision: 2,
+                minMove: 0.01
+            }
+        }
+    );
+
+    const ema21Series = candleChart.addSeries(
+        LightweightCharts.LineSeries,
+        {
+            title: "EMA 21",
+            color: "#ea580c",
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: true,
+            priceFormat: {
+                type: "price",
+                precision: 2,
+                minMove: 0.01
+            }
+        }
+    );
+
+    ema9Series.setData(ema9Data || []);
+    ema21Series.setData(ema21Data || []);
+
+    rsiChart = LightweightCharts.createChart(
+        rsiContainer,
+        {
+            ...commonOptions,
+            width: rsiContainer.clientWidth,
+            height: rsiContainer.clientHeight,
+            rightPriceScale: {
+                borderColor: "#d7dee8",
+                scaleMargins: {
+                    top: 0.12,
+                    bottom: 0.12
+                }
+            }
+        }
+    );
+
+    rsiSeries = rsiChart.addSeries(
+        LightweightCharts.LineSeries,
+        {
+            color: "#6336a4",
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: true,
+            priceFormat: {
+                type: "custom",
+                formatter: price => Number(price).toFixed(2)
+            }
+        }
+    );
+
+    rsiSeries.setData(rsiData);
+    rsiChart.timeScale().fitContent();
+
+    rsi30Line = rsiSeries.createPriceLine({
+        price: 30,
+        color: "#b3261e",
+        lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: "30"
+    });
+
+    rsi70Line = rsiSeries.createPriceLine({
+        price: 70,
+        color: "#137333",
+        lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: "70"
+    });
+
+    rsiChart.timeScale().fitContent();
+
+    if (!chartResizeHandlerAdded) {
+        window.addEventListener("resize", resizeCharts);
+        chartResizeHandlerAdded = true;
+    }
+}
+
+function resizeCharts() {
+    const candleContainer = document.getElementById(
+        "candleChartContainer"
+    );
+
+    const rsiContainer = document.getElementById(
+        "rsiChartContainer"
+    );
+
+    if (candleChart && candleContainer.clientWidth > 0) {
+        candleChart.applyOptions({
+            width: candleContainer.clientWidth,
+            height: candleContainer.clientHeight
+        });
+    }
+
+    if (rsiChart && rsiContainer.clientWidth > 0) {
+        rsiChart.applyOptions({
+            width: rsiContainer.clientWidth,
+            height: rsiContainer.clientHeight
+        });
+    }
+}
+
+async function loadChartData() {
+    const symbol = getChartRequestedSymbol();
+    const interval = document.getElementById("chartInterval").value;
+    const period = document.getElementById("chartPeriod").value;
+    const rsiPeriod = numberOrZero(
+        document.getElementById("chartRsiPeriod").value
+    ) || 14;
+
+    const status = document.getElementById("chartStatus");
+    const summary = document.getElementById("chartSummary");
+
+    if (!symbol) {
+        status.textContent =
+            "Please select a Wishlist symbol or enter an NSE symbol first.";
+
+        status.className = "chart-status negative";
+        return;
+    }
+
+    status.textContent =
+        "Loading " +
+        (interval === "1d" ? "daily" : interval) +
+        " candlestick and RSI data for " +
+        symbol.toUpperCase() +
+        "...";
+
+    status.className = "chart-status";
+
+    try {
+        const url =
+            API_BASE +
+            "/chart-data?symbol=" +
+            encodeURIComponent(symbol) +
+            "&period=" +
+            encodeURIComponent(period) +
+            "&interval=" +
+            encodeURIComponent(interval) +
+            "&rsi=" +
+            encodeURIComponent(rsiPeriod);
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+                errorData.error || ("HTTP " + response.status)
+            );
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        if (!Array.isArray(data.candles) || data.candles.length === 0) {
+            throw new Error("No candles were returned.");
+        }
+
+        createCharts(
+            data.candles,
+            data.rsi || [],
+            data.interval,
+            data.ema9 || [],
+            data.ema21 || []
+        );
+
+        document.getElementById("chartSymbolDisplay").textContent =
+            data.symbol || symbol.toUpperCase();
+
+        document.getElementById("chartLatestClose").textContent =
+            money(data.latestClose);
+
+        document.getElementById("chartLatestRsi").textContent =
+            data.latestRsi === null || data.latestRsi === undefined
+                ? "Not enough data"
+                : Number(data.latestRsi).toFixed(2);
+
+        document.getElementById("chartCandleCount").textContent =
+            data.candles.length;
+
+        summary.style.display = "grid";
+
+        lastChartSymbol = data.symbol || symbol.toUpperCase();
+        lastChartData = data;
+
+        status.textContent =
+            (data.symbol || symbol.toUpperCase()) +
+            " loaded: " +
+            data.candles.length +
+            " " +
+            (data.interval === "1d" ? "daily" : data.interval) +
+            " candles, RSI(" +
+            data.rsiPeriod +
+            "), refreshed at " +
+            formatTime(new Date()) +
+            ".";
+
+        status.className = "chart-status positive";
+
+    } catch (error) {
+        clearChartContainers();
+
+        document.getElementById("candleChartContainer").innerHTML =
+            '<div class="chart-empty">Could not load chart: ' +
+            escapeHtml(error.message) +
+            "</div>";
+
+        document.getElementById("rsiChartContainer").innerHTML =
+            '<div class="chart-empty">RSI chart unavailable.</div>';
+
+        summary.style.display = "none";
+
+        status.textContent =
+            "Chart load failed: " + error.message;
+
+        status.className = "chart-status negative";
+    }
+}
+
+/* ---------- Stock Analysis ---------- */
+
+async function loadStockAnalysis() {
+    const status = document.getElementById("analysisStatus");
+    const sectionStatus = document.getElementById("analysisSectionStatus");
+    const contentDiv = document.getElementById("analysisContent");
+
+    const symbol = lastChartSymbol || getChartRequestedSymbol();
+
+    if (!symbol) {
+        status.textContent =
+            "Please load a chart first, or enter a symbol and load the chart.";
+        status.className = "analysis-status negative";
+        return;
+    }
+
+    status.textContent =
+        "Loading analysis for " + symbol + "...";
+    status.className = "analysis-status";
+
+    sectionStatus.textContent =
+        "Analysis loading for " + symbol + "...";
+
+    contentDiv.style.display = "none";
+    contentDiv.innerHTML = "";
+
+    try {
+        const url =
+            API_BASE +
+            "/analysis?symbol=" +
+            encodeURIComponent(symbol);
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+                errorData.error || ("HTTP " + response.status)
+            );
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        renderAnalysisContent(data);
+
+        status.textContent =
+            "Analysis loaded for " +
+            (data.symbol || symbol) +
+            " at " +
+            formatTime(new Date()) +
+            ".";
+        status.className = "analysis-status positive";
+
+        sectionStatus.textContent =
+            "Analysis shown for " + (data.symbol || symbol) + ".";
+
+        contentDiv.style.display = "block";
+
+    } catch (error) {
+        contentDiv.style.display = "block";
+        contentDiv.innerHTML =
+            '<div class="muted">Analysis unavailable: ' +
+            escapeHtml(error.message) +
+            "</div>";
+
+        status.textContent =
+            "Analysis load failed: " + error.message;
+        status.className = "analysis-status negative";
+
+        sectionStatus.textContent =
+            "Analysis failed for " + symbol + ".";
+    }
+}
+
+function renderAnalysisContent(data) {
+    const contentDiv = document.getElementById("analysisContent");
+
+    const symbol = escapeHtml(data.symbol || "Unknown");
+    const name = escapeHtml(data.name || "");
+    const sector = escapeHtml(data.sector || "Not available");
+    const industry = escapeHtml(data.industry || "Not available");
+
+    const marketCap =
+        data.marketCap !== null && data.marketCap !== undefined
+            ? formatMarketCap(data.marketCap)
+            : "Not available";
+
+    const pe =
+        data.pe !== null && data.pe !== undefined
+            ? Number(data.pe).toFixed(2)
+            : "Not available";
+
+    const eps =
+        data.eps !== null && data.eps !== undefined
+            ? money(data.eps)
+            : "Not available";
+
+    const week52High =
+        data.week52High !== null && data.week52High !== undefined
+            ? money(data.week52High)
+            : "Not available";
+
+    const week52Low =
+        data.week52Low !== null && data.week52Low !== undefined
+            ? money(data.week52Low)
+            : "Not available";
+
+    const latestClose =
+        data.latestClose !== null && data.latestClose !== undefined
+            ? money(data.latestClose)
+            : "Not available";
+
+    const shortTermText = escapeHtml(
+        data.shortTermTrend || "No short-term trend analysis available."
+    );
+
+    const longTermText = escapeHtml(
+        data.longTermTrend || "No long-term trend analysis available."
+    );
+
+    const description = escapeHtml(
+        data.description || "No company description available."
+    );
+
+    let html = "";
+
+    html += "<h3>Company Overview</h3>";
+    html +=
+        "<div>" +
+        "<strong>Symbol:</strong> " + symbol + "<br>" +
+        "<strong>Name:</strong> " + (name || "—") + "<br>" +
+        "<strong>Sector:</strong> " + sector + "<br>" +
+        "<strong>Industry:</strong> " + industry + "<br>" +
+        "<strong>Market Cap:</strong> " + marketCap + "<br>" +
+        "<strong>P/E (TTM):</strong> " + pe + "<br>" +
+        "<strong>EPS (TTM):</strong> " + eps + "<br>" +
+        "<strong>52-Week High:</strong> " + week52High + "<br>" +
+        "<strong>52-Week Low:</strong> " + week52Low + "<br>" +
+        "<strong>Latest Close:</strong> " + latestClose +
+        "</div>";
+
+    html += "<h3>Business Summary</h3>";
+    html += "<div>" + description + "</div>";
+
+    html += "<h3>Short-Term Trend</h3>";
+    html += "<div>" + shortTermText + "</div>";
+
+    html += "<h3>Long-Term Trend</h3>";
+    html += "<div>" + longTermText + "</div>";
+
+    html +=
+        "<div class='muted' style='margin-top:12px;'>" +
+        "This analysis is generated automatically from public data and simple rules. " +
+        "It is for information only and not a recommendation to buy or sell." +
+        "</div>";
+
+    contentDiv.innerHTML = html;
+}
+
+function formatMarketCap(value) {
+    if (value === null || value === undefined || !Number.isFinite(value)) {
+        return "Not available";
+    }
+
+    if (value >= 1_00_00_00_00_000) {
+        return "₹" + (value / 1_00_00_00_00_000).toFixed(2) + " Lakh Cr";
+    }
+
+    if (value >= 1_00_00_00_000) {
+        return "₹" + (value / 1_00_00_00_000).toFixed(2) + " Thousand Cr";
+    }
+
+    const inCrores = value / 1_00_00_000;
+    return "₹" + inCrores.toFixed(2) + " Cr";
+}
+
+/* ---------- Manage Holdings ---------- */
+
+function populateManageLotSelect() {
+    const select = document.getElementById("manageLotSelect");
+    select.innerHTML = '<option value="">-- Choose --</option>';
+
+    rawHoldingsLots.forEach((lot, index) => {
+        const symbol = String(lot.symbol || "").trim().toUpperCase();
+        const buydate = String(lot.buydate || "").trim();
+        const qty = numberOrZero(lot.qty);
+        const avgPrice = numberOrZero(lot.avgPrice);
+
+        if (!symbol || qty <= 0 || avgPrice <= 0) {
+            return;
+        }
+
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent =
+            symbol +
+            " – " +
+            (buydate || "No date") +
+            " – Qty " +
+            qty +
+            " – " +
+            money(avgPrice);
+
+        select.appendChild(option);
+    });
+}
+
+async function removeSelectedLot() {
+    const select = document.getElementById("manageLotSelect");
+    const status = document.getElementById("manageStatus");
+
+    const indexValue = select.value;
+
+    if (!indexValue) {
+        alert("Please select a lot to remove.");
+        return;
+    }
+
+    const index = Number(indexValue);
+
+    if (!Number.isInteger(index) || index < 0 || index >= rawHoldingsLots.length) {
+        alert("Invalid lot selection.");
+        return;
+    }
+
+    const lotToRemove = rawHoldingsLots[index];
+
+    if (
+        !window.confirm(
+            "Remove this lot?\n\n" +
+            "Symbol: " + (lotToRemove.symbol || "") + "\n" +
+            "Buy date: " + (lotToRemove.buydate || "") + "\n" +
+            "Qty: " + (lotToRemove.qty || 0) + "\n" +
+            "Avg price: " + (lotToRemove.avgPrice || 0)
+        )
+    ) {
+        return;
+    }
+
+    try {
+        const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+
+        const response = await fetch(
+            API_BASE + "/manage-holdings" + userParam,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "remove",
+                    index: index
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || ("HTTP " + response.status));
+        }
+
+        const result = await response.json();
+
+        if (!result.ok) {
+            throw new Error(result.error || "Remove failed.");
+        }
+
+        status.textContent =
+            "Lot removed at " +
+            formatTime(new Date()) +
+            ". File: " +
+            (result.file || "Holdings file") +
+            ". Remaining lots: " +
+            (result.count ?? "—") +
+            ".";
+
+        status.className = "manage-status positive";
+
+        await loadHoldings();
+
+    } catch (error) {
+        status.textContent =
+            "Remove failed: " + error.message;
+
+        status.className = "manage-status negative";
+
+        alert("Could not remove lot: " + error.message);
+    }
+}
+
+async function addNewLot() {
+    const symbol = document.getElementById("addSymbol").value.trim();
+    const buydate = document.getElementById("addBuyDate").value.trim();
+    const qtyValue = document.getElementById("addQty").value;
+    const avgPriceValue = document.getElementById("addAvgPrice").value;
+
+    const status = document.getElementById("manageStatus");
+
+    const qty = numberOrZero(qtyValue);
+    const avgPrice = numberOrZero(avgPriceValue);
+
+    if (!symbol) {
+        alert("Symbol is required.");
+        return;
+    }
+
+    if (!buydate) {
+        alert("Buy date (DD/MM/YYYY) is required.");
+        return;
+    }
+
+    if (!parseBuyDate(buydate)) {
+        alert("Buy date must be in DD/MM/YYYY format and be a valid date.");
+        return;
+    }
+
+    if (qty <= 0) {
+        alert("Quantity must be greater than zero.");
+        return;
+    }
+
+    if (avgPrice <= 0) {
+        alert("Average price must be greater than zero.");
+        return;
+    }
+
+    try {
+        const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+
+        const response = await fetch(
+            API_BASE + "/manage-holdings" + userParam,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "add",
+                    lot: {
+                        symbol: symbol.toUpperCase(),
+                        buydate: buydate,
+                        qty: qty,
+                        avgPrice: avgPrice
+                    }
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || ("HTTP " + response.status));
+        }
+
+        const result = await response.json();
+
+        if (!result.ok) {
+            throw new Error(result.error || "Add failed.");
+        }
+
+        status.textContent =
+            "Lot added at " +
+            formatTime(new Date()) +
+            ". File: " +
+            (result.file || "Holdings file") +
+            ". Total lots: " +
+            (result.count ?? "—") +
+            ".";
+
+        status.className = "manage-status positive";
+
+        document.getElementById("addSymbol").value = "";
+        document.getElementById("addBuyDate").value = "";
+        document.getElementById("addQty").value = "";
+        document.getElementById("addAvgPrice").value = "";
+
+        await loadHoldings();
+
+    } catch (error) {
+        status.textContent =
+            "Add failed: " + error.message;
+
+        status.className = "manage-status negative";
+
+        alert("Could not add lot: " + error.message);
+    }
+}
+
+/* ---------- Target Calculator ---------- */
+
+    function calculateTarget() {
+        const boughtPrice = numberOrZero(
+            document.getElementById("targetBoughtPrice").value
+        );
+
+        const qty = numberOrZero(
+            document.getElementById("targetQty").value
+        );
+
+        const requiredPercent = numberOrZero(
+            document.getElementById("targetPercent").value
+        );
+
+        const status = document.getElementById("targetStatus");
+        const resultsBox = document.getElementById("targetResults");
+        const chargeDetails = document.getElementById("targetChargeDetails");
+
+        // Always compute portfolio targets if percentage is valid
+        if (requiredPercent > 0) {
+            computeAndRenderPortfolioTargets(requiredPercent);
+        }
+
+        // If bought price or qty is missing, skip single-stock calculation
+        if (boughtPrice <= 0 || qty <= 0) {
+            status.textContent =
+                "Portfolio targets calculated at " +
+                formatTime(new Date()) +
+                ". Enter bought price and quantity to calculate a single-stock target.";
+            status.className = "target-status";
+
+            // Hide single-stock results if they were previously shown
+            resultsBox.style.display = "none";
+            chargeDetails.style.display = "none";
+            return;
+        }
+
+        // --- Existing single-stock target calculation follows ---
+
+        const r = getRates();
+
+        const buyValue = boughtPrice * qty;
+
+        const buyBrokerage = numberOrZero(settings.buyBrokerage);
+
+        const buyExchangeTx = buyValue * r.exchangeTx;
+        const buyClearing = buyValue * r.clearing;
+        const buySebi = buyValue * r.sebi;
+        const buyIpf = buyValue * r.ipf;
+
+        const buyGst =
+            (buyBrokerage + buyExchangeTx + buyClearing + buySebi + buyIpf) *
+            r.gst;
+
+        const buyStamp = buyValue * r.stampBuy;
+        const buyStt = buyValue * r.sttBuy;
+
+        const totalBuyCharges =
+            buyBrokerage +
+            buyExchangeTx +
+            buyClearing +
+            buySebi +
+            buyIpf +
+            buyGst +
+            buyStamp +
+            buyStt;
+
+        const totalCost = buyValue + totalBuyCharges;
+
+        const requiredNetProfit = totalCost * (requiredPercent / 100);
+
+        const requiredNetProceeds = totalCost + requiredNetProfit;
+
+        let low = boughtPrice * 0.5;
+        let high = Math.max(boughtPrice * 3, 1);
+
+        while (true) {
+            const grossSell = high * qty;
+
+            const sellBrokerage = numberOrZero(settings.sellBrokerage);
+
+            const sellExchangeTx = grossSell * r.exchangeTx;
+            const sellClearing = grossSell * r.clearing;
+            const sellSebi = grossSell * r.sebi;
+            const sellIpf = grossSell * r.ipf;
+
+            const sellGst =
+                (sellBrokerage + sellExchangeTx + sellClearing + sellSebi + sellIpf) *
+                r.gst;
+
+            const sellStt = grossSell * r.sttSell;
+
+            const totalSellCharges =
+                sellBrokerage +
+                sellExchangeTx +
+                sellClearing +
+                sellSebi +
+                sellIpf +
+                sellGst +
+                sellStt;
+
+            const netProceeds = grossSell - totalSellCharges;
+
+            if (netProceeds >= requiredNetProceeds) {
+                break;
+            }
+
+            high *= 1.5;
+
+            if (high > 1e9) {
+                alert(
+                    "Unable to converge on a target price with these inputs. " +
+                    "Please check your values and rates."
+                );
+                return;
+            }
+        }
+
+        for (let i = 0; i < 100; i++) {
+            const mid = (low + high) / 2;
+
+            const grossSellMid = mid * qty;
+
+            const sellBrokerage = numberOrZero(settings.sellBrokerage);
+
+            const sellExchangeTx = grossSellMid * r.exchangeTx;
+            const sellClearing = grossSellMid * r.clearing;
+            const sellSebi = grossSellMid * r.sebi;
+            const sellIpf = grossSellMid * r.ipf;
+
+            const sellGst =
+                (sellBrokerage + sellExchangeTx + sellClearing + sellSebi + sellIpf) *
+                r.gst;
+
+            const sellStt = grossSellMid * r.sttSell;
+
+            const totalSellChargesMid =
+                sellBrokerage +
+                sellExchangeTx +
+                sellClearing +
+                sellSebi +
+                sellIpf +
+                sellGst +
+                sellStt;
+
+            const netProceedsMid = grossSellMid - totalSellChargesMid;
+
+            if (netProceedsMid < requiredNetProceeds) {
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+
+        const targetPricePerShare = high;
+        const grossSellValue = targetPricePerShare * qty;
+
+        const sellBrokerageFinal = numberOrZero(settings.sellBrokerage);
+
+        const sellExchangeTxFinal = grossSellValue * r.exchangeTx;
+        const sellClearingFinal = grossSellValue * r.clearing;
+        const sellSebiFinal = grossSellValue * r.sebi;
+        const sellIpfFinal = grossSellValue * r.ipf;
+
+        const sellGstFinal =
+            (sellBrokerageFinal + sellExchangeTxFinal + sellClearingFinal + sellSebiFinal + sellIpfFinal) *
+            r.gst;
+
+        const sellSttFinal = grossSellValue * r.sttSell;
+
+        const totalSellChargesFinal =
+            sellBrokerageFinal +
+            sellExchangeTxFinal +
+            sellClearingFinal +
+            sellSebiFinal +
+            sellIpfFinal +
+            sellGstFinal +
+            sellSttFinal;
+
+        const netSellProceeds = grossSellValue - totalSellChargesFinal;
+
+        const netProfit = netSellProceeds - totalCost;
+
+        const netProfitPercent =
+            totalCost > 0
+                ? (netProfit / totalCost) * 100
+                : 0;
+
+        document.getElementById("targetPricePerShare").textContent =
+            money(targetPricePerShare);
+
+        document.getElementById("targetGrossSellValue").textContent =
+            money(grossSellValue);
+
+        document.getElementById("targetTotalBuyCharges").textContent =
+            money(totalBuyCharges);
+
+        document.getElementById("targetTotalSellCharges").textContent =
+            money(totalSellChargesFinal);
+
+        document.getElementById("targetNetProfit").textContent =
+            (netProfit >= 0 ? "+" : "") +
+            money(netProfit);
+
+        document.getElementById("targetNetProfitPercent").textContent =
+            (netProfitPercent >= 0 ? "+" : "") +
+            netProfitPercent.toFixed(2) +
+            "%";
+
+        resultsBox.style.display = "grid";
+        chargeDetails.style.display = "block";
+
+        const tbody = document.getElementById("targetChargeRows");
+
+        const chargeRows = [
+            ["Buy value", buyValue],
+            ["Buy brokerage", buyBrokerage],
+            ["Buy exchange charge", buyExchangeTx],
+            ["Buy clearing charge", buyClearing],
+            ["Buy SEBI fee", buySebi],
+            ["Buy IPF", buyIpf],
+            ["Buy GST", buyGst],
+            ["Buy stamp duty", buyStamp],
+            ["Buy STT", buyStt],
+            ["Total buy charges", totalBuyCharges],
+            ["Total cost (buy value + buy charges)", totalCost],
+            ["Target gross sell value", grossSellValue],
+            ["Sell brokerage", sellBrokerageFinal],
+            ["Sell exchange charge", sellExchangeTxFinal],
+            ["Sell clearing charge", sellClearingFinal],
+            ["Sell SEBI fee", sellSebiFinal],
+            ["Sell IPF", sellIpfFinal],
+            ["Sell GST", sellGstFinal],
+            ["Sell STT", sellSttFinal],
+            ["Total sell charges", totalSellChargesFinal],
+            ["Net sell proceeds", netSellProceeds],
+            ["Net profit", netProfit]
+        ];
+
+        tbody.innerHTML = chargeRows.map((row, index) => {
+            const isTotalOrNet =
+                index === 9 ||
+                index === 10 ||
+                index === 19 ||
+                index === 20 ||
+                index === 21;
+
+            const style = isTotalOrNet
+                ? ' style="font-weight:bold;background:#f3e5f5"'
+                : "";
+
+            return (
+                "<tr" + style + ">" +
+                "<td>" + escapeHtml(row[0]) + "</td>" +
+                "<td>" + money(row[1]) + "</td>" +
+                "</tr>"
+            );
+        }).join("");
+
+        status.textContent =
+            "Target calculated at " +
+            formatTime(new Date()) +
+            ". Required net profit: " +
+            requiredPercent.toFixed(2) +
+            "%.";
+    }
+
+
+
+
+function computeTargetPriceForBoughtPrice(boughtPrice, qty, requiredPercent) {
+    if (boughtPrice <= 0 || qty <= 0) return null;
+    const r = getRates();
+    const buyValue = boughtPrice * qty;
+    const buyBrokerage = numberOrZero(settings.buyBrokerage);
+    const buyExchangeTx = buyValue * r.exchangeTx;
+    const buyClearing = buyValue * r.clearing;
+    const buySebi = buyValue * r.sebi;
+    const buyIpf = buyValue * r.ipf;
+    const buyGst = (buyBrokerage + buyExchangeTx + buyClearing + buySebi + buyIpf) * r.gst;
+    const buyStamp = buyValue * r.stampBuy;
+    const buyStt = buyValue * r.sttBuy;
+    const totalCost = buyValue + buyBrokerage + buyExchangeTx + buyClearing + buySebi + buyIpf + buyGst + buyStamp + buyStt;
+    const requiredNetProceeds = totalCost * (1 + requiredPercent / 100);
+    let low = boughtPrice * 0.5;
+    let high = Math.max(boughtPrice * 3, 1);
+
+    function netSell(price) {
+        const gross = price * qty;
+        const brokerage = numberOrZero(settings.sellBrokerage);
+        const exchangeTx = gross * r.exchangeTx;
+        const clearing = gross * r.clearing;
+        const sebi = gross * r.sebi;
+        const ipf = gross * r.ipf;
+        const gst = (brokerage + exchangeTx + clearing + sebi + ipf) * r.gst;
+        const stt = gross * r.sttSell;
+        return gross - brokerage - exchangeTx - clearing - sebi - ipf - gst - stt;
+    }
+
+    while (netSell(high) < requiredNetProceeds) {
+        high *= 1.5;
+        if (high > 1e9) return null;
+    }
+    for (let i = 0; i < 100; i++) {
+        const mid = (low + high) / 2;
+        if (netSell(mid) < requiredNetProceeds) low = mid;
+        else high = mid;
+    }
+    return high;
+}
+
+function ceilToNextRupee(value) {
+    return Math.ceil(Number(value));
+}
+
+function computeAndRenderPortfolioTargets(requiredPercent) {
+    const tbody = document.getElementById("portfolioTargetRows");
+    const box = document.getElementById("portfolioTargetsBox");
+    if (!tbody || !box) return;
+    box.style.display = "block";
+    if (!holdingsList || !holdingsList.length) {
+        tbody.innerHTML = '<tr><td colspan="18">No holdings loaded yet.</td></tr>';
+        return;
+    }
+
+    let html = "";
+    holdingsList.forEach(h => {
+        const symbol = h.symbol || "—";
+        const bought = numberOrZero(h.avgPrice);
+        const qty = numberOrZero(h.qty);
+        const cmp = numberOrZero(h.livePrice);
+        if (bought <= 0 || qty <= 0) return;
+
+        const breakEven = computeTargetPriceForBoughtPrice(bought, qty, 0);
+        const isLoss = cmp > 0 && cmp < breakEven;
+        let pcts = [];
+        if (isLoss) {
+            for (let pct = 0; pct >= -10; pct--) pcts.push(pct);
+        } else {
+            for (let pct = 0; pct <= 10; pct++) pcts.push(pct);
+        }
+
+        let ladder = "";
+        pcts.forEach(pct => {
+            const price = computeTargetPriceForBoughtPrice(bought, qty, pct);
+            const reached = isLoss ? (cmp > 0 && cmp <= price) : (cmp > 0 && cmp >= price);
+            const className = reached ? (isLoss ? "target-loss" : "target-reached") : "";
+            ladder += '<td class="' + className + '">' + ceilToNextRupee(price).toLocaleString("en-IN") + '</td>';
+        });
+
+        const finalTarget = requiredPercent > 0
+            ? computeTargetPriceForBoughtPrice(bought, qty, requiredPercent)
+            : null;
+
+        html += '<tr>' +
+            '<td>' + escapeHtml(symbol) + '</td>' +
+            '<td>' + money(bought) + '</td>' +
+            '<td>' + qty.toLocaleString("en-IN") + '</td>' +
+            '<td>' + (cmp > 0 ? money(cmp) : '—') + '</td>' +
+            ladder +
+            '<td class="portfolio-final-target">' + (finalTarget !== null ? money(finalTarget) : '—') + '</td>' +
+            '<td>' + money(bought) + '</td>' +
+            '<td>' + escapeHtml(symbol) + '</td>' +
+            '</tr>';
+    });
+    tbody.innerHTML = html || '<tr><td colspan="18">No valid holdings available.</td></tr>';
+}
+
+/* ---------- Page load ---------- */
+
+function showSection(sectionId) {
+    document.querySelectorAll('.section-block').forEach(el => el.classList.remove('active'));
+    if (sectionId === 'analysisSection') {
+        document.getElementById('chartSection').closest('.section-block')?.classList.add('active');
+        document.getElementById('analysisSection').closest('.section-block')?.classList.add('active');
+    } else {
+        document.getElementById(sectionId)?.closest('.section-block')?.classList.add('active');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+(async function initPage() {
+    //askUserName();
+    await loadRatesFromServer();
+
+    document.title = buildPageTitle(CURRENT_USER);
+
+    setSettingsInputsFromValues();
+
+    document.getElementById("brokerageBuy1").value = settings.buyBrokerage;
+    document.getElementById("brokerageSell1").value = settings.sellBrokerage;
+    document.getElementById("brokerageBuy2").value = settings.buyBrokerage;
+    document.getElementById("brokerageSell2").value = settings.sellBrokerage;
+    document.getElementById("tradeBrokerage").value = settings.buyBrokerage;
+
+    updateRatesUsedText();
+
+    loadHoldings();
+
+    load52WeekLowAR();
+    loadTopLosersAR();
+    load52WeekHighAR();
+    loadTopGainersAR();
+    loadVolumeGainersAR();
+
+    refreshWishlist(true);
+
+    onChartIntervalChange();
+
+    startAutoRefresh();
+})();
+
+
+    // ========== COMPLETE AUTHENTICATION SYSTEM ==========
+    (function () {
+        // Add CSS dynamically
+        const css = document.createElement('style');
+        css.textContent = '#authOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center}#authOverlay.hidden{display:none}.auth-box{background:#fff;padding:30px 40px;border-radius:12px;max-width:500px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.3)}.auth-box h2{margin:0 0 10px;color:#12375b;font-size:24px}.auth-box p{margin:0 0 20px;color:#52606d;font-size:14px;line-height:1.5}.auth-input-row{margin-bottom:16px}.auth-input-row label{display:block;margin-bottom:8px;color:#374151;font-size:14px;font-weight:bold}.auth-input-row input{width:100%;min-height:44px;padding:10px 12px;border:2px solid #b9c4d0;border-radius:8px;font-size:16px}.auth-input-row input:focus{outline:none;border-color:var(--blue)}.auth-error{margin:12px 0;padding:12px;background:#fce4e2;border:1px solid #b3261e;border-radius:8px;color:#b3261e;font-size:13px;line-height:1.5;display:none}.auth-error strong{display:block;margin-bottom:6px}.auth-error ul{margin:0;padding-left:20px}.auth-error li{margin-bottom:4px}.auth-submit-btn{width:100%;min-height:44px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer}.auth-submit-btn:hover{background:#084b8b}.auth-submit-btn:disabled{background:#6b7280;cursor:not-allowed}';
+        document.head.appendChild(css);
+
+        // Add HTML overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'authOverlay';
+        overlay.innerHTML = '<div class="auth-box"><h2>Welcome to KP\'s Stocks</h2><p>Enter user name. Files: <strong>Holdings_USER.json</strong>, <strong>Rates_USER.txt</strong>, <strong>wishlist_USER.txt</strong></p><div class="auth-input-row"><label for="authUserName">User Name</label><input id="authUserName" type="text" placeholder="KP" onkeydown="if(event.key===\'Enter\')validateUserAndLoad()"></div><div id="authError" class="auth-error"><strong>Invalid User Name</strong><p style="margin:0 0 8px;">Files not found:</p><ul id="authErrorFiles"></ul></div><button type="button" class="auth-submit-btn" onclick="validateUserAndLoad()">Continue</button></div>';
+        document.body.insertBefore(overlay, document.body.firstChild);
+
+        // Auth functions
+        let authUser = "";
+        let authDone = false;
+
+        function showAuth(err) {
+            const e = document.getElementById('authError');
+            const l = document.getElementById('authErrorFiles');
+            const i = document.getElementById('authUserName');
+            if (err && err.length) {
+                l.innerHTML = err.map(f => '<li>' + f + '</li>').join('');
+                e.style.display = 'block';
+            } else {
+                e.style.display = 'none';
+            }
+            document.getElementById('authOverlay').classList.remove('hidden');
+            setTimeout(() => { i.value = ''; i.focus(); }, 50);
+        }
+
+        function hideAuth() {
+            document.getElementById('authOverlay').classList.add('hidden');
+        }
+
+        async function validateUserAndLoad() {
+            const i = document.getElementById('authUserName');
+            const u = (i.value || '').trim().toUpperCase();
+            const btn = document.querySelector('.auth-submit-btn');
+
+            if (!u) { showAuth(['User name blank']); return; }
+            if (btn) { btn.disabled = true; btn.textContent = 'Checking...'; }
+
+            const files = ['Holdings_' + u + '.json', 'Rates_' + u + '.txt', 'wishlist_' + u + '.txt'];
+            const missing = [];
+
+            for (const f of files) {
+                try {
+                    const r = await fetch('/validate?user=' + encodeURIComponent(u) + '&check=' + encodeURIComponent(f));
+                    if (!r.ok) { missing.push(f + ' (HTTP ' + r.status + ')'); continue; }
+                    const d = await r.json();
+                    if (!d.exists) missing.push(f);
+                } catch (e) { missing.push(f + ' (' + e.message + ')'); }
+            }
+
+            if (missing.length) {
+                showAuth(missing);
+                if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
+                return;
+            }
+
+            authUser = u;
+            sessionStorage.setItem('kp_stocks_user', u);
+            hideAuth();
+
+            // Set the global CURRENT_USER and reload
+            CURRENT_USER = u;
+            location.reload();
+        }
+
+        // Auto-check on load
+        const stored = sessionStorage.getItem('kp_stocks_user');
+        if (stored) {
+            CURRENT_USER = stored;
+            hideAuth();
+        } else {
+            showAuth([]);
+        }
+
+        // Expose function globally
+        window.validateUserAndLoad = validateUserAndLoad;
+    })();
+// ========== END AUTH ==========
+
+
+
+</script>
+</body>
+</html>

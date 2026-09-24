@@ -1,0 +1,98 @@
+[
+  {
+    "buydate": "04/05/2022",
+    "symbol": "LICI-EQ",
+    "qty": 50,
+    "avgPrice": 450.0
+  },
+  {
+    "buydate": "28/08/2026",
+    "symbol": "ITC-EQ",
+    "qty": 50,
+    "avgPrice": 270.0
+  },
+  {
+    "buydate": "07/09/2026",
+    "symbol": "DABUR-EQ",
+    "qty": 10,
+    "avgPrice": 377.0
+  },
+  {
+    "buydate": "07/09/2026",
+    "symbol": "SUNTV-EQ",
+    "qty": 10,
+    "avgPrice": 454.0
+  },
+  {
+    "buydate": "09/09/2026",
+    "symbol": "HDFCBANK-EQ",
+    "qty": 10,
+    "avgPrice": 687.1
+  },
+  {
+    "buydate": "10/09/2026",
+    "symbol": "AEGISVOPAK-EQ",
+    "qty": 20,
+    "avgPrice": 293.0
+  },
+  {
+    "buydate": "10/09/2026",
+    "symbol": "PCBL-EQ",
+    "qty": 10,
+    "avgPrice": 330.0
+  },
+  {
+    "buydate": "15/09/2026",
+    "symbol": "FIRSTCRY-EQ",
+    "qty": 20,
+    "avgPrice": 170.0
+  },
+  {
+    "buydate": "16/09/2026",
+    "symbol": "TATACHEM-EQ",
+    "qty": 10,
+    "avgPrice": 730.0
+  },
+  {
+    "buydate": "17/09/2026",
+    "symbol": "GROWW-EQ",
+    "qty": 20,
+    "avgPrice": 187.0
+  },
+  {
+    "buydate": "18/09/2026",
+    "symbol": "TATATECH-EQ",
+    "qty": 10,
+    "avgPrice": 728.0
+  },
+  {
+    "buydate": "23/09/2026",
+    "symbol": "GLASSWALL-EQ",
+    "qty": 20,
+    "avgPrice": 295.0
+  },
+  {
+    "buydate": "23/09/2026",
+    "symbol": "HBLENGINE-EQ",
+    "qty": 10,
+    "avgPrice": 766.0
+  },
+  {
+    "buydate": "23/09/2026",
+    "symbol": "IRB-EQ",
+    "qty": 250,
+    "avgPrice": 17.9
+  },
+  {
+    "buydate": "23/09/2026",
+    "symbol": "LICHSGFIN-EQ",
+    "qty": 10,
+    "avgPrice": 570.0
+  },
+  {
+    "buydate": "23/09/2026",
+    "symbol": "TENNIND-EQ",
+    "qty": 10,
+    "avgPrice": 520.0
+  }
+]

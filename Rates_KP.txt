@@ -1,0 +1,22 @@
+# Buy Brokerage (₹ / lot)
+20
+# Sell Brokerage (₹ / order)
+20
+# Exchange Charge (%)
+0.00307
+# Clearing Charge (%)
+0.000075
+# SEBI Fee (%)
+0.0001
+# Investor Protection Fund (%)
+0.0001
+# GST (%)
+18
+# Stamp Duty on Buy (%)
+0.015
+# STT on Buy (%)
+0.1
+# STT on Sell (%)
+0.1
+# STOP LOSS (%)
+3
