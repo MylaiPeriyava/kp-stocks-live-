@@ -1,6 +1,7 @@
 # kp_server.py
 # Local server for KP's Stocks (Live) - WITH FIREBASE
-
+# Whitelist of valid users
+VALID_USERS = {"KP","PK"}  # Add new users here: {"KP", "RA", "ADMIN"}
 import json
 import os
 from datetime import datetime
