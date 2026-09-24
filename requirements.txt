@@ -1,2 +1,5 @@
 flask
 yfinance
+requests
+beautifulsoup4
+firebase-admin
