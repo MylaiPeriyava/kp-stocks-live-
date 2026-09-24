@@ -600,9 +600,20 @@ def manage_wishlist():
         else:
             lines = []
         
+        # Normalize lines - convert string items to objects
+        normalized_lines = []
+        for item in lines:
+            if isinstance(item, str):
+                # Old format - convert to object
+                normalized_lines.append({"type": "symbol", "symbol": item})
+            elif isinstance(item, dict):
+                normalized_lines.append(item)
+        
+        lines = normalized_lines
+        
         if action == "add":
             # Check if symbol already exists
-            existing_symbols = [item.get('symbol') for item in lines if item.get('type') == 'symbol']
+            existing_symbols = [item.get('symbol') for item in lines if isinstance(item, dict) and item.get('type') == 'symbol']
             if symbol in existing_symbols:
                 return jsonify({"error": "Symbol already exists in wishlist."}), 400
             
@@ -619,7 +630,7 @@ def manage_wishlist():
         
         elif action == "remove":
             # Remove symbol
-            lines = [item for item in lines if item.get('symbol') != symbol or item.get('type') != 'symbol']
+            lines = [item for item in lines if not (isinstance(item, dict) and item.get('symbol') == symbol)]
             
             # Save back to Firebase
             doc_ref.set({
@@ -634,6 +645,7 @@ def manage_wishlist():
     
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+        
 
 
 if __name__ == "__main__":
