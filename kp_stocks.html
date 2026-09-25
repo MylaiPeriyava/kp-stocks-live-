@@ -84,40 +84,43 @@
     }
 
     /* ----- Top menu ----- */
-    .top-menu {
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        min-height: var(--menu-height);
-        overflow-x: auto;
-        margin: 0 0 18px;
-        padding: 5px 10px;
-        background: #ffffff;
-        border: 1px solid var(--border);
-        border-top: 0;
-        border-radius: 0 0 10px 10px;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, .10);
-        white-space: nowrap;
-        scrollbar-width: thin;
-    }
+.top-menu {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    min-height: var(--menu-height);
+    overflow-x: visible;       /* allow wrapping instead of horizontal scroll */
+    margin: 0 0 18px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .10);
+    white-space: normal;       /* allow text wrapping */
+    flex-wrap: wrap;           /* allow items to wrap to next line */
+    gap: 6px 8px;              /* row-gap 6px, column-gap 8px */
+}
 
-    .top-menu a {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 32px;
-        margin-right: 6px;
-        padding: 7px 13px;
-        color: #173b63;
-        background: #f1f6fc;
-        border: 1px solid #d7e3f0;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: bold;
-        text-decoration: none;
-    }
+.top-menu a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    margin-right: 0;           /* remove old margin, use gap instead */
+    padding: 6px 10px;
+    color: #173b63;
+    background: #f1f6fc;
+    border: 1px solid #d7e3f0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+}
+    
 
     .top-menu a:hover {
         color: #ffffff;
@@ -1544,23 +1547,23 @@
     </div>
 
     <!-- ==================== TOP MENU ==================== -->
-    <nav class="top-menu" aria-label="Dashboard navigation">
-        <a class="menu-top" href="#top">↑ Top</a>
-        <a href="javascript:void(0)" onclick="showSection('settingsSection')">Rates</a>
-        <a href="javascript:void(0)" onclick="showSection('holdingsSection')">Holdings</a>
-        <a href="javascript:void(0)" onclick="showSection('calculatorSection')">Calculator</a>
-        <a href="javascript:void(0)" onclick="showSection('resultsSection')">Results</a>
-        <a href="javascript:void(0)" onclick="showSection('screenersSection')">Screeners</a>
-        <a href="javascript:void(0)" onclick="showSection('wishlistSection')">Wishlist</a>
-        <a href="javascript:void(0)" onclick="showSection('tradeCalcSection')">Trade Calc</a>
-        <a href="javascript:void(0)" onclick="showSection('chartSection')">Chart + RSI</a>
-        <a href="javascript:void(0)" onclick="showSection('analysisSection')">Analyse</a>
-        <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
-        <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
-        <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
-        <a href="javascript:void(0)" onclick="showSection('patternSection')">WL Status</a>
-        <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
-    </nav>
+<nav class="top-menu" aria-label="Dashboard navigation">
+    <a class="menu-top" href="#top">↑ Top</a>
+    <a href="javascript:void(0)" onclick="showSection('settingsSection')">Rates</a>
+    <a href="javascript:void(0)" onclick="showSection('holdingsSection')">Holdings</a>
+    <a href="javascript:void(0)" onclick="showSection('calculatorSection')">Calculator</a>
+    <a href="javascript:void(0)" onclick="showSection('resultsSection')">Results</a>
+    <a href="javascript:void(0)" onclick="showSection('screenersSection')">Screeners</a>
+    <a href="javascript:void(0)" onclick="showSection('wishlistSection')">Wishlist</a>
+    <a href="javascript:void(0)" onclick="showSection('tradeCalcSection')">Trade Calc</a>
+    <a href="javascript:void(0)" onclick="showSection('chartSection')">Chart + RSI</a>
+    <a href="javascript:void(0)" onclick="showSection('analysisSection')">Analyse</a>
+    <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
+    <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
+    <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
+    <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
+</nav>
+    
 
     <p class="note">
         Intended for Indian equity delivery trades. Holdings and prices are loaded from your local server.
@@ -5898,89 +5901,88 @@ function displayWlPatternResults(analysis) {
     renderWlPatternChart(analysis);
 }
 
-function renderWlPatternChart(analysis) {
-    const ctx = document.getElementById("wlPatternChart").getContext("2d");
-    if (wlPatternChart) wlPatternChart.destroy();
-
-    const toMinutes = t => {
-        if (!t) return null;
-        const [h, m] = t.split(':').map(Number);
-        return h * 60 + m;
-    };
-
-    wlPatternChart = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            labels: analysis.dates,
-            datasets: [
-                {
-                    label: 'Daily High Time',
-                    data: analysis.dates.map((d, i) => ({
-                        x: i,
-                        y: toMinutes(analysis.dailyData[d].highTime)
-                    })),
-                    backgroundColor: '#27ae60',
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                },
-                {
-                    label: 'Daily Low Time',
-                    data: analysis.dates.map((d, i) => ({
-                        x: i,
-                        y: toMinutes(analysis.dailyData[d].lowTime)
-                    })),
-                    backgroundColor: '#e74c3c',
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Intraday High/Low Pattern (5‑minute candles)',
-                    font: { size: 15 }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            const mins = context.raw.y;
-                            if (mins == null) return context.dataset.label;
-                            const h = Math.floor(mins / 60);
-                            const m = mins % 60;
-                            return context.dataset.label + ': ' +
-                                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-                        }
+wlPatternChart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+        labels: analysis.dates,
+        datasets: [
+            {
+                label: 'Daily High Time',
+                data: analysis.dates.map((d, i) => ({
+                    x: i,
+                    y: toMinutes(analysis.dailyData[d].highTime)
+                })),
+                backgroundColor: '#27ae60',
+                borderColor: '#27ae60',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                showLine: true,
+                lineTension: 0.2
+            },
+            {
+                label: 'Daily Low Time',
+                data: analysis.dates.map((d, i) => ({
+                    x: i,
+                    y: toMinutes(analysis.dailyData[d].lowTime)
+                })),
+                backgroundColor: '#e74c3c',
+                borderColor: '#e74c3c',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                showLine: true,
+                lineTension: 0.2
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Intraday High/Low Pattern (5‑minute candles)',
+                font: { size: 15 }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        const mins = context.raw.y;
+                        if (mins == null) return context.dataset.label;
+                        const h = Math.floor(mins / 60);
+                        const m = mins % 60;
+                        return context.dataset.label + ': ' +
+                            String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
                     }
+                }
+            }
+        },
+        scales: {
+            x: {
+                title: { display: true, text: 'Date' },
+                ticks: {
+                    maxTicksLimit: 10,
+                    callback: function (val) { return analysis.dates[val]; }
                 }
             },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Date' },
-                    ticks: {
-                        maxTicksLimit: 10,
-                        callback: function (val) { return analysis.dates[val]; }
-                    }
-                },
-                y: {
-                    title: { display: true, text: 'Time of Day' },
-                    min: 9 * 60,
-                    max: 15.5 * 60,
-                    ticks: {
-                        callback: function (v) {
-                            const h = Math.floor(v / 60);
-                            const m = Math.round(v % 60);
-                            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-                        }
+            y: {
+                title: { display: true, text: 'Time of Day' },
+                min: 9 * 60,
+                max: 15.5 * 60,
+                ticks: {
+                    callback: function (v) {
+                        const h = Math.floor(v / 60);
+                        const m = Math.round(v % 60);
+                        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
                     }
                 }
             }
         }
-    });
+    }
+});
+
+
+    
 }
 </script>
 </body>
