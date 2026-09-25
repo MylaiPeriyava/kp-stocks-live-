@@ -1541,8 +1541,8 @@
             class="header-img"
         >
 
-        <h1 class="header-title">KP's Stocks (Live)</h1>
-
+<h1 class="header-title" id="pageHeaderTitle">KP's Stocks (Live)</h1>
+        
         <img
             src="https://www.ganesasarma.com/MPS2.jpg"
             alt="KP Stocks right header image"
@@ -5359,9 +5359,21 @@ function showSection(sectionId) {
             return;
         }
 
-        authUser = u;
-        sessionStorage.setItem('kp_stocks_user', u);
-        hideAuth();
+authUser = u;
+sessionStorage.setItem('kp_stocks_user', u);
+hideAuth();
+
+CURRENT_USER = u;
+
+const titleText = buildPageTitle(u);
+document.title = titleText;
+const headerEl = document.getElementById('pageHeaderTitle');
+if (headerEl) {
+    headerEl.textContent = titleText;
+}
+
+location.reload();
+        
 
 CURRENT_USER = u;
 document.title = buildPageTitle(u);  // ← add this if missing
