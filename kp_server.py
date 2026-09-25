@@ -619,40 +619,64 @@ def save_rates():
 
 @app.route("/chart-data")
 def chart_data():
-    symbol = request.args.get("symbol", "")
-    period = request.args.get("period", "1mo")
-    interval = request.args.get("interval", "1d")
-    
-    if not symbol:
-        return jsonify({"error": "Symbol is required."}), 400
-    
+    user_symbol = request.args.get("symbol", "").strip()
+    period = request.args.get("period", "1mo").strip()
+    interval = request.args.get("interval", "1d").strip()
+    rsi_period_text = request.args.get("rsi", "14").strip()
+    if not user_symbol:
+        return jsonify({"error": "symbol parameter required"}), 400
+    allowed_periods = {"5d", "1mo", "3mo", "6mo", "1y"}
+    allowed_intervals = {"1d", "30m", "60m"}
+    if period not in allowed_periods:
+        return jsonify({"error": "Unsupported period. Use 5d, 1mo, 3mo, 6mo, or 1y."}), 400
+    if interval not in allowed_intervals:
+        return jsonify({"error": "Unsupported interval. Use 1d, 30m, or 60m."}), 400
+    if interval in ("30m", "60m") and period not in ("5d", "1mo"):
+        return jsonify({"error": "Intraday intervals only supported for 5d and 1mo."}), 400
     try:
-        ticker = yf.Ticker(symbol)
-        
-        # Fetch historical data
+        rsi_period = int(rsi_period_text)
+    except ValueError:
+        rsi_period = 14
+    rsi_period = max(2, min(rsi_period, 50))
+    yahoo_symbol = to_yahoo_symbol(user_symbol)
+    try:
+        ticker = yf.Ticker(yahoo_symbol)
         history = ticker.history(period=period, interval=interval, auto_adjust=False)
-        
-        if history.empty:
-            return jsonify({"error": "No data available for this symbol."}), 404
-        
+        if history is None or history.empty:
+            return jsonify({"error": "No chart data for " + yahoo_symbol}), 404
         candles = []
-        for timestamp, row in history.iterrows():
-            # Format timestamp as ISO string
-            time_str = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
-            
-            candles.append([
-                time_str,
-                round(float(row["Open"]), 2),
-                round(float(row["High"]), 2),
-                round(float(row["Low"]), 2),
-                round(float(row["Close"]), 2),
-                int(row["Volume"])
-            ])
-        
-        return jsonify({"candles": candles})
-    
+        close_values = []
+        candle_times = []
+        use_unix_time = interval in ("30m", "60m")
+        for index_value, row in history.iterrows():
+            open_price = safe_number(row.get("Open"))
+            high_price = safe_number(row.get("High"))
+            low_price = safe_number(row.get("Low"))
+            close_price = safe_number(row.get("Close"))
+            volume = safe_number(row.get("Volume"))
+            if open_price is None or high_price is None or low_price is None or close_price is None:
+                continue
+            try:
+                import pandas as pd
+                ts = pd.Timestamp(index_value)
+                time_value = int(ts.timestamp()) if use_unix_time else index_value.strftime("%Y-%m-%d")
+            except:
+                continue
+            candles.append({"time": time_value, "open": round(open_price, 2), "high": round(high_price, 2), "low": round(low_price, 2), "close": round(close_price, 2), "volume": int(volume) if volume else 0})
+            close_values.append(close_price)
+            candle_times.append(time_value)
+        if not candles:
+            return jsonify({"error": "No valid OHLC data"}), 404
+        rsi_values = calculate_rsi(close_values, rsi_period)
+        ema9_values = calculate_ema(close_values, 9)
+        ema21_values = calculate_ema(close_values, 21)
+        rsi_data = [{"time": candle_times[i], "value": round(rsi_values[i], 2)} for i in range(len(rsi_values)) if rsi_values[i] is not None]
+        ema9_data = [{"time": candle_times[i], "value": round(ema9_values[i], 2)} for i in range(len(ema9_values)) if ema9_values[i] is not None]
+        ema21_data = [{"time": candle_times[i], "value": round(ema21_values[i], 2)} for i in range(len(ema21_values)) if ema21_values[i] is not None]
+        return jsonify({"symbol": display_nse_symbol(user_symbol), "yahooSymbol": yahoo_symbol, "period": period, "interval": interval, "rsiPeriod": rsi_period, "latestClose": candles[-1]["close"], "latestRsi": rsi_data[-1]["value"] if rsi_data else None, "candles": candles, "rsi": rsi_data, "ema9": ema9_data, "ema21": ema21_data})
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+
         
 
 if __name__ == "__main__":
