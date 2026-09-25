@@ -5252,14 +5252,12 @@ function computeAndRenderPortfolioTargets(requiredPercent) {
 
 /* ==================== PAGE LOAD & SECTION NAVIGATION ==================== */
 function showSection(sectionId) {
-    // Toggle .section-block.active
     document.querySelectorAll('.section-block').forEach(el => el.classList.remove('active'));
     const targetBlock = document.getElementById(sectionId)?.closest('.section-block');
     if (targetBlock) {
         targetBlock.classList.add('active');
     }
 
-    // Explicitly control section display
     document.querySelectorAll('.section-anchor').forEach(sec => {
         sec.style.display = 'none';
     });
@@ -5272,6 +5270,7 @@ function showSection(sectionId) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+    
 (async function initPage() {
     await loadRatesFromServer();
     document.title = buildPageTitle(CURRENT_USER);
