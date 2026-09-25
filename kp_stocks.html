@@ -5277,8 +5277,22 @@ function showSection(sectionId) {
 
     
 (async function initPage() {
+    // Ensure CURRENT_USER is set from sessionStorage before using it
+    const stored = sessionStorage.getItem('kp_stocks_user');
+    if (stored) {
+        CURRENT_USER = stored;
+    }
+
     await loadRatesFromServer();
-    document.title = buildPageTitle(CURRENT_USER);
+
+    // Set both browser tab title and on-page header
+    const titleText = buildPageTitle(CURRENT_USER);
+    document.title = titleText;
+    const headerEl = document.getElementById('pageHeaderTitle');
+    if (headerEl) {
+        headerEl.textContent = titleText;
+    }
+
     setSettingsInputsFromValues();
 
     document.getElementById("brokerageBuy1").value = settings.buyBrokerage;
@@ -5300,6 +5314,7 @@ function showSection(sectionId) {
     onChartIntervalChange();
     startAutoRefresh();
 })();
+    
 
 /* ==================== AUTHENTICATION (IF USED) ==================== */
 (function () {
