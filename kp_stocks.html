@@ -1612,6 +1612,32 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* WL Pattern Analysis styles */
+.wl-pattern-period-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.wl-pattern-period-btn:hover {
+    background: #f0f0f0;
+}
+
+.wl-pattern-period-btn.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+@keyframes wlPatternSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
     
     
 </style>
@@ -1652,7 +1678,8 @@
         <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
         <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
         <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
-        <a href="javascript:void(0)" onclick="showSection('patternSection')">Pattern</a>
+        <a href="javascript:void(0)" onclick="showSection('patternSection')">WL Status</a>
+        <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
     </nav>
 
     <p class="note">
@@ -6996,7 +7023,261 @@ function renderPatternChart(analysis) {
     });
 }
     
+// WL Pattern Analysis
+let wlPatternChart = null;
+let wlPatternDays = 30;
 
+function setWlPatternDays(days) {
+    wlPatternDays = days;
+    document.querySelectorAll('.wl-pattern-period-btn').forEach(btn => {
+        btn.classList.remove('active');
+        const m = btn.getAttribute('onclick').match(/\d+/);
+        if (m && parseInt(m[0]) === days) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function initWlPatternSection() {
+    const select = document.getElementById("wlPatternSymbol");
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Select from wishlist...</option>';
+    if (typeof wishlist !== 'undefined' && wishlist.length > 0) {
+        wishlist.forEach(symbol => {
+            const option = document.createElement("option");
+            option.value = symbol;
+            option.textContent = symbol;
+            select.appendChild(option);
+        });
+    }
+}
+
+// Hook into your existing showSection
+(function () {
+    const oldShow = window.showSection;
+    window.showSection = function (sectionId) {
+        if (sectionId === 'wlPatternSection') {
+            initWlPatternSection();
+        }
+        oldShow(sectionId);
+    };
+})();
+
+async function analyzeWlPattern() {
+    const symbol = document.getElementById("wlPatternSymbol").value;
+    if (!symbol) {
+        alert("Please select a symbol from the wishlist.");
+        return;
+    }
+
+    document.getElementById("wlPatternResults").style.display = "none";
+    document.getElementById("wlPatternLoading").style.display = "block";
+
+    try {
+        const response = await fetch(
+            API_BASE + "/wl-pattern-data?symbol=" + encodeURIComponent(symbol) + "&days=" + wlPatternDays
+        );
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || ("HTTP " + response.status));
+        }
+
+        const data = await response.json();
+        if (!data.candles || data.candles.length === 0) {
+            throw new Error("No data available for this symbol");
+        }
+
+        const analysis = processWlPatternData(data.candles);
+        displayWlPatternResults(analysis);
+
+        document.getElementById("wlPatternLoading").style.display = "none";
+        document.getElementById("wlPatternResults").style.display = "block";
+    } catch (error) {
+        document.getElementById("wlPatternLoading").style.display = "none";
+        alert("Error analyzing pattern: " + error.message);
+    }
+}
+
+function processWlPatternData(candles) {
+    const dailyData = {};
+
+    candles.forEach(candle => {
+        const dateTime = candle[0];
+        const date = dateTime.split('T')[0];
+        const time = dateTime.split('T')[1];
+
+        if (!dailyData[date]) {
+            dailyData[date] = { high: -Infinity, low: Infinity, highTime: null, lowTime: null };
+        }
+
+        const high = candle[2];
+        const low = candle[3];
+
+        if (high > dailyData[date].high) {
+            dailyData[date].high = high;
+            dailyData[date].highTime = time;
+        }
+        if (low < dailyData[date].low) {
+            dailyData[date].low = low;
+            dailyData[date].lowTime = time;
+        }
+    });
+
+    const highTimeCounts = {};
+    const lowTimeCounts = {};
+    const dates = Object.keys(dailyData).sort();
+
+    dates.forEach(date => {
+        if (dailyData[date].highTime) {
+            const w = getWlPatternTimeWindow(dailyData[date].highTime);
+            highTimeCounts[w] = (highTimeCounts[w] || 0) + 1;
+        }
+        if (dailyData[date].lowTime) {
+            const w = getWlPatternTimeWindow(dailyData[date].lowTime);
+            lowTimeCounts[w] = (lowTimeCounts[w] || 0) + 1;
+        }
+    });
+
+    const mostCommonHigh = Object.entries(highTimeCounts).sort((a, b) => b[1] - a[1])[0];
+    const mostCommonLow = Object.entries(lowTimeCounts).sort((a, b) => b[1] - a[1])[0];
+
+    return {
+        days: dates.length,
+        mostCommonHigh: mostCommonHigh ? mostCommonHigh[0] : '-',
+        mostCommonLow: mostCommonLow ? mostCommonLow[0] : '-',
+        dates: dates,
+        dailyData: dailyData,
+        highTimeCounts: highTimeCounts,
+        lowTimeCounts: lowTimeCounts
+    };
+}
+
+function getWlPatternTimeWindow(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    const total = h * 60 + m;
+    const start = Math.floor(total / 15) * 15;
+    const end = start + 15;
+    const sh = Math.floor(start / 60), sm = start % 60;
+    const eh = Math.floor(end / 60), em = end % 60;
+    return String(sh).padStart(2, '0') + ':' + String(sm).padStart(2, '0') + '-' +
+           String(eh).padStart(2, '0') + ':' + String(em).padStart(2, '0');
+}
+
+function displayWlPatternResults(analysis) {
+    document.getElementById("wlPatternDaysCount").textContent = analysis.days;
+    document.getElementById("wlPatternHighTime").textContent = analysis.mostCommonHigh;
+    document.getElementById("wlPatternLowTime").textContent = analysis.mostCommonLow;
+
+    const list = document.getElementById("wlPatternInsightsList");
+    list.innerHTML = '';
+
+    if (analysis.mostCommonHigh !== '-') {
+        list.innerHTML += '<li>Daily high most frequent: ' + analysis.mostCommonHigh + '</li>';
+    }
+    if (analysis.mostCommonLow !== '-') {
+        list.innerHTML += '<li>Daily low most frequent: ' + analysis.mostCommonLow + '</li>';
+    }
+
+    const top3 = Object.entries(analysis.highTimeCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+    if (top3.length > 1) {
+        list.innerHTML += '<li>Top 3 high windows: ' + top3.map(x => x[0]).join(', ') + '</li>';
+    }
+
+    renderWlPatternChart(analysis);
+}
+
+function renderWlPatternChart(analysis) {
+    const ctx = document.getElementById("wlPatternChart").getContext("2d");
+    if (wlPatternChart) wlPatternChart.destroy();
+
+    const toMinutes = t => {
+        if (!t) return null;
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    wlPatternChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            labels: analysis.dates,
+            datasets: [
+                {
+                    label: 'Daily High Time',
+                    data: analysis.dates.map((d, i) => ({
+                        x: i,
+                        y: toMinutes(analysis.dailyData[d].highTime)
+                    })),
+                    backgroundColor: '#27ae60',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                },
+                {
+                    label: 'Daily Low Time',
+                    data: analysis.dates.map((d, i) => ({
+                        x: i,
+                        y: toMinutes(analysis.dailyData[d].lowTime)
+                    })),
+                    backgroundColor: '#e74c3c',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Intraday High/Low Pattern (5‑minute candles)',
+                    font: { size: 15 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const mins = context.raw.y;
+                            if (mins == null) return context.dataset.label;
+                            const h = Math.floor(mins / 60);
+                            const m = mins % 60;
+                            return context.dataset.label + ': ' +
+                                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date' },
+                    ticks: {
+                        maxTicksLimit: 10,
+                        callback: function (val) {
+                            return analysis.dates[val];
+                        }
+                    }
+                },
+                y: {
+                    title: { display: true, text: 'Time of Day' },
+                    min: 9 * 60,
+                    max: 15.5 * 60,
+                    ticks: {
+                        callback: function (v) {
+                            const h = Math.floor(v / 60);
+                            const m = Math.round(v % 60);
+                            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+            
 </script>
 
 
@@ -7080,6 +7361,68 @@ function renderPatternChart(analysis) {
 
 </section>
 </div>
-    
+
+<section id="wlPatternSection" class="section-anchor" style="display:none;">
+    <div class="card">
+        <h2>WL Pattern Analysis</h2>
+        <p class="section-help">
+            Analyze when stocks typically reach their daily high and low. Select a symbol from your wishlist, choose a period, and click Analyze.
+        </p>
+
+        <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <label style="font-weight: 600;">Symbol:</label>
+                <select id="wlPatternSymbol" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 150px;">
+                    <option value="">Select from wishlist...</option>
+                </select>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" onclick="setWlPatternDays(90)" class="wl-pattern-period-btn">3 months</button>
+                    <button type="button" onclick="setWlPatternDays(60)" class="wl-pattern-period-btn">2 months</button>
+                    <button type="button" onclick="setWlPatternDays(30)" class="wl-pattern-period-btn active">1 month</button>
+                    <button type="button" onclick="setWlPatternDays(15)" class="wl-pattern-period-btn">15 days</button>
+                    <button type="button" onclick="setWlPatternDays(7)" class="wl-pattern-period-btn">1 week</button>
+                </div>
+
+                <button type="button" onclick="analyzeWlPattern()" style="padding: 10px 24px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    🔍 Analyze
+                </button>
+            </div>
+        </div>
+
+        <div id="wlPatternResults" style="display: none; margin-top: 30px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+                    <div style="font-size: 12px; color: #7f8c8d;">Days Analyzed:</div>
+                    <div style="font-size: 18px; font-weight: 700;" id="wlPatternDaysCount">0</div>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
+                    <div style="font-size: 12px; color: #7f8c8d;">Most Common High Time:</div>
+                    <div style="font-size: 18px; font-weight: 700;" id="wlPatternHighTime">-</div>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                    <div style="font-size: 12px; color: #7f8c8d;">Most Common Low Time:</div>
+                    <div style="font-size: 18px; font-weight: 700;" id="wlPatternLowTime">-</div>
+                </div>
+            </div>
+
+            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                <canvas id="wlPatternChart"></canvas>
+            </div>
+
+            <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
+                <h3 style="margin: 0 0 15px 0; color: #f39c12; font-size: 16px;">Key Insights:</h3>
+                <ul id="wlPatternInsightsList" style="margin: 0; padding-left: 20px;"></ul>
+            </div>
+        </div>
+
+        <div id="wlPatternLoading" style="display: none; text-align: center; padding: 40px;">
+            <div style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: wlPatternSpin 1s linear infinite; margin: 0 auto;"></div>
+            <p style="margin-top: 15px; color: #7f8c8d;">Analyzing intraday patterns...</p>
+        </div>
+    </div>
+</section>
+
+            
 </body>
 </html>
