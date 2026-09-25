@@ -1573,8 +1573,9 @@
     <!-- ==================== ALL SECTIONS ==================== -->
 
     <!-- Rates and Defaults -->
-    <div class="section-block active">
-    <section id="settingsSection" class="section-anchor">
+<!-- Rates and Defaults -->
+<div class="section-block">
+<section id="settingsSection" class="section-anchor">
         <div class="card settings-card">
             <div class="settings-title-row">
                 <h2>Rates & Defaults</h2>
@@ -1662,8 +1663,9 @@
     </div>
 
     <!-- Holdings -->
-    <div class="section-block">
-    <section id="holdingsSection" class="section-anchor">
+<!-- Holdings -->
+<div class="section-block active">
+<section id="holdingsSection" class="section-anchor">
         <div class="card">
             <div class="row-label">Holdings (live from server)</div>
 
@@ -5981,7 +5983,97 @@ wlPatternChart = new Chart(ctx, {
 });
 
 
+function renderWlPatternChart(analysis) {
+    const ctx = document.getElementById("wlPatternChart").getContext("2d");
+    if (wlPatternChart) wlPatternChart.destroy();
 
+    const toMinutes = t => {
+        if (!t) return null;
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    wlPatternChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            labels: analysis.dates,
+            datasets: [
+                {
+                    label: 'Daily High Time',
+                    data: analysis.dates.map((d, i) => ({
+                        x: i,
+                        y: toMinutes(analysis.dailyData[d].highTime)
+                    })),
+                    backgroundColor: '#27ae60',
+                    borderColor: '#27ae60',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    showLine: true,
+                    lineTension: 0.2
+                },
+                {
+                    label: 'Daily Low Time',
+                    data: analysis.dates.map((d, i) => ({
+                        x: i,
+                        y: toMinutes(analysis.dailyData[d].lowTime)
+                    })),
+                    backgroundColor: '#e74c3c',
+                    borderColor: '#e74c3c',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    showLine: true,
+                    lineTension: 0.2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Intraday High/Low Pattern (5‑minute candles)',
+                    font: { size: 15 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const mins = context.raw.y;
+                            if (mins == null) return context.dataset.label;
+                            const h = Math.floor(mins / 60);
+                            const m = mins % 60;
+                            return context.dataset.label + ': ' +
+                                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date' },
+                    ticks: {
+                        maxTicksLimit: 10,
+                        callback: function (val) { return analysis.dates[val]; }
+                    }
+                },
+                y: {
+                    title: { display: true, text: 'Time of Day' },
+                    min: 9 * 60,
+                    max: 15.5 * 60,
+                    ticks: {
+                        callback: function (v) {
+                            const h = Math.floor(v / 60);
+                            const m = Math.round(v % 60);
+                            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+    
 </script>
 </body>
 </html>
