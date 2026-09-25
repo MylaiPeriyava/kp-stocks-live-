@@ -2865,7 +2865,6 @@
                     </select>
 
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button type="button" onclick="setWlPatternDays(90)" class="wl-pattern-period-btn">3 months</button>
                         <button type="button" onclick="setWlPatternDays(60)" class="wl-pattern-period-btn">2 months</button>
                         <button type="button" onclick="setWlPatternDays(30)" class="wl-pattern-period-btn active">1 month</button>
                         <button type="button" onclick="setWlPatternDays(15)" class="wl-pattern-period-btn">15 days</button>
@@ -5364,8 +5363,10 @@ function showSection(sectionId) {
         sessionStorage.setItem('kp_stocks_user', u);
         hideAuth();
 
-        CURRENT_USER = u;
-        location.reload();
+CURRENT_USER = u;
+document.title = buildPageTitle(u);  // ← add this if missing
+location.reload();
+        
     }
 
     const stored = sessionStorage.getItem('kp_stocks_user');
