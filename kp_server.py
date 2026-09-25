@@ -677,6 +677,71 @@ def chart_data():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+@app.route("/pattern-data")
+def pattern_data():
+    """Dedicated endpoint for pattern analysis - returns raw 5-minute candles"""
+    user_symbol = request.args.get("symbol", "").strip()
+    days = request.args.get("days", "30").strip()
+    
+    if not user_symbol:
+        return jsonify({"error": "symbol parameter required"}), 400
+    
+    try:
+        days_int = int(days)
+        days_int = max(7, min(days_int, 90))  # Limit 7-90 days
+    except ValueError:
+        days_int = 30
+    
+    yahoo_symbol = to_yahoo_symbol(user_symbol)
+    
+    try:
+        ticker = yf.Ticker(yahoo_symbol)
+        
+        # Fetch 5-minute data
+        history = ticker.history(period=f"{days_int}d", interval="5m", auto_adjust=False)
+        
+        if history is None or history.empty:
+            return jsonify({"error": "No pattern data for " + yahoo_symbol}), 404
+        
+        candles = []
+        for index_value, row in history.iterrows():
+            open_price = safe_number(row.get("Open"))
+            high_price = safe_number(row.get("High"))
+            low_price = safe_number(row.get("Low"))
+            close_price = safe_number(row.get("Close"))
+            volume = safe_number(row.get("Volume"))
+            
+            if open_price is None or high_price is None or low_price is None or close_price is None:
+                continue
+            
+            try:
+                import pandas as pd
+                ts = pd.Timestamp(index_value)
+                time_str = ts.strftime("%Y-%m-%dT%H:%M:%S")
+            except:
+                continue
+            
+            candles.append([
+                time_str,
+                round(open_price, 2),
+                round(high_price, 2),
+                round(low_price, 2),
+                round(close_price, 2),
+                int(volume) if volume else 0
+            ])
+        
+        if not candles:
+            return jsonify({"error": "No valid OHLC data"}), 404
+        
+        return jsonify({
+            "symbol": display_nse_symbol(user_symbol),
+            "yahooSymbol": yahoo_symbol,
+            "days": days_int,
+            "candles": candles
+        })
+    
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
         
 
 if __name__ == "__main__":
