@@ -1413,23 +1413,27 @@
     }
 
     /* ----- WL Pattern Analysis (scatter chart) ----- */
-    .wl-pattern-period-btn {
-        padding: 8px 16px;
-        border: 1px solid #ddd;
-        background: white;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 13px;
-        transition: all 0.2s;
-    }
+.wl-pattern-period-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: #ffffff;        /* light background */
+    color: #173b63;             /* dark text */
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
 
-    .wl-pattern-period-btn:hover { background: #f0f0f0; }
+.wl-pattern-period-btn:hover {
+    background: #f0f0f0;
+}
 
-    .wl-pattern-period-btn.active {
-        background: #3498db;
-        color: white;
-        border-color: #3498db;
-    }
+.wl-pattern-period-btn.active {
+    background: #3498db;
+    color: #ffffff;             /* white text on blue */
+    border-color: #3498db;
+}
+    
 
     @keyframes wlPatternSpin {
         0% { transform: rotate(0deg); }
