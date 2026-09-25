@@ -675,5 +675,44 @@ def save_rates():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+
+@app.route("/chart-data")
+def chart_data():
+    symbol = request.args.get("symbol", "")
+    period = request.args.get("period", "1mo")
+    interval = request.args.get("interval", "1d")
+    
+    if not symbol:
+        return jsonify({"error": "Symbol is required."}), 400
+    
+    try:
+        ticker = yf.Ticker(symbol)
+        
+        # Fetch historical data
+        history = ticker.history(period=period, interval=interval, auto_adjust=False)
+        
+        if history.empty:
+            return jsonify({"error": "No data available for this symbol."}), 404
+        
+        candles = []
+        for timestamp, row in history.iterrows():
+            # Format timestamp as ISO string
+            time_str = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+            
+            candles.append([
+                time_str,
+                round(float(row["Open"]), 2),
+                round(float(row["High"]), 2),
+                round(float(row["Low"]), 2),
+                round(float(row["Close"]), 2),
+                int(row["Volume"])
+            ])
+        
+        return jsonify({"candles": candles})
+    
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+        
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
