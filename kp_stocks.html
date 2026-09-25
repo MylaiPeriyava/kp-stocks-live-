@@ -6717,6 +6717,7 @@ document.querySelectorAll('.pattern-period-btn').forEach(btn => {
 });
 
 // Analyze Pattern
+// Analyze Pattern
 async function analyzePattern() {
     const symbol = document.getElementById("patternSymbol").value;
     const resultsDiv = document.getElementById("patternResults");
@@ -6731,14 +6732,15 @@ async function analyzePattern() {
     loadingDiv.style.display = "block";
     
     try {
-        // Fetch 5-minute data for the selected period
+        // Fetch 5-minute data from NEW pattern-data endpoint
         const response = await fetch(
-            API_BASE + "/chart-data?symbol=" + encodeURIComponent(symbol) + 
-            "&period=" + patternDays + "d&interval=5m"
+            API_BASE + "/pattern-data?symbol=" + encodeURIComponent(symbol) + 
+            "&days=" + patternDays
         );
         
         if (!response.ok) {
-            throw new Error("Failed to fetch data");
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || ("HTTP " + response.status));
         }
         
         const data = await response.json();
