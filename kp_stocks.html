@@ -14,6 +14,23 @@
 <!-- ==================== ALL CSS STYLES ==================== -->
 <!-- ========================================================= -->
 <style>
+/* Smooth fade-in for the main header text */
+#pageHeaderTitle {
+    opacity: 0;
+    animation: kpHeaderFadeIn 0.35s ease-out forwards;
+}
+
+@keyframes kpHeaderFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+    
     /* ----- Core variables and base styles ----- */
     :root {
         --blue: #0b5cab;
