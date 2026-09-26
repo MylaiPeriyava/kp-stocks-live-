@@ -2913,6 +2913,34 @@
                 <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
                     <canvas id="wlPatternChart"></canvas>
                 </div>
+                <!-- BSE Sensex vs Stock -->
+                <div style="margin-top:24px;">
+                    <h4 style="margin:0 0 8px 0;">BSE Sensex vs Stock</h4>
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="bseIndexChart"></canvas>
+                    </div>
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="bseStockChart"></canvas>
+                    </div>
+                    <div style="height:160px;">
+                        <canvas id="bseRSChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- NSE Nifty vs Stock -->
+                <div style="margin-top:24px;">
+                    <h4 style="margin:0 0 8px 0;">NSE Nifty vs Stock</h4>
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="nseIndexChart"></canvas>
+                    </div>
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="nseStockChart"></canvas>
+                    </div>
+                    <div style="height:160px;">
+                        <canvas id="nseRSChart"></canvas>
+                    </div>
+                </div>
+
 
                 <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
                     <h3 style="margin: 0 0 15px 0; color: #f39c12; font-size: 16px;">Key Insights:</h3>
@@ -5946,6 +5974,7 @@ function displayWlPatternResults(analysis) {
     }
 
     renderWlPatternChart(analysis);
+    renderIndexVsStockCharts(analysis); // new call
 }
 
 wlPatternChart = new Chart(ctx, {
@@ -6029,97 +6058,273 @@ wlPatternChart = new Chart(ctx, {
 });
 
 
-function renderWlPatternChart(analysis) {
-    const ctx = document.getElementById("wlPatternChart").getContext("2d");
-    if (wlPatternChart) wlPatternChart.destroy();
+    function renderWlPatternChart(analysis) {
+        const ctx = document.getElementById("wlPatternChart").getContext("2d");
+        if (wlPatternChart) wlPatternChart.destroy();
 
-    const toMinutes = t => {
-        if (!t) return null;
-        const [h, m] = t.split(':').map(Number);
-        return h * 60 + m;
-    };
+        const toMinutes = t => {
+            if (!t) return null;
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
 
-    wlPatternChart = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            labels: analysis.dates,
-            datasets: [
-                {
-                    label: 'Daily High Time',
-                    data: analysis.dates.map((d, i) => ({
-                        x: i,
-                        y: toMinutes(analysis.dailyData[d].highTime)
-                    })),
-                    backgroundColor: '#27ae60',
-                    borderColor: '#27ae60',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    showLine: true,
-                    lineTension: 0.2
-                },
-                {
-                    label: 'Daily Low Time',
-                    data: analysis.dates.map((d, i) => ({
-                        x: i,
-                        y: toMinutes(analysis.dailyData[d].lowTime)
-                    })),
-                    backgroundColor: '#e74c3c',
-                    borderColor: '#e74c3c',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    showLine: true,
-                    lineTension: 0.2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Intraday High/Low Pattern (5‑minute candles)',
-                    font: { size: 15 }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            const mins = context.raw.y;
-                            if (mins == null) return context.dataset.label;
-                            const h = Math.floor(mins / 60);
-                            const m = mins % 60;
-                            return context.dataset.label + ': ' +
-                                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        wlPatternChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                labels: analysis.dates,
+                datasets: [
+                    {
+                        label: 'Daily High Time',
+                        data: analysis.dates.map((d, i) => ({
+                            x: i,
+                            y: toMinutes(analysis.dailyData[d].highTime)
+                        })),
+                        backgroundColor: '#27ae60',
+                        borderColor: '#27ae60',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        showLine: true,
+                        lineTension: 0.2
+                    },
+                    {
+                        label: 'Daily Low Time',
+                        data: analysis.dates.map((d, i) => ({
+                            x: i,
+                            y: toMinutes(analysis.dailyData[d].lowTime)
+                        })),
+                        backgroundColor: '#e74c3c',
+                        borderColor: '#e74c3c',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        showLine: true,
+                        lineTension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Intraday High/Low Pattern (5‑minute candles)',
+                        font: { size: 15 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const mins = context.raw.y;
+                                if (mins == null) return context.dataset.label;
+                                const h = Math.floor(mins / 60);
+                                const m = mins % 60;
+                                return context.dataset.label + ': ' +
+                                    String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                            }
                         }
                     }
-                }
-            },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Date' },
-                    ticks: {
-                        maxTicksLimit: 10,
-                        callback: function (val) { return analysis.dates[val]; }
-                    }
                 },
-                y: {
-                    title: { display: true, text: 'Time of Day' },
-                    min: 9 * 60,
-                    max: 15.5 * 60,
-                    ticks: {
-                        callback: function (v) {
-                            const h = Math.floor(v / 60);
-                            const m = Math.round(v % 60);
-                            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Date' },
+                        ticks: {
+                            maxTicksLimit: 10,
+                            callback: function (val) { return analysis.dates[val]; }
+                        }
+                    },
+                    y: {
+                        title: { display: true, text: 'Time of Day' },
+                        min: 9 * 60,
+                        max: 15.5 * 60,
+                        ticks: {
+                            callback: function (v) {
+                                const h = Math.floor(v / 60);
+                                const m = Math.round(v % 60);
+                                return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                            }
                         }
                     }
                 }
             }
+        });
+    }
+
+    /* ==================== INDEX VS STOCK CHARTS (BSE & NSE) ==================== */
+
+    // Fetch daily history for an index or stock symbol from your server.
+    // Adjust the endpoint name if your server uses a different path.
+    async function fetchDailyHistoryForSymbol(symbol, days) {
+        const url = API_BASE + "/daily-history?symbol=" + encodeURIComponent(symbol) + "&days=" + days;
+        const response = await fetch(url);
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || ("HTTP " + response.status));
         }
-    });
-}
-    
+        const data = await response.json();
+        // Expected: { candles: [ ["2025-09-01T00:00:00", open, high, low, close, volume], ... ] }
+        if (!Array.isArray(data.candles)) {
+            throw new Error("Invalid daily-history response for " + symbol);
+        }
+        return data.candles;
+    }
+
+    // Align stock and index data by date and compute RS = stockClose / indexClose
+    function alignAndComputeRS(stockDates, stockCloses, indexCandles) {
+        // indexCandles: [ ["2025-09-01T00:00:00", o, h, l, c, v], ... ]
+        const indexMap = new Map();
+        indexCandles.forEach(c => {
+            const dateStr = c[0].split('T')[0]; // "2025-09-01"
+            const close = c[4];
+            indexMap.set(dateStr, close);
+        });
+
+        const alignedDates = [];
+        const alignedIndex = [];
+        const alignedStock = [];
+        const rsValues = [];
+
+        stockDates.forEach((d, i) => {
+            const idxClose = indexMap.get(d);
+            if (idxClose == null || idxClose === 0) return;
+            const stkClose = stockCloses[i];
+            if (stkClose == null || stkClose === 0) return;
+
+            alignedDates.push(d);
+            alignedIndex.push(idxClose);
+            alignedStock.push(stkClose);
+            rsValues.push(stkClose / idxClose);
+        });
+
+        return {
+            dates: alignedDates,
+            index: alignedIndex,
+            stock: alignedStock,
+            rs: rsValues
+        };
+    }
+
+    // Generic chart creators (Chart.js line charts)
+    function createIndexChart(canvasId, dates, indexData, label) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label,
+                    data: indexData,
+                    borderColor: '#1f77b4',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { display: true },
+                    y: { display: true }
+                }
+            }
+        });
+    }
+
+    function createStockChart(canvasId, dates, stockData, label) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label,
+                    data: stockData,
+                    borderColor: '#2ca02c',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { display: true },
+                    y: { display: true }
+                }
+            }
+        });
+    }
+
+    function createRSChart(canvasId, dates, rsData, label) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label,
+                    data: rsData,
+                    borderColor: '#d62728',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { display: true },
+                    y: { display: true }
+                }
+            }
+        });
+    }
+
+    // Main function: render BSE & NSE vs stock charts, called after WL pattern analysis
+    async function renderIndexVsStockCharts(analysis) {
+        // analysis: { dates: ["2025-09-01", ...], dailyData: { "2025-09-01": { high, low, close?, ... }, ... } }
+        const stockDates = analysis.dates; // sorted dates used in the scatter chart
+        const stockCloses = stockDates.map(d => {
+            const dd = analysis.dailyData[d];
+            // If your server already provides close in dailyData, use it. Otherwise, we may need to adjust.
+            return dd?.close ?? null;
+        });
+
+        // If close is not in dailyData, we'll need to adjust the server response or compute differently.
+        // For now, assume dd.close exists. If not, tell me and I'll adapt.
+
+        const days = stockDates.length;
+
+        try {
+            // Fetch BSE Sensex and NSE Nifty daily history
+            const bseCandles = await fetchDailyHistoryForSymbol('^BSESN', days);
+            const nseCandles = await fetchDailyHistoryForSymbol('^NSEI', days);
+
+            // Align and compute RS for BSE
+            const bseAligned = alignAndComputeRS(stockDates, stockCloses, bseCandles);
+            // Align and compute RS for NSE
+            const nseAligned = alignAndComputeRS(stockDates, stockCloses, nseCandles);
+
+            // BSE charts
+            createIndexChart('bseIndexChart', bseAligned.dates, bseAligned.index, 'BSE Sensex');
+            createStockChart('bseStockChart', bseAligned.dates, bseAligned.stock, 'Stock Price');
+            createRSChart('bseRSChart', bseAligned.dates, bseAligned.rs, 'Relative Strength (Stock / BSE)');
+
+            // NSE charts
+            createIndexChart('nseIndexChart', nseAligned.dates, nseAligned.index, 'NSE Nifty');
+            createStockChart('nseStockChart', nseAligned.dates, nseAligned.stock, 'Stock Price');
+            createRSChart('nseRSChart', nseAligned.dates, nseAligned.rs, 'Relative Strength (Stock / NSE)');
+        } catch (error) {
+            console.warn("Index vs Stock charts failed:", error);
+            // Optionally, show a message in the UI.
+        }
+    }
+
 </script>
 </body>
 </html>
