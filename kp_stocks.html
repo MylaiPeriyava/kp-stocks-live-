@@ -2989,8 +2989,6 @@
                         </div>
                     </div>
 
-
-
                     <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
                         <h3 style="margin: 0 0 15px 0; color: #f39c12; font-size: 16px;">Key Insights:</h3>
                         <ul id="wlPatternInsightsList" style="margin: 0; padding-left: 20px;"></ul>
@@ -3328,7 +3326,6 @@ async function applySettings() {
         calculateTrade();
     }
 
-    // Save rates to Firebase
     try {
         const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
         const response = await fetch(
@@ -3798,7 +3795,8 @@ function setAutoRefresh(enabled) {
             "Auto refresh is ON. Prices will refresh every 60 seconds.";
     } else {
         document.getElementById("refreshStatus").textContent =
-            'Auto refresh is OFF. Use "Refresh All Prices Now" whenever required.';    }
+            'Auto refresh is OFF. Use "Refresh All Prices Now" whenever required.';
+    }
 }
 
 function startAutoRefresh() {
@@ -5431,7 +5429,6 @@ function showSection(sectionId) {
 
     
 (async function initPage() {
-    // Ensure CURRENT_USER is set from sessionStorage before using it
     const stored = sessionStorage.getItem('kp_stocks_user');
     if (stored) {
         CURRENT_USER = stored;
@@ -5439,7 +5436,6 @@ function showSection(sectionId) {
 
     await loadRatesFromServer();
 
-    // Set both browser tab title and on-page header
     const titleText = buildPageTitle(CURRENT_USER);
     document.title = titleText;
     const headerEl = document.getElementById('pageHeaderTitle');
@@ -5561,7 +5557,6 @@ function showSection(sectionId) {
             btn.textContent = 'Checking...';
         }
 
-        // First, validate user + password via /validate
         try {
             const validateUrl =
                 '/validate?user=' + encodeURIComponent(u) +
@@ -5569,7 +5564,6 @@ function showSection(sectionId) {
 
             const vr = await fetch(validateUrl);
             if (!vr.ok) {
-                // Invalid user/password
                 showAuth(['Invalid user name or password']);
                 if (btn) {
                     btn.disabled = false;
@@ -5595,7 +5589,6 @@ function showSection(sectionId) {
             return;
         }
 
-        // User + password OK - now check files (legacy logic, now mostly informational)
         const files = ['Holdings_' + u + '.json', 'Rates_' + u + '.txt', 'wishlist_' + u + '.txt'];
         const missing = [];
 
