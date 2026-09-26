@@ -2916,18 +2916,31 @@
                 <!-- BSE Sensex vs Stock -->
                 <div style="margin-top:24px;">
                     <h4 style="margin:0 0 8px 0;">BSE Sensex vs Stock</h4>
-                    <div style="height:220px; background:#f9fafb; border:1px dashed #d1d5db; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#6b7280; font-size:13px;">
-                        Chart area – to be implemented
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="bseIndexChart"></canvas>
+                    </div>
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="bseStockChart"></canvas>
+                    </div>
+                    <div style="height:160px;">
+                        <canvas id="bseRSChart"></canvas>
                     </div>
                 </div>
 
                 <!-- NSE Nifty vs Stock -->
                 <div style="margin-top:24px;">
                     <h4 style="margin:0 0 8px 0;">NSE Nifty vs Stock</h4>
-                    <div style="height:220px; background:#f9fafb; border:1px dashed #d1d5db; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#6b7280; font-size:13px;">
-                        Chart area – to be implemented
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="nseIndexChart"></canvas>
+                    </div>
+                    <div style="height:220px; margin-bottom:8px;">
+                        <canvas id="nseStockChart"></canvas>
+                    </div>
+                    <div style="height:160px;">
+                        <canvas id="nseRSChart"></canvas>
                     </div>
                 </div>
+
 
 
                 <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
@@ -5880,55 +5893,68 @@ async function analyzeWlPattern() {
     }
 }
 
-function processWlPatternData(candles) {
-    const dailyData = {};
-    candles.forEach(candle => {
-        const dateTime = candle[0];
-        const date = dateTime.split('T')[0];
-        const time = dateTime.split('T')[1];
-        if (!dailyData[date]) {
-            dailyData[date] = { high: -Infinity, low: Infinity, highTime: null, lowTime: null };
-        }
-        const high = candle[2];
-        const low = candle[3];
-        if (high > dailyData[date].high) {
-            dailyData[date].high = high;
-            dailyData[date].highTime = time;
-        }
-        if (low < dailyData[date].low) {
-            dailyData[date].low = low;
-            dailyData[date].lowTime = time;
-        }
-    });
+    function processWlPatternData(candles) {
+        const dailyData = {};
+        candles.forEach(candle => {
+            const dateTime = candle[0];
+            const date = dateTime.split('T')[0];
+            const time = dateTime.split('T')[1];
+            const close = candle[4]; // add close
 
-    const highTimeCounts = {};
-    const lowTimeCounts = {};
-    const dates = Object.keys(dailyData).sort();
+            if (!dailyData[date]) {
+                dailyData[date] = {
+                    high: -Infinity,
+                    low: Infinity,
+                    highTime: null,
+                    lowTime: null,
+                    close: null
+                };
+            }
 
-    dates.forEach(date => {
-        if (dailyData[date].highTime) {
-            const w = getWlPatternTimeWindow(dailyData[date].highTime);
-            highTimeCounts[w] = (highTimeCounts[w] || 0) + 1;
-        }
-        if (dailyData[date].lowTime) {
-            const w = getWlPatternTimeWindow(dailyData[date].lowTime);
-            lowTimeCounts[w] = (lowTimeCounts[w] || 0) + 1;
-        }
-    });
+            const high = candle[2];
+            const low = candle[3];
 
-    const mostCommonHigh = Object.entries(highTimeCounts).sort((a, b) => b[1] - a[1])[0];
-    const mostCommonLow = Object.entries(lowTimeCounts).sort((a, b) => b[1] - a[1])[0];
+            if (high > dailyData[date].high) {
+                dailyData[date].high = high;
+                dailyData[date].highTime = time;
+            }
+            if (low < dailyData[date].low) {
+                dailyData[date].low = low;
+                dailyData[date].lowTime = time;
+            }
 
-    return {
-        days: dates.length,
-        mostCommonHigh: mostCommonHigh ? mostCommonHigh[0] : '-',
-        mostCommonLow: mostCommonLow ? mostCommonLow[0] : '-',
-        dates,
-        dailyData,
-        highTimeCounts,
-        lowTimeCounts
-    };
-}
+            // Store the last close of the day
+            dailyData[date].close = close;
+        });
+
+        const highTimeCounts = {};
+        const lowTimeCounts = {};
+        const dates = Object.keys(dailyData).sort();
+
+        dates.forEach(date => {
+            if (dailyData[date].highTime) {
+                const w = getWlPatternTimeWindow(dailyData[date].highTime);
+                highTimeCounts[w] = (highTimeCounts[w] || 0) + 1;
+            }
+            if (dailyData[date].lowTime) {
+                const w = getWlPatternTimeWindow(dailyData[date].lowTime);
+                lowTimeCounts[w] = (lowTimeCounts[w] || 0) + 1;
+            }
+        });
+
+        const mostCommonHigh = Object.entries(highTimeCounts).sort((a, b) => b[1] - a[1])[0];
+        const mostCommonLow = Object.entries(lowTimeCounts).sort((a, b) => b[1] - a[1])[0];
+
+        return {
+            days: dates.length,
+            mostCommonHigh: mostCommonHigh ? mostCommonHigh[0] : '-',
+            mostCommonLow: mostCommonLow ? mostCommonLow[0] : '-',
+            dates,
+            dailyData,
+            highTimeCounts,
+            lowTimeCounts
+        };
+    }
 
 function getWlPatternTimeWindow(timeStr) {
     const [h, m] = timeStr.split(':').map(Number);
