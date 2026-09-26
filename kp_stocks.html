@@ -5991,29 +5991,84 @@ function getWlPatternTimeWindow(timeStr) {
            String(eh).padStart(2, '0') + ':' + String(em).padStart(2, '0');
 }
 
-function displayWlPatternResults(analysis) {
-    document.getElementById("wlPatternDaysCount").textContent = analysis.days;
-    document.getElementById("wlPatternHighTime").textContent = analysis.mostCommonHigh;
-    document.getElementById("wlPatternLowTime").textContent = analysis.mostCommonLow;
+    function displayWlPatternResults(analysis) {
+        document.getElementById("wlPatternDaysCount").textContent = analysis.days;
+        document.getElementById("wlPatternHighTime").textContent = analysis.mostCommonHigh;
+        document.getElementById("wlPatternLowTime").textContent = analysis.mostCommonLow;
 
-    const list = document.getElementById("wlPatternInsightsList");
-    list.innerHTML = '';
+        const list = document.getElementById("wlPatternInsightsList");
+        list.innerHTML = '';
 
-    if (analysis.mostCommonHigh !== '-') {
-        list.innerHTML += '<li>Daily high most frequent: ' + analysis.mostCommonHigh + '</li>';
+        if (analysis.mostCommonHigh !== '-') {
+            list.innerHTML += '<li>Daily high most frequent: ' + analysis.mostCommonHigh + '</li>';
+        }
+        if (analysis.mostCommonLow !== '-') {
+            list.innerHTML += '<li>Daily low most frequent: ' + analysis.mostCommonLow + '</li>';
+        }
+
+        const top3 = Object.entries(analysis.highTimeCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        if (top3.length > 1) {
+            list.innerHTML += '<li>Top 3 high windows: ' + top3.map(x => x[0]).join(', ') + '</li>';
+        }
+
+        renderWlPatternChart(analysis);
+        renderIndexVsStockCharts(analysis);
+
+        // ---- New: compute and show correlation + RS verdict ----
+        computeAndShowMarketRSInsights(analysis);
     }
-    if (analysis.mostCommonLow !== '-') {
-        list.innerHTML += '<li>Daily low most frequent: ' + analysis.mostCommonLow + '</li>';
+
+    async function computeAndShowMarketRSInsights(analysis) {
+        const list = document.getElementById("wlPatternInsightsList");
+        if (!list) return;
+
+        const stockDates = analysis.dates;
+        const stockCloses = stockDates.map(d => analysis.dailyData[d]?.close ?? null).filter(c => c !== null);
+        if (stockCloses.length < 5) {
+            list.innerHTML += '<li>Not enough data for market relative strength analysis.</li>';
+            return;
+        }
+
+        const days = stockDates.length;
+
+        try {
+            const bseCandles = await fetchDailyHistoryForSymbol('^BSESN', days);
+            const nseCandles = await fetchDailyHistoryForSymbol('^NSEI', days);
+
+            const bseAligned = alignAndComputeRS(stockDates, stockCloses, bseCandles);
+            const nseAligned = alignAndComputeRS(stockDates, stockCloses, nseCandles);
+
+            // BSE insights
+            if (bseAligned.dates.length >= 5) {
+                const bseRet = dailyReturns(bseAligned.index);
+                const stkRetBSE = dailyReturns(bseAligned.stock);
+                const corrBSE = pearsonCorrelation(bseRet, stkRetBSE);
+                const rsTrendBSE = rsTrendLabel(bseAligned.rs);
+
+                const corrText = corrBSE === null ? 'N/A' : corrBSE.toFixed(2);
+                list.innerHTML +=
+                    '<li><strong>BSE Sensex:</strong> Correlation = ' + corrText +
+                    '. ' + rsTrendBSE + '.</li>';
+            }
+
+            // NSE insights
+            if (nseAligned.dates.length >= 5) {
+                const nseRet = dailyReturns(nseAligned.index);
+                const stkRetNSE = dailyReturns(nseAligned.stock);
+                const corrNSE = pearsonCorrelation(nseRet, stkRetNSE);
+                const rsTrendNSE = rsTrendLabel(nseAligned.rs);
+
+                const corrText = corrNSE === null ? 'N/A' : corrNSE.toFixed(2);
+                list.innerHTML +=
+                    '<li><strong>NSE Nifty:</strong> Correlation = ' + corrText +
+                    '. ' + rsTrendNSE + '.</li>';
+            }
+        } catch (error) {
+            console.warn("Market RS insights failed:", error);
+            list.innerHTML += '<li>Market relative strength analysis unavailable.</li>';
+        }
     }
 
-    const top3 = Object.entries(analysis.highTimeCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    if (top3.length > 1) {
-        list.innerHTML += '<li>Top 3 high windows: ' + top3.map(x => x[0]).join(', ') + '</li>';
-    }
-
-    renderWlPatternChart(analysis);
-    renderIndexVsStockCharts(analysis); // new call
-}
 
 wlPatternChart = new Chart(ctx, {
     type: 'scatter',
@@ -6457,6 +6512,61 @@ wlPatternChart = new Chart(ctx, {
             }
         });
     }
+
+    // Pearson correlation between two equal-length arrays
+    function pearsonCorrelation(x, y) {
+        const n = x.length;
+        if (n !== y.length || n === 0) return null;
+
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+        for (let i = 0; i < n; i++) {
+            const xi = x[i], yi = y[i];
+            sumX += xi;
+            sumY += yi;
+            sumXY += xi * yi;
+            sumX2 += xi * xi;
+            sumY2 += yi * yi;
+        }
+
+        const num = n * sumXY - sumX * sumY;
+        const den = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+        if (den === 0) return null;
+        return num / den;
+    }
+
+    // Daily returns array from price array
+    function dailyReturns(prices) {
+        const ret = [];
+        for (let i = 1; i < prices.length; i++) {
+            const p0 = prices[i - 1];
+            const p1 = prices[i];
+            if (p0 === 0) {
+                ret.push(0);
+            } else {
+                ret.push((p1 - p0) / p0);
+            }
+        }
+        return ret;
+    }
+
+    // Simple RS trend: compare first half vs second half average RS
+    function rsTrendLabel(rs) {
+        if (rs.length < 4) return "Insufficient data";
+        const mid = Math.floor(rs.length / 2);
+        const firstHalf = rs.slice(0, mid);
+        const secondHalf = rs.slice(mid);
+
+        const avg1 = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+        const avg2 = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+
+        const changePct = ((avg2 - avg1) / avg1) * 100;
+
+        if (changePct > 3) return "RS rising – stock outperforming";
+        if (changePct < -3) return "RS falling – stock underperforming";
+        return "RS flat – stock moving in line with index";
+    }
+
+
 
 </script>
 </body>
