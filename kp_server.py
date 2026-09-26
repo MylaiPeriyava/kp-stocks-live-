@@ -1137,7 +1137,21 @@ def list_trades():
 def delete_trade():
     user = get_user_from_request()
     try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON body"}), 400
 
+        trade_id = data.get("tradeId")
+        if not trade_id:
+            return jsonify({"error": "tradeId required"}), 400
+
+        trade_ref = db.collection("users").document(user).collection("trades").document(trade_id)
+        trade_ref.delete()
+
+        return jsonify({"ok": True}), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
 
 
 if __name__ == "__main__":
