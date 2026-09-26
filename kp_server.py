@@ -1074,5 +1074,71 @@ def research_ideas():
         return jsonify({"error": str(error)}), 500
 
 
+@app.route("/add-trade", methods=["POST"])
+def add_trade():
+    user = get_user_from_request()
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON body"}), 400
+
+        buy_date = data.get("buyDate")
+        sell_date = data.get("sellDate")
+        symbol = data.get("symbol")
+        total_spent = data.get("totalSpent")
+        total_returned = data.get("totalReturned")
+
+        if not all([buy_date, sell_date, symbol, total_spent is not None, total_returned is not None]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        trades_ref = db.collection("users").document(user).collection("trades")
+
+        doc_ref = trades_ref.add({
+            "buyDate": buy_date,
+            "sellDate": sell_date,
+            "symbol": symbol,
+            "totalSpent": float(total_spent),
+            "totalReturned": float(total_returned)
+        })
+
+        trade_id = doc_ref[1].id
+        return jsonify({"ok": True, "tradeId": trade_id}), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
+@app.route("/list-trades", methods=["GET"])
+def list_trades():
+    user = get_user_from_request()
+    try:
+        trades_ref = db.collection("users").document(user).collection("trades")
+        docs = trades_ref.stream()
+
+        trades = []
+        for doc in docs:
+            data = doc.to_dict()
+            trades.append({
+                "id": doc.id,
+                "buyDate": data.get("buyDate", ""),
+                "sellDate": data.get("sellDate", ""),
+                "symbol": data.get("symbol", ""),
+                "totalSpent": data.get("totalSpent", 0),
+                "totalReturned": data.get("totalReturned", 0)
+            })
+
+        return jsonify(trades), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
+@app.route("/delete-trade", methods=["POST"])
+def delete_trade():
+    user = get_user_from_request()
+    try:
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
