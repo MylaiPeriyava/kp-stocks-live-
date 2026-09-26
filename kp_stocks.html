@@ -5394,8 +5394,47 @@ function showSection(sectionId) {
 
     const overlay = document.createElement('div');
     overlay.id = 'authOverlay';
-    overlay.innerHTML = '<div class="auth-box"><h2>Welcome to KP\'s Stocks</h2><p>Enter user name. Files: <strong>Holdings_USER.json</strong>, <strong>Rates_USER.txt</strong>, <strong>wishlist_USER.txt</strong></p><div class="auth-input-row"><label for="authUserName">User Name</label><input id="authUserName" type="text" placeholder="KP" onkeydown="if(event.key===\'Enter\')validateUserAndLoad()"></div><div id="authError" class="auth-error"><strong>Invalid User Name</strong><p style="margin:0 0 8px;">Files not found:</p><ul id="authErrorFiles"></ul></div><button type="button" class="auth-submit-btn" onclick="validateUserAndLoad()">Continue</button></div>';
+    overlay.innerHTML = `
+  <div class="auth-box">
+    <h2>Welcome to KP's Stocks</h2>
+    <p>
+      Enter your user name and password.
+      Files: <strong>Holdings_USER.json</strong>, <strong>Rates_USER.txt</strong>, <strong>wishlist_USER.txt</strong>.
+    </p>
+
+    <div class="auth-input-row">
+      <label for="authUserName">User Name</label>
+      <input
+        id="authUserName"
+        type="text"
+        placeholder="e.g. KP"
+        onkeydown="if(event.key==='Enter') validateUserAndLoad()"
+      >
+    </div>
+
+    <div class="auth-input-row">
+      <label for="authUserPwd">Password</label>
+      <input
+        id="authUserPwd"
+        type="password"
+        placeholder="Your password"
+        onkeydown="if(event.key==='Enter') validateUserAndLoad()"
+      >
+    </div>
+
+    <div id="authError" class="auth-error">
+      <strong>Invalid user name or password</strong>
+      <p style="margin:0 0 8px;">Files not found:</p>
+      <ul id="authErrorFiles"></ul>
+    </div>
+
+    <button type="button" class="auth-submit-btn" onclick="validateUserAndLoad()">
+      Continue
+    </button>
+  </div>
+`;
     document.body.insertBefore(overlay, document.body.firstChild);
+
 
     let authUser = "";
     let authDone = false;
@@ -5420,18 +5459,65 @@ function showSection(sectionId) {
 
     async function validateUserAndLoad() {
         const i = document.getElementById('authUserName');
+        const p = document.getElementById('authUserPwd');
         const u = (i.value || '').trim().toUpperCase();
+        const pwd = (p.value || '');
         const btn = document.querySelector('.auth-submit-btn');
 
-        if (!u) { showAuth(['User name blank']); return; }
-        if (btn) { btn.disabled = true; btn.textContent = 'Checking...'; }
+        if (!u) {
+            showAuth(['User name blank']);
+            return;
+        }
+        if (!pwd) {
+            showAuth(['Password blank']);
+            return;
+        }
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+        }
 
+        // First, validate user + password via /validate
+        try {
+            const validateUrl =
+                '/validate?user=' + encodeURIComponent(u) +
+                '&pwd=' + encodeURIComponent(pwd);
+
+            const vr = await fetch(validateUrl);
+            if (!vr.ok) {
+                // Invalid user/password
+                showAuth(['Invalid user name or password']);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Continue';
+                }
+                return;
+            }
+            const vd = await vr.json();
+            if (!vd.exists) {
+                showAuth(['Invalid user name or password']);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Continue';
+                }
+                return;
+            }
+        } catch (e) {
+            showAuth(['Validation failed: ' + e.message]);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Continue';
+            }
+            return;
+        }
+
+        // User + password OK - now check files (legacy logic, now mostly informational)
         const files = ['Holdings_' + u + '.json', 'Rates_' + u + '.txt', 'wishlist_' + u + '.txt'];
         const missing = [];
 
         for (const f of files) {
             try {
-                const r = await fetch('/validate?user=' + encodeURIComponent(u) + '&check=' + encodeURIComponent(f));
+                const r = await fetch('/validate?user=' + encodeURIComponent(u) + '&pwd=' + encodeURIComponent(pwd) + '&check=' + encodeURIComponent(f));
                 if (!r.ok) { missing.push(f + ' (HTTP ' + r.status + ')'); continue; }
                 const d = await r.json();
                 if (!d.exists) missing.push(f);
@@ -5444,23 +5530,20 @@ function showSection(sectionId) {
             return;
         }
 
-authUser = u;
-sessionStorage.setItem('kp_stocks_user', u);
-hideAuth();
+        authUser = u;
+        sessionStorage.setItem('kp_stocks_user', u);
+        hideAuth();
 
-CURRENT_USER = u;
+        CURRENT_USER = u;
 
-const titleText = buildPageTitle(u);
-document.title = titleText;
-const headerEl = document.getElementById('pageHeaderTitle');
-if (headerEl) {
-    headerEl.textContent = titleText;
-}
+        const titleText = buildPageTitle(u);
+        document.title = titleText;
+        const headerEl = document.getElementById('pageHeaderTitle');
+        if (headerEl) {
+            headerEl.textContent = titleText;
+        }
 
-location.reload();
-        
-
-        
+        location.reload();
     }
 
     const stored = sessionStorage.getItem('kp_stocks_user');
