@@ -823,7 +823,11 @@ def daily_history():
     except ValueError:
         days_int = 30
 
-    yahoo_symbol = to_yahoo_symbol(user_symbol)
+    # Do NOT transform index symbols that start with '^'
+    if user_symbol.startswith("^"):
+        yahoo_symbol = user_symbol
+    else:
+        yahoo_symbol = to_yahoo_symbol(user_symbol)
 
     try:
         ticker = yf.Ticker(yahoo_symbol)
