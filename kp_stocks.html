@@ -14,6 +14,24 @@
 <!-- ==================== ALL CSS STYLES ==================== -->
 <!-- ========================================================= -->
 <style>
+
+    .index-vs-stock-block {
+        margin-top: 24px;
+        padding: 14px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+        .index-vs-stock-block h4 {
+            margin: 0 0 10px 0;
+            color: #111827;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+
 /* Smooth fade-in for the main header text */
 #pageHeaderTitle {
     opacity: 0;
@@ -2914,30 +2932,36 @@
                     <canvas id="wlPatternChart"></canvas>
                 </div>
                 <!-- BSE Sensex vs Stock -->
-                <div style="margin-top:24px;">
-                    <h4 style="margin:0 0 8px 0;">BSE Sensex vs Stock</h4>
+                <div class="index-vs-stock-block" style="margin-top:24px;">
+                    <h4>BSE Sensex vs Stock</h4>
                     <div style="height:220px; margin-bottom:8px;">
                         <canvas id="bseIndexChart"></canvas>
                     </div>
                     <div style="height:220px; margin-bottom:8px;">
                         <canvas id="bseStockChart"></canvas>
                     </div>
-                    <div style="height:160px;">
+                    <div style="height:160px; margin-bottom:8px;">
                         <canvas id="bseRSChart"></canvas>
+                    </div>
+                    <div style="height:220px;">
+                        <canvas id="bseNormalizedChart"></canvas>
                     </div>
                 </div>
 
                 <!-- NSE Nifty vs Stock -->
-                <div style="margin-top:24px;">
-                    <h4 style="margin:0 0 8px 0;">NSE Nifty vs Stock</h4>
+                <div class="index-vs-stock-block" style="margin-top:24px;">
+                    <h4>NSE Nifty vs Stock</h4>
                     <div style="height:220px; margin-bottom:8px;">
                         <canvas id="nseIndexChart"></canvas>
                     </div>
                     <div style="height:220px; margin-bottom:8px;">
                         <canvas id="nseStockChart"></canvas>
                     </div>
-                    <div style="height:160px;">
+                    <div style="height:160px; margin-bottom:8px;">
                         <canvas id="nseRSChart"></canvas>
+                    </div>
+                    <div style="height:220px;">
+                        <canvas id="nseNormalizedChart"></canvas>
                     </div>
                 </div>
 
@@ -6305,15 +6329,17 @@ wlPatternChart = new Chart(ctx, {
         console.log("Sample dailyData entry:", analysis.dailyData[analysis.dates[0]]);
 
         // Destroy any existing charts for these canvases
-        ['bseIndexChart', 'bseStockChart', 'bseRSChart',
-            'nseIndexChart', 'nseStockChart', 'nseRSChart'].forEach(id => {
-                const canvas = document.getElementById(id);
-                if (!canvas) return;
-                const chart = Chart.getChart(canvas);
-                if (chart) {
-                    chart.destroy();
-                }
-            });
+        [
+            'bseIndexChart', 'bseStockChart', 'bseRSChart', 'bseNormalizedChart',
+            'nseIndexChart', 'nseStockChart', 'nseRSChart', 'nseNormalizedChart'
+        ].forEach(id => {
+            const canvas = document.getElementById(id);
+            if (!canvas) return;
+            const chart = Chart.getChart(canvas);
+            if (chart) {
+                chart.destroy();
+            }
+        });
 
         const stockDates = analysis.dates;
         const stockCloses = stockDates.map(d => {
@@ -6346,16 +6372,90 @@ wlPatternChart = new Chart(ctx, {
                 createIndexChart('bseIndexChart', bseAligned.dates, bseAligned.index, 'BSE Sensex');
                 createStockChart('bseStockChart', bseAligned.dates, bseAligned.stock, 'Stock Price');
                 createRSChart('bseRSChart', bseAligned.dates, bseAligned.rs, 'Relative Strength (Stock / BSE)');
+                createNormalizedChart(
+                    'bseNormalizedChart',
+                    bseAligned.dates,
+                    bseAligned.index,
+                    bseAligned.stock,
+                    'BSE Sensex',
+                    analysis.symbol || 'Stock'
+                );
             }
 
             if (nseAligned.dates.length > 0) {
                 createIndexChart('nseIndexChart', nseAligned.dates, nseAligned.index, 'NSE Nifty');
                 createStockChart('nseStockChart', nseAligned.dates, nseAligned.stock, 'Stock Price');
                 createRSChart('nseRSChart', nseAligned.dates, nseAligned.rs, 'Relative Strength (Stock / NSE)');
+                createNormalizedChart(
+                    'nseNormalizedChart',
+                    nseAligned.dates,
+                    nseAligned.index,
+                    nseAligned.stock,
+                    'NSE Nifty',
+                    analysis.symbol || 'Stock'
+                );
             }
         } catch (error) {
             console.warn("Index vs Stock charts failed:", error);
         }
+    }
+
+    function createNormalizedChart(canvasId, dates, indexData, stockData, indexLabel, stockLabel) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+
+        // Normalize both series to 100 at the first date
+        const baseIndex = indexData[0];
+        const baseStock = stockData[0];
+
+        const normIndex = indexData.map(v => (v / baseIndex) * 100);
+        const normStock = stockData.map(v => (v / baseStock) * 100);
+
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: indexLabel + ' (normalized)',
+                        data: normIndex,
+                        borderColor: '#1f77b4',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: stockLabel + ' (normalized)',
+                        data: normStock,
+                        borderColor: '#2ca02c',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true },
+                    title: {
+                        display: true,
+                        text: 'Normalized Comparison (base = 100)',
+                        font: { size: 13 }
+                    }
+                },
+                scales: {
+                    x: { display: true },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Normalized Value (100 = start)'
+                        }
+                    }
+                }
+            }
+        });
     }
 
 </script>
