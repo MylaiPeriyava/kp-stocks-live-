@@ -2229,6 +2229,8 @@
                             <th>Total Spent (₹)</th>
                             <th>Total Returned (₹)</th>
                             <th>P/L (₹)</th>
+                            <th>P/L %</th>
+                            <th>Holding Days</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -3791,7 +3793,7 @@ async function loadResearchIdeas() {
     async function loadTrades() {
         const tbody = document.getElementById("trades-body");
         if (!tbody) return;
-        tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='9'>Loading...</td></tr>";
         const user = getCurrentUser();
         const url = API_BASE + "/list-trades?user=" + encodeURIComponent(user);
         try {
@@ -3800,31 +3802,178 @@ async function loadResearchIdeas() {
                 const err = await res.json().catch(() => ({}));
                 throw new Error(err.error || ("HTTP " + res.status));
             }
-            const trades = await res.json();
+            let trades = await res.json();
+
+            // Parse sellDate for sorting
+            trades = trades.map(t => ({
+                ...t,
+                _sellDateObj: t.sellDate ? new Date(t.sellDate) : new Date(0)
+            }));
+
+            // Sort by sell date ascending (latest at bottom)
+            trades.sort((a, b) => a._sellDateObj.getTime() - b._sellDateObj.getTime());
+
             tbody.innerHTML = "";
+
             if (trades.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='7'>No trades added yet.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='9'>No trades added yet.</td></tr>";
                 return;
             }
-            for (const t of trades) {
+
+            let monthRows = "";
+            let monthInvestment = 0;
+            let monthReturns = 0;
+            let monthProfit = 0;
+
+            let totalInvestment = 0;
+            let totalReturns = 0;
+            let totalProfit = 0;
+
+            function monthKey(dateObj) {
+                return dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, "0");
+            }
+
+            function monthLabel(dateObj) {
+                const months = [
+                    "January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"
+                ];
+                return months[dateObj.getMonth()] + " " + dateObj.getFullYear();
+            }
+
+            function holdingDays(buyDateStr, sellDateStr) {
+                if (!buyDateStr || !sellDateStr) return 0;
+                const b = new Date(buyDateStr);
+                const s = new Date(sellDateStr);
+                if (Number.isNaN(b.getTime()) || Number.isNaN(s.getTime())) return 0;
+                const msPerDay = 24 * 60 * 60 * 1000;
+                return Math.max(0, Math.floor((s.getTime() - b.getTime()) / msPerDay));
+            }
+
+            function renderMonthSummary(monthDateObj, investment, returns, profit) {
+                const label = monthLabel(monthDateObj);
+                const profitClass = profit >= 0 ? "positive" : "negative";
+                const profitSign = profit >= 0 ? "+" : "";
+                const pct = investment > 0 ? (profit / investment) * 100 : 0;
+                const pctClass = pct >= 0 ? "positive" : "negative";
+                const pctSign = pct >= 0 ? "+" : "";
+                return `
+                <tr>
+                    <td colspan="3" style="text-align:left; font-weight:bold; background:#f9fafb;">
+                        ${escapeHtml(label)} Summary
+                    </td>
+                    <td>${Number(investment).toFixed(2)}</td>
+                    <td>${Number(returns).toFixed(2)}</td>
+                    <td class="${profitClass}" style="font-weight:bold;">
+                        ${profitSign}${Number(profit).toFixed(2)}
+                    </td>
+                    <td class="${pctClass}" style="font-weight:bold;">
+                        ${pctSign}${pct.toFixed(2)}%
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+                <tr><td colspan="9" style="height:8px; background:#ffffff;"></td></tr>
+            `;
+            }
+
+            let prevMonth = null;
+
+            for (let i = 0; i < trades.length; i++) {
+                const t = trades[i];
+                const sellDateObj = t._sellDateObj;
+                const currentMonth = monthKey(sellDateObj);
+
+                // If month changed, emit summary for previous month
+                if (prevMonth !== null && currentMonth !== prevMonth) {
+                    monthRows += renderMonthSummary(sellDateObj, monthInvestment, monthReturns, monthProfit);
+                    monthInvestment = 0;
+                    monthReturns = 0;
+                    monthProfit = 0;
+                }
+
                 const pl = (t.totalReturned || 0) - (t.totalSpent || 0);
+                const plPct = (t.totalSpent || 0) > 0 ? (pl / t.totalSpent) * 100 : 0;
+                const plClass = pl >= 0 ? "positive" : "negative";
+                const plSign = pl >= 0 ? "+" : "";
+                const plPctClass = plPct >= 0 ? "positive" : "negative";
+                const plPctSign = plPct >= 0 ? "+" : "";
+                const hDays = holdingDays(t.buyDate, t.sellDate);
+
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td>${t.buyDate || ""}</td>
-                    <td>${t.sellDate || ""}</td>
-                    <td>${t.symbol || ""}</td>
-                    <td>${Number(t.totalSpent || 0).toFixed(2)}</td>
-                    <td>${Number(t.totalReturned || 0).toFixed(2)}</td>
-                    <td style="color:${pl >= 0 ? 'green' : 'red'}">${pl.toFixed(2)}</td>
-                    <td><button data-trade-id="${t.id}" class="delete-trade-btn">Delete</button></td>
-                `;
+                <td>${t.buyDate || ""}</td>
+                <td>${t.sellDate || ""}</td>
+                <td>${t.symbol || ""}</td>
+                <td>${Number(t.totalSpent || 0).toFixed(2)}</td>
+                <td>${Number(t.totalReturned || 0).toFixed(2)}</td>
+                <td class="${plClass}" style="${pl !== 0 ? 'font-weight:bold;' : ''}">
+                    ${plSign}${Number(pl).toFixed(2)}
+                </td>
+                <td class="${plPctClass}" style="${plPct !== 0 ? 'font-weight:bold;' : ''}">
+                    ${plPctSign}${Number(plPct).toFixed(2)}%
+                </td>
+                <td>${hDays}</td>
+                <td><button data-trade-id="${t.id}" class="delete-trade-btn">Delete</button></td>
+            `;
                 tbody.appendChild(tr);
+
+                // Accumulate
+                monthInvestment += Number(t.totalSpent || 0);
+                monthReturns += Number(t.totalReturned || 0);
+                monthProfit += pl;
+
+                totalInvestment += Number(t.totalSpent || 0);
+                totalReturns += Number(t.totalReturned || 0);
+                totalProfit += pl;
+
+                prevMonth = currentMonth;
             }
+
+            // Last month summary
+            if (prevMonth !== null && trades.length > 0) {
+                const lastDate = trades[trades.length - 1]._sellDateObj;
+                monthRows += renderMonthSummary(lastDate, monthInvestment, monthReturns, monthProfit);
+            }
+
+            // Overall summary
+            const overallProfitClass = totalProfit >= 0 ? "positive" : "negative";
+            const overallProfitSign = totalProfit >= 0 ? "+" : "";
+            const overallPct = totalInvestment > 0 ? (totalProfit / totalInvestment) * 100 : 0;
+            const overallPctClass = overallPct >= 0 ? "positive" : "negative";
+            const overallPctSign = overallPct >= 0 ? "+" : "";
+
+            const overallSummaryRow = `
+            <tr><td colspan="9" style="height:8px; background:#ffffff;"></td></tr>
+            <tr>
+                <td colspan="3" style="text-align:left; font-weight:bold; background:#f0f9ff;">
+                    Overall Summary
+                </td>
+                <td>${Number(totalInvestment).toFixed(2)}</td>
+                <td>${Number(totalReturns).toFixed(2)}</td>
+                <td class="${overallProfitClass}" style="font-weight:bold;">
+                    ${overallProfitSign}${Number(totalProfit).toFixed(2)}
+                </td>
+                <td class="${overallPctClass}" style="font-weight:bold;">
+                    ${overallPctSign}${Number(overallPct).toFixed(2)}%
+                </td>
+                <td colspan="2"></td>
+            </tr>
+        `;
+
+            // Insert month summaries and overall summary after all trade rows
+            const tempContainer = document.createElement("tbody");
+            tempContainer.innerHTML = monthRows + overallSummaryRow;
+            while (tempContainer.firstChild) {
+                tbody.appendChild(tempContainer.firstChild);
+            }
+
+            // Re-attach delete handlers
             tbody.querySelectorAll(".delete-trade-btn").forEach(btn => {
                 btn.addEventListener("click", () => deleteTrade(btn.dataset.tradeId));
             });
+
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan='7'>Error loading trades: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan='9'>Error loading trades: ${err.message}</td></tr>`;
         }
     }
 
