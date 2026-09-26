@@ -793,6 +793,7 @@
         Intended for Indian equity delivery trades. Holdings and prices are loaded from your local server.
         Rates below are editable for the current browser session. Existing holdings charges are calculated separately for every original purchase lot.
     </p>
+
     <!-- Rates and Defaults -->
     <div class="section-block">
     <section id="settingsSection" class="section-anchor">
@@ -1427,6 +1428,8 @@
         </div>
     </section>
     </div>
+
+<!-- END OF PART 1 OF 3 -->
 
     <!-- WL Status (Pattern table) -->
     <div class="section-block">
@@ -2084,7 +2087,7 @@
     </section>
     </div>
 
-    <!-- WL Pattern (scatter chart) -->
+    <!-- WL Pattern (scatter chart + BSE/NSE index charts) -->
     <div class="section-block">
         <section id="wlPatternSection" class="section-anchor" style="display:none;">
             <div class="card">
@@ -2133,6 +2136,7 @@
                         <canvas id="wlPatternChart"></canvas>
                     </div>
 
+                    <!-- BSE Sensex vs Stock -->
                     <div class="index-vs-stock-block" style="margin-top:24px;">
                         <h4>BSE Sensex vs Stock</h4>
                         <div style="height:220px; margin-bottom:8px;">
@@ -2149,6 +2153,7 @@
                         </div>
                     </div>
 
+                    <!-- NSE Nifty vs Stock -->
                     <div class="index-vs-stock-block" style="margin-top:24px;">
                         <h4>NSE Nifty vs Stock</h4>
                         <div style="height:220px; margin-bottom:8px;">
@@ -2245,6 +2250,7 @@
 
 </div>
 <!-- end of .wrap -->
+
 <script>
 /* ==================== GLOBAL CONFIG & STATE ==================== */
 const API_BASE = "";
@@ -3936,7 +3942,7 @@ async function loadResearchIdeas() {
                 const summaryRow = renderMonthSummaryRow(monthDateObj, monthInvestment, monthReturns, monthProfit);
                 tbody.appendChild(summaryRow);
 
-                // Blank separator (except after last month, we’ll add one before overall summary)
+                // Blank separator (except after last month, we'll add one before overall summary)
                 if (idx < monthKeys.length - 1) {
                     tbody.appendChild(renderBlankRow());
                 }
@@ -4045,6 +4051,723 @@ async function loadResearchIdeas() {
         attachTradeFormHandler();
     }
 })();
+
+// END OF PART 2 OF 3
+
+/* ==================== WL PATTERN ANALYSIS (FULL) ==================== */
+let wlPatternChart = null;
+let wlPatternDays = 30;
+
+function setWlPatternDays(days) {
+    wlPatternDays = days;
+    document.querySelectorAll('.wl-pattern-period-btn').forEach(btn => {
+        btn.classList.remove('active');
+        const m = btn.getAttribute('onclick').match(/\d+/);
+        if (m && parseInt(m[0]) === days) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function initWlPatternSection() {
+    const select = document.getElementById("wlPatternSymbol");
+    if (!select) return;
+    select.innerHTML = '<option value="">Select from wishlist...</option>';
+    if (typeof wishlistSymbols !== 'undefined' && wishlistSymbols.length > 0) {
+        wishlistSymbols.forEach(symbol => {
+            const option = document.createElement("option");
+            option.value = symbol;
+            option.textContent = symbol;
+            select.appendChild(option);
+        });
+    }
+}
+
+(function () {
+    const oldShow = window.showSection;
+    window.showSection = function (sectionId) {
+        if (sectionId === 'wlPatternSection') {
+            initWlPatternSection();
+        }
+        oldShow(sectionId);
+    };
+})();
+
+async function analyzeWlPattern() {
+    const symbol = document.getElementById("wlPatternSymbol").value;
+    if (!symbol) {
+        alert("Please select a symbol from the wishlist.");
+        return;
+    }
+
+    document.getElementById("wlPatternResults").style.display = "none";
+    document.getElementById("wlPatternLoading").style.display = "block";
+
+    try {
+        const response = await fetch(
+            API_BASE + "/wl-pattern-data?symbol=" + encodeURIComponent(symbol) + "&days=" + wlPatternDays
+        );
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || ("HTTP " + response.status));
+        }
+
+        const data = await response.json();
+        if (!data.candles || data.candles.length === 0) {
+            throw new Error("No data available for this symbol");
+        }
+
+        const analysis = processWlPatternData(data.candles);
+        displayWlPatternResults(analysis);
+
+        document.getElementById("wlPatternLoading").style.display = "none";
+        document.getElementById("wlPatternResults").style.display = "block";
+    } catch (error) {
+        document.getElementById("wlPatternLoading").style.display = "none";
+        alert("Error analyzing pattern: " + error.message);
+    }
+}
+
+function processWlPatternData(candles) {
+    const dailyData = {};
+    candles.forEach(candle => {
+        const dateTime = candle[0];
+        const date = dateTime.split('T')[0];
+        const time = dateTime.split('T')[1];
+        const close = candle[4];
+
+        if (!dailyData[date]) {
+            dailyData[date] = {
+                high: -Infinity,
+                low: Infinity,
+                highTime: null,
+                lowTime: null,
+                close: null
+            };
+        }
+
+        const high = candle[2];
+        const low = candle[3];
+
+        if (high > dailyData[date].high) {
+            dailyData[date].high = high;
+            dailyData[date].highTime = time;
+        }
+        if (low < dailyData[date].low) {
+            dailyData[date].low = low;
+            dailyData[date].lowTime = time;
+        }
+
+        dailyData[date].close = close;
+    });
+
+    const highTimeCounts = {};
+    const lowTimeCounts = {};
+    const dates = Object.keys(dailyData).sort();
+
+    dates.forEach(date => {
+        if (dailyData[date].highTime) {
+            const w = getWlPatternTimeWindow(dailyData[date].highTime);
+            highTimeCounts[w] = (highTimeCounts[w] || 0) + 1;
+        }
+        if (dailyData[date].lowTime) {
+            const w = getWlPatternTimeWindow(dailyData[date].lowTime);
+            lowTimeCounts[w] = (lowTimeCounts[w] || 0) + 1;
+        }
+    });
+
+    const mostCommonHigh = Object.entries(highTimeCounts).sort((a, b) => b[1] - a[1])[0];
+    const mostCommonLow = Object.entries(lowTimeCounts).sort((a, b) => b[1] - a[1])[0];
+
+    return {
+        days: dates.length,
+        mostCommonHigh: mostCommonHigh ? mostCommonHigh[0] : '-',
+        mostCommonLow: mostCommonLow ? mostCommonLow[0] : '-',
+        dates,
+        dailyData,
+        highTimeCounts,
+        lowTimeCounts
+    };
+}
+
+function getWlPatternTimeWindow(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    const total = h * 60 + m;
+    const start = Math.floor(total / 15) * 15;
+    const end = start + 15;
+    const sh = Math.floor(start / 60), sm = start % 60;
+    const eh = Math.floor(end / 60), em = end % 60;
+    return String(sh).padStart(2, '0') + ':' + String(sm).padStart(2, '0') + '-' +
+           String(eh).padStart(2, '0') + ':' + String(em).padStart(2, '0');
+}
+
+function displayWlPatternResults(analysis) {
+    document.getElementById("wlPatternDaysCount").textContent = analysis.days;
+    document.getElementById("wlPatternHighTime").textContent = analysis.mostCommonHigh;
+    document.getElementById("wlPatternLowTime").textContent = analysis.mostCommonLow;
+
+    const list = document.getElementById("wlPatternInsightsList");
+    list.innerHTML = '';
+
+    if (analysis.mostCommonHigh !== '-') {
+        list.innerHTML += '<li>Daily high most frequent: ' + analysis.mostCommonHigh + '</li>';
+    }
+    if (analysis.mostCommonLow !== '-') {
+        list.innerHTML += '<li>Daily low most frequent: ' + analysis.mostCommonLow + '</li>';
+    }
+
+    const top3 = Object.entries(analysis.highTimeCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    if (top3.length > 1) {
+        list.innerHTML += '<li>Top 3 high windows: ' + top3.map(x => x[0]).join(', ') + '</li>';
+    }
+
+    renderWlPatternChart(analysis);
+    renderIndexVsStockCharts(analysis);
+
+    computeAndShowMarketRSInsights(analysis);
+}
+
+function renderWlPatternChart(analysis) {
+    const ctx = document.getElementById("wlPatternChart").getContext("2d");
+    if (wlPatternChart) wlPatternChart.destroy();
+
+    const toMinutes = t => {
+        if (!t) return null;
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    wlPatternChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            labels: analysis.dates,
+            datasets: [
+                {
+                    label: 'Daily High Time',
+                    data: analysis.dates.map((d, i) => ({
+                        x: i,
+                        y: toMinutes(analysis.dailyData[d].highTime)
+                    })),
+                    backgroundColor: '#27ae60',
+                    borderColor: '#27ae60',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    showLine: true,
+                    lineTension: 0.2
+                },
+                {
+                    label: 'Daily Low Time',
+                    data: analysis.dates.map((d, i) => ({
+                        x: i,
+                        y: toMinutes(analysis.dailyData[d].lowTime)
+                    })),
+                    backgroundColor: '#e74c3c',
+                    borderColor: '#e74c3c',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    showLine: true,
+                    lineTension: 0.2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Intraday High/Low Pattern (5‑minute candles)',
+                    font: { size: 15 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const mins = context.raw.y;
+                            if (mins == null) return context.dataset.label;
+                            const h = Math.floor(mins / 60);
+                            const m = mins % 60;
+                            return context.dataset.label + ': ' +
+                                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date' },
+                    ticks: {
+                        maxTicksLimit: 10,
+                        callback: function (val) { return analysis.dates[val]; }
+                    }
+                },
+                y: {
+                    title: { display: true, text: 'Time of Day' },
+                    min: 9 * 60,
+                    max: 15.5 * 60,
+                    ticks: {
+                        callback: function (v) {
+                            const h = Math.floor(v / 60);
+                            const m = Math.round(v % 60);
+                            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/* ==================== INDEX VS STOCK CHARTS (BSE & NSE) ==================== */
+async function fetchDailyHistoryForSymbol(symbol, days) {
+    const url = API_BASE + "/chart-data?symbol=" + encodeURIComponent(symbol) + "&period=" + encodeURIComponent(days + "d") + "&interval=1d&rsi=14";
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    return data.candles || [];
+}
+
+function alignAndComputeRS(stockDates, stockCloses, indexCandles) {
+    const indexMap = {};
+    indexCandles.forEach(c => {
+        const date = c[0].split('T')[0];
+        const close = c[4];
+        indexMap[date] = close;
+    });
+
+    const aligned = { dates: [], stock: [], index: [], rs: [] };
+    for (let i = 0; i < stockDates.length; i++) {
+        const d = stockDates[i];
+        const sc = stockCloses[i];
+        const ic = indexMap[d];
+        if (ic == null || sc == null) continue;
+        aligned.dates.push(d);
+        aligned.stock.push(sc);
+        aligned.index.push(ic);
+        aligned.rs.push(sc / ic);
+    }
+    return aligned;
+}
+
+function dailyReturns(prices) {
+    const rets = [];
+    for (let i = 1; i < prices.length; i++) {
+        rets.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+    }
+    return rets;
+}
+
+function pearsonCorrelation(x, y) {
+    if (x.length !== y.length || x.length === 0) return null;
+    const n = x.length;
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i], 0);
+    const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
+    const sumY2 = y.reduce((acc, yi) => acc + yi * yi, 0);
+    const num = n * sumXY - sumX * sumY;
+    const den = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+    if (den === 0) return 0;
+    return num / den;
+}
+
+function rsTrendInfo(rsArray) {
+    if (!rsArray || rsArray.length < 2) return { label: "RS trend unclear", color: "#374151" };
+    const firstHalf = rsArray.slice(0, Math.floor(rsArray.length / 2));
+    const secondHalf = rsArray.slice(Math.floor(rsArray.length / 2));
+    const avg1 = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+    const avg2 = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+    const change = (avg2 - avg1) / avg1;
+    if (change > 0.03) return { label: "RS trending up (outperforming)", color: "#137333" };
+    if (change < -0.03) return { label: "RS trending down (underperforming)", color: "#b3261e" };
+    return { label: "RS roughly flat (in line with index)", color: "#374151" };
+}
+
+async function computeAndShowMarketRSInsights(analysis) {
+    const list = document.getElementById("wlPatternInsightsList");
+    if (!list) return;
+
+    const stockDates = analysis.dates;
+    const stockCloses = stockDates.map(d => analysis.dailyData[d]?.close ?? null).filter(c => c !== null);
+    if (stockCloses.length < 5) {
+        list.innerHTML += '<li>Not enough data for market relative strength analysis.</li>';
+        return;
+    }
+
+    const days = stockDates.length;
+    let bseInfo = null;
+    let nseInfo = null;
+
+    try {
+        const bseCandles = await fetchDailyHistoryForSymbol('^BSESN', days);
+        const nseCandles = await fetchDailyHistoryForSymbol('^NSEI', days);
+
+        const bseAligned = alignAndComputeRS(stockDates, stockCloses, bseCandles);
+        const nseAligned = alignAndComputeRS(stockDates, stockCloses, nseCandles);
+
+        if (bseAligned.dates.length >= 5) {
+            const bseRet = dailyReturns(bseAligned.index);
+            const stkRetBSE = dailyReturns(bseAligned.stock);
+            const corrBSE = pearsonCorrelation(bseRet, stkRetBSE);
+            const rsInfoBSE = rsTrendInfo(bseAligned.rs);
+            const corrText = corrBSE === null ? 'N/A' : corrBSE.toFixed(2);
+
+            bseInfo = {
+                name: 'BSE Sensex',
+                correlation: corrText,
+                rsLabel: rsInfoBSE.label,
+                color: rsInfoBSE.color
+            };
+        }
+
+        if (nseAligned.dates.length >= 5) {
+            const nseRet = dailyReturns(nseAligned.index);
+            const stkRetNSE = dailyReturns(nseAligned.stock);
+            const corrNSE = pearsonCorrelation(nseRet, stkRetNSE);
+            const rsInfoNSE = rsTrendInfo(nseAligned.rs);
+            const corrText = corrNSE === null ? 'N/A' : corrNSE.toFixed(2);
+
+            nseInfo = {
+                name: 'NSE Nifty',
+                correlation: corrText,
+                rsLabel: rsInfoNSE.label,
+                color: rsInfoNSE.color
+            };
+        }
+    } catch (error) {
+        console.warn("Market RS insights failed:", error);
+        list.innerHTML += '<li>Market relative strength analysis unavailable.</li>';
+        return;
+    }
+
+    if (bseInfo) {
+        list.innerHTML +=
+            '<li><strong>' + bseInfo.name + ':</strong> Correlation = ' + bseInfo.correlation +
+            '. <span style="color:' + bseInfo.color + '; font-weight:600;">' + bseInfo.rsLabel + '</span>.</li>';
+    }
+
+    if (nseInfo) {
+        list.innerHTML +=
+            '<li><strong>' + nseInfo.name + ':</strong> Correlation = ' + nseInfo.correlation +
+            '. <span style="color:' + nseInfo.color + '; font-weight:600;">' + nseInfo.rsLabel + '</span>.</li>';
+    }
+
+    if (bseInfo && nseInfo) {
+        const bseStrong = bseInfo.color === "#137333";
+        const bseWeak = bseInfo.color === "#b3261e";
+        const nseStrong = nseInfo.color === "#137333";
+        const nseWeak = nseInfo.color === "#b3261e";
+
+        let verdictText = "";
+        let verdictColor = "#374151";
+
+        if (bseStrong && nseStrong) {
+            verdictText = "Overall verdict: Stock shows broad outperformance vs both BSE and NSE.";
+            verdictColor = "#137333";
+        } else if (bseWeak && nseWeak) {
+            verdictText = "Overall verdict: Stock shows broad underperformance vs both BSE and NSE.";
+            verdictColor = "#b3261e";
+        } else if (bseStrong || nseStrong) {
+            verdictText = "Overall verdict: Stock outperforms one major index and is neutral/weak vs the other.";
+            verdictColor = "#137333";
+        } else if (bseWeak || nseWeak) {
+            verdictText = "Overall verdict: Stock underperforms one major index and is neutral/strong vs the other.";
+            verdictColor = "#b3261e";
+        } else {
+            verdictText = "Overall verdict: Stock is broadly in line with both major indices.";
+        }
+
+        list.innerHTML +=
+            '<li><span style="color:' + verdictColor + '; font-weight:700;">' + verdictText + '</span></li>';
+    } else if (bseInfo || nseInfo) {
+        const single = bseInfo || nseInfo;
+        const isStrong = single.color === "#137333";
+        const isWeak = single.color === "#b3261e";
+
+        let verdictText = "";
+        let verdictColor = "#374151";
+
+        if (isStrong) {
+            verdictText = "Overall verdict: Stock shows outperformance vs " + single.name + ".";
+            verdictColor = "#137333";
+        } else if (isWeak) {
+            verdictText = "Overall verdict: Stock shows underperformance vs " + single.name + ".";
+            verdictColor = "#b3261e";
+        } else {
+            verdictText = "Overall verdict: Stock is broadly in line with " + single.name + ".";
+        }
+
+        list.innerHTML +=
+            '<li><span style="color:' + verdictColor + '; font-weight:700;">' + verdictText + '</span></li>';
+    }
+}
+
+function renderIndexVsStockCharts(analysis) {
+    const stockDates = analysis.dates;
+    const stockCloses = stockDates.map(d => analysis.dailyData[d]?.close ?? null);
+
+    renderBseCharts(stockDates, stockCloses);
+    renderNseCharts(stockDates, stockCloses);
+}
+
+async function renderBseCharts(stockDates, stockCloses) {
+    try {
+        const bseCandles = await fetchDailyHistoryForSymbol('^BSESN', stockDates.length);
+        const aligned = alignAndComputeRS(stockDates, stockCloses, bseCandles);
+        if (aligned.dates.length < 2) return;
+
+        // BSE Index Chart
+        const bseIndexCtx = document.getElementById('bseIndexChart').getContext('2d');
+        new Chart(bseIndexCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [{
+                    label: 'BSE Sensex',
+                    data: aligned.index,
+                    borderColor: '#0b5cab',
+                    backgroundColor: 'rgba(11, 92, 171, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        // BSE Stock Chart
+        const bseStockCtx = document.getElementById('bseStockChart').getContext('2d');
+        new Chart(bseStockCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [{
+                    label: 'Stock Price',
+                    data: aligned.stock,
+                    borderColor: '#137333',
+                    backgroundColor: 'rgba(19, 115, 51, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        // BSE RS Chart
+        const bseRsCtx = document.getElementById('bseRSChart').getContext('2d');
+        new Chart(bseRsCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [{
+                    label: 'RS (Stock/Index)',
+                    data: aligned.rs,
+                    borderColor: '#6336a4',
+                    backgroundColor: 'rgba(99, 54, 164, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        // BSE Normalized Chart
+        const bseNormCtx = document.getElementById('bseNormalizedChart').getContext('2d');
+        const baseStock = aligned.stock[0];
+        const baseIndex = aligned.index[0];
+        const normStock = aligned.stock.map(v => (v / baseStock) * 100);
+        const normIndex = aligned.index.map(v => (v / baseIndex) * 100);
+
+        new Chart(bseNormCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [
+                    {
+                        label: 'Stock (normalized)',
+                        data: normStock,
+                        borderColor: '#137333',
+                        tension: 0.2
+                    },
+                    {
+                        label: 'BSE Sensex (normalized)',
+                        data: normIndex,
+                        borderColor: '#0b5cab',
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.warn("BSE charts failed:", error);
+    }
+}
+
+async function renderNseCharts(stockDates, stockCloses) {
+    try {
+        const nseCandles = await fetchDailyHistoryForSymbol('^NSEI', stockDates.length);
+        const aligned = alignAndComputeRS(stockDates, stockCloses, nseCandles);
+        if (aligned.dates.length < 2) return;
+
+        // NSE Index Chart
+        const nseIndexCtx = document.getElementById('nseIndexChart').getContext('2d');
+        new Chart(nseIndexCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [{
+                    label: 'NSE Nifty',
+                    data: aligned.index,
+                    borderColor: '#0b5cab',
+                    backgroundColor: 'rgba(11, 92, 171, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        // NSE Stock Chart
+        const nseStockCtx = document.getElementById('nseStockChart').getContext('2d');
+        new Chart(nseStockCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [{
+                    label: 'Stock Price',
+                    data: aligned.stock,
+                    borderColor: '#137333',
+                    backgroundColor: 'rgba(19, 115, 51, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        // NSE RS Chart
+        const nseRsCtx = document.getElementById('nseRSChart').getContext('2d');
+        new Chart(nseRsCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [{
+                    label: 'RS (Stock/Index)',
+                    data: aligned.rs,
+                    borderColor: '#6336a4',
+                    backgroundColor: 'rgba(99, 54, 164, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        // NSE Normalized Chart
+        const nseNormCtx = document.getElementById('nseNormalizedChart').getContext('2d');
+        const baseStock = aligned.stock[0];
+        const baseIndex = aligned.index[0];
+        const normStock = aligned.stock.map(v => (v / baseStock) * 100);
+        const normIndex = aligned.index.map(v => (v / baseIndex) * 100);
+
+        new Chart(nseNormCtx, {
+            type: 'line',
+            data: {
+                labels: aligned.dates,
+                datasets: [
+                    {
+                        label: 'Stock (normalized)',
+                        data: normStock,
+                        borderColor: '#137333',
+                        tension: 0.2
+                    },
+                    {
+                        label: 'NSE Nifty (normalized)',
+                        data: normIndex,
+                        borderColor: '#0b5cab',
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.warn("NSE charts failed:", error);
+    }
+}
+
+/* ==================== PATTERN SECTION (EXISTING) ==================== */
+// Your existing analyzePattern() and related functions for patternSection
+// should remain here as they were in your 7-part version.
+// (Not repeated here to keep this part focused on WL Pattern.)
+
 </script>
 </body>
 </html>
+<!-- END OF PART 3 OF 3 -->
