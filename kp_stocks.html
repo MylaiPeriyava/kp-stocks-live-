@@ -6304,6 +6304,17 @@ wlPatternChart = new Chart(ctx, {
         console.log("renderIndexVsStockCharts called", analysis.dates.length, "dates");
         console.log("Sample dailyData entry:", analysis.dailyData[analysis.dates[0]]);
 
+        // Destroy any existing charts for these canvases
+        ['bseIndexChart', 'bseStockChart', 'bseRSChart',
+            'nseIndexChart', 'nseStockChart', 'nseRSChart'].forEach(id => {
+                const canvas = document.getElementById(id);
+                if (!canvas) return;
+                const chart = Chart.getChart(canvas);
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+
         const stockDates = analysis.dates;
         const stockCloses = stockDates.map(d => {
             const dd = analysis.dailyData[d];
@@ -6346,7 +6357,6 @@ wlPatternChart = new Chart(ctx, {
             console.warn("Index vs Stock charts failed:", error);
         }
     }
-
 
 </script>
 </body>
