@@ -6754,54 +6754,118 @@ function getCurrentUser() {
     return CURRENT_USER || "USER1";
 }
 
-async function loadTrades() {
-    const tbody = document.getElementById("trades-body");
-    tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+    async function loadTrades() {
+        const tbody = document.getElementById("trades-body");
+        tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
 
-    const user = getCurrentUser();
-    const url = API_BASE + "/list-trades?user=" + encodeURIComponent(user);
+        const user = getCurrentUser();
+        const url = API_BASE + "/list-trades?user=" + encodeURIComponent(user);
 
-    try {
-        const res = await fetch(url);
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || ("HTTP " + res.status));
-        }
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || ("HTTP " + res.status));
+            }
 
-        const trades = await res.json();
-        tbody.innerHTML = "";
+            const trades = await res.json();
+            tbody.innerHTML = "";
 
-        if (trades.length === 0) {
-            tbody.innerHTML = "<tr><td colspan='7'>No trades added yet.</td></tr>";
-            return;
-        }
+            if (trades.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='7'>No trades added yet.</td></tr>";
+                return;
+            }
 
-        for (const t of trades) {
-            const pl = (t.totalReturned || 0) - (t.totalSpent || 0);
-            const tr = document.createElement("tr");
+            // Sort trades by sell date
+            trades.sort((a, b) => new Date(a.sellDate) - new Date(b.sellDate));
 
-            tr.innerHTML = `
-                <td>${t.buyDate || ""}</td>
-                <td>${t.sellDate || ""}</td>
-                <td>${t.symbol || ""}</td>
-                <td>${Number(t.totalSpent || 0).toFixed(2)}</td>
-                <td>${Number(t.totalReturned || 0).toFixed(2)}</td>
-                <td style="color:${pl >= 0 ? 'green' : 'red'}">${pl.toFixed(2)}</td>
-                <td>
-                    <button data-trade-id="${t.id}" class="delete-trade-btn">Delete</button>
+            // Group by month (YYYY-MM)
+            const monthlyGroups = {};
+            let grandTotalPL = 0;
+
+            trades.forEach(t => {
+                const pl = (t.totalReturned || 0) - (t.totalSpent || 0);
+                grandTotalPL += pl;
+
+                const sellDate = new Date(t.sellDate);
+                const monthKey = sellDate.getFullYear() + '-' + String(sellDate.getMonth() + 1).padStart(2, '0');
+
+                if (!monthlyGroups[monthKey]) {
+                    monthlyGroups[monthKey] = { trades: [], monthPL: 0 };
+                }
+                monthlyGroups[monthKey].trades.push({ ...t, pl });
+                monthlyGroups[monthKey].monthPL += pl;
+            });
+
+            // Render trades grouped by month
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            Object.keys(monthlyGroups).sort().forEach(monthKey => {
+                const group = monthlyGroups[monthKey];
+                const [year, month] = monthKey.split('-');
+                const monthLabel = monthNames[parseInt(month) - 1] + ' ' + year;
+
+                // Month header row
+                const monthRow = document.createElement("tr");
+                monthRow.style.backgroundColor = '#eaf2fb';
+                monthRow.style.fontWeight = 'bold';
+                monthRow.innerHTML = `
+                <td colspan="7" style="padding: 8px; color: #173b63;">
+                    ${monthLabel} — Monthly P/L: 
+                    <span style="color: ${group.monthPL >= 0 ? 'green' : 'red'}">
+                        ${group.monthPL >= 0 ? '+' : ''}${group.monthPL.toFixed(2)}
+                    </span>
                 </td>
             `;
+                tbody.appendChild(monthRow);
 
-            tbody.appendChild(tr);
+                // Individual trade rows for this month
+                group.trades.forEach(t => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                    <td>${t.buyDate || ""}</td>
+                    <td>${t.sellDate || ""}</td>
+                    <td>${t.symbol || ""}</td>
+                    <td>${Number(t.totalSpent || 0).toFixed(2)}</td>
+                    <td>${Number(t.totalReturned || 0).toFixed(2)}</td>
+                    <td style="color:${t.pl >= 0 ? 'green' : 'red'}">${t.pl >= 0 ? '+' : ''}${t.pl.toFixed(2)}</td>
+                    <td>
+                        <button data-trade-id="${t.id}" class="delete-trade-btn" style="padding: 4px 8px; font-size: 12px;">Delete</button>
+                    </td>
+                `;
+                    tbody.appendChild(tr);
+                });
+
+                // Add a blank row after each month for visual separation
+                const spacerRow = document.createElement("tr");
+                spacerRow.innerHTML = '<td colspan="7" style="height: 8px;"></td>';
+                tbody.appendChild(spacerRow);
+            });
+
+            // Grand total summary row
+            const totalRow = document.createElement("tr");
+            totalRow.style.backgroundColor = '#f3e5f5';
+            totalRow.style.fontWeight = 'bold';
+            totalRow.style.fontSize = '15px';
+            totalRow.style.borderTop = '2px solid #c792ea';
+            totalRow.innerHTML = `
+            <td colspan="5" style="padding: 10px; text-align: right; color: #4a148c;">GRAND TOTAL P/L:</td>
+            <td colspan="2" style="color: ${grandTotalPL >= 0 ? 'green' : 'red'}; font-size: 16px;">
+                ${grandTotalPL >= 0 ? '+' : ''}${grandTotalPL.toFixed(2)}
+            </td>
+        `;
+            tbody.appendChild(totalRow);
+
+            // Attach delete handlers
+            tbody.querySelectorAll(".delete-trade-btn").forEach(btn => {
+                btn.addEventListener("click", () => deleteTrade(btn.dataset.tradeId));
+            });
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan='7'>Error loading trades: ${err.message}</td></tr>`;
         }
-
-        tbody.querySelectorAll(".delete-trade-btn").forEach(btn => {
-            btn.addEventListener("click", () => deleteTrade(btn.dataset.tradeId));
-        });
-    } catch (err) {
-        tbody.innerHTML = `<tr><td colspan='7'>Error loading trades: ${err.message}</td></tr>`;
     }
-}
+
 
 document.getElementById("add-trade-form").addEventListener("submit", async (e) => {
     e.preventDefault();
