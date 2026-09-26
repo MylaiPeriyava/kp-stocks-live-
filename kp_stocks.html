@@ -6301,43 +6301,52 @@ wlPatternChart = new Chart(ctx, {
 
     // Main function: render BSE & NSE vs stock charts, called after WL pattern analysis
     async function renderIndexVsStockCharts(analysis) {
-        // analysis: { dates: ["2025-09-01", ...], dailyData: { "2025-09-01": { high, low, close?, ... }, ... } }
-        const stockDates = analysis.dates; // sorted dates used in the scatter chart
+        console.log("renderIndexVsStockCharts called", analysis.dates.length, "dates");
+        console.log("Sample dailyData entry:", analysis.dailyData[analysis.dates[0]]);
+
+        const stockDates = analysis.dates;
         const stockCloses = stockDates.map(d => {
             const dd = analysis.dailyData[d];
-            // If your server already provides close in dailyData, use it. Otherwise, we may need to adjust.
             return dd?.close ?? null;
         });
 
-        // If close is not in dailyData, we'll need to adjust the server response or compute differently.
-        // For now, assume dd.close exists. If not, tell me and I'll adapt.
+        console.log("stockCloses sample:", stockCloses.slice(0, 3));
 
         const days = stockDates.length;
+        if (days === 0) {
+            console.warn("No dates for index vs stock charts");
+            return;
+        }
 
         try {
-            // Fetch BSE Sensex and NSE Nifty daily history
             const bseCandles = await fetchDailyHistoryForSymbol('^BSESN', days);
             const nseCandles = await fetchDailyHistoryForSymbol('^NSEI', days);
 
-            // Align and compute RS for BSE
+            console.log("BSE candles count:", bseCandles.length);
+            console.log("NSE candles count:", nseCandles.length);
+
             const bseAligned = alignAndComputeRS(stockDates, stockCloses, bseCandles);
-            // Align and compute RS for NSE
             const nseAligned = alignAndComputeRS(stockDates, stockCloses, nseCandles);
 
-            // BSE charts
-            createIndexChart('bseIndexChart', bseAligned.dates, bseAligned.index, 'BSE Sensex');
-            createStockChart('bseStockChart', bseAligned.dates, bseAligned.stock, 'Stock Price');
-            createRSChart('bseRSChart', bseAligned.dates, bseAligned.rs, 'Relative Strength (Stock / BSE)');
+            console.log("BSE aligned:", bseAligned.dates.length);
+            console.log("NSE aligned:", nseAligned.dates.length);
 
-            // NSE charts
-            createIndexChart('nseIndexChart', nseAligned.dates, nseAligned.index, 'NSE Nifty');
-            createStockChart('nseStockChart', nseAligned.dates, nseAligned.stock, 'Stock Price');
-            createRSChart('nseRSChart', nseAligned.dates, nseAligned.rs, 'Relative Strength (Stock / NSE)');
+            if (bseAligned.dates.length > 0) {
+                createIndexChart('bseIndexChart', bseAligned.dates, bseAligned.index, 'BSE Sensex');
+                createStockChart('bseStockChart', bseAligned.dates, bseAligned.stock, 'Stock Price');
+                createRSChart('bseRSChart', bseAligned.dates, bseAligned.rs, 'Relative Strength (Stock / BSE)');
+            }
+
+            if (nseAligned.dates.length > 0) {
+                createIndexChart('nseIndexChart', nseAligned.dates, nseAligned.index, 'NSE Nifty');
+                createStockChart('nseStockChart', nseAligned.dates, nseAligned.stock, 'Stock Price');
+                createRSChart('nseRSChart', nseAligned.dates, nseAligned.rs, 'Relative Strength (Stock / NSE)');
+            }
         } catch (error) {
             console.warn("Index vs Stock charts failed:", error);
-            // Optionally, show a message in the UI.
         }
     }
+
 
 </script>
 </body>
