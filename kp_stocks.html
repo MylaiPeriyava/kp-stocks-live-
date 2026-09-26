@@ -6030,6 +6030,8 @@ function getWlPatternTimeWindow(timeStr) {
         }
 
         const days = stockDates.length;
+        let bseInfo = null;
+        let nseInfo = null;
 
         try {
             const bseCandles = await fetchDailyHistoryForSymbol('^BSESN', days);
@@ -6043,12 +6045,15 @@ function getWlPatternTimeWindow(timeStr) {
                 const bseRet = dailyReturns(bseAligned.index);
                 const stkRetBSE = dailyReturns(bseAligned.stock);
                 const corrBSE = pearsonCorrelation(bseRet, stkRetBSE);
-                const rsTrendBSE = rsTrendLabel(bseAligned.rs);
-
+                const rsInfoBSE = rsTrendInfo(bseAligned.rs);
                 const corrText = corrBSE === null ? 'N/A' : corrBSE.toFixed(2);
-                list.innerHTML +=
-                    '<li><strong>BSE Sensex:</strong> Correlation = ' + corrText +
-                    '. ' + rsTrendBSE + '.</li>';
+
+                bseInfo = {
+                    name: 'BSE Sensex',
+                    correlation: corrText,
+                    rsLabel: rsInfoBSE.label,
+                    color: rsInfoBSE.color
+                };
             }
 
             // NSE insights
@@ -6056,16 +6061,83 @@ function getWlPatternTimeWindow(timeStr) {
                 const nseRet = dailyReturns(nseAligned.index);
                 const stkRetNSE = dailyReturns(nseAligned.stock);
                 const corrNSE = pearsonCorrelation(nseRet, stkRetNSE);
-                const rsTrendNSE = rsTrendLabel(nseAligned.rs);
-
+                const rsInfoNSE = rsTrendInfo(nseAligned.rs);
                 const corrText = corrNSE === null ? 'N/A' : corrNSE.toFixed(2);
-                list.innerHTML +=
-                    '<li><strong>NSE Nifty:</strong> Correlation = ' + corrText +
-                    '. ' + rsTrendNSE + '.</li>';
+
+                nseInfo = {
+                    name: 'NSE Nifty',
+                    correlation: corrText,
+                    rsLabel: rsInfoNSE.label,
+                    color: rsInfoNSE.color
+                };
             }
         } catch (error) {
             console.warn("Market RS insights failed:", error);
             list.innerHTML += '<li>Market relative strength analysis unavailable.</li>';
+            return;
+        }
+
+        // Show BSE and NSE lines with color
+        if (bseInfo) {
+            list.innerHTML +=
+                '<li><strong>' + bseInfo.name + ':</strong> Correlation = ' + bseInfo.correlation +
+                '. <span style="color:' + bseInfo.color + '; font-weight:600;">' + bseInfo.rsLabel + '</span>.</li>';
+        }
+
+        if (nseInfo) {
+            list.innerHTML +=
+                '<li><strong>' + nseInfo.name + ':</strong> Correlation = ' + nseInfo.correlation +
+                '. <span style="color:' + nseInfo.color + '; font-weight:600;">' + nseInfo.rsLabel + '</span>.</li>';
+        }
+
+        // Overall verdict
+        if (bseInfo && nseInfo) {
+            const bseStrong = bseInfo.color === "#137333"; // green
+            const bseWeak = bseInfo.color === "#b3261e";   // red
+            const nseStrong = nseInfo.color === "#137333";
+            const nseWeak = nseInfo.color === "#b3261e";
+
+            let verdictText = "";
+            let verdictColor = "#374151"; // default
+
+            if (bseStrong && nseStrong) {
+                verdictText = "Overall verdict: Stock shows broad outperformance vs both BSE and NSE.";
+                verdictColor = "#137333"; // green
+            } else if (bseWeak && nseWeak) {
+                verdictText = "Overall verdict: Stock shows broad underperformance vs both BSE and NSE.";
+                verdictColor = "#b3261e"; // red
+            } else if (bseStrong || nseStrong) {
+                verdictText = "Overall verdict: Stock outperforms one major index and is neutral/weak vs the other.";
+                verdictColor = "#137333";
+            } else if (bseWeak || nseWeak) {
+                verdictText = "Overall verdict: Stock underperforms one major index and is neutral/strong vs the other.";
+                verdictColor = "#b3261e";
+            } else {
+                verdictText = "Overall verdict: Stock is broadly in line with both major indices.";
+            }
+
+            list.innerHTML +=
+                '<li><span style="color:' + verdictColor + '; font-weight:700;">' + verdictText + '</span></li>';
+        } else if (bseInfo || nseInfo) {
+            const single = bseInfo || nseInfo;
+            const isStrong = single.color === "#137333";
+            const isWeak = single.color === "#b3261e";
+
+            let verdictText = "";
+            let verdictColor = "#374151";
+
+            if (isStrong) {
+                verdictText = "Overall verdict: Stock shows outperformance vs " + single.name + ".";
+                verdictColor = "#137333";
+            } else if (isWeak) {
+                verdictText = "Overall verdict: Stock shows underperformance vs " + single.name + ".";
+                verdictColor = "#b3261e";
+            } else {
+                verdictText = "Overall verdict: Stock is broadly in line with " + single.name + ".";
+            }
+
+            list.innerHTML +=
+                '<li><span style="color:' + verdictColor + '; font-weight:700;">' + verdictText + '</span></li>';
         }
     }
 
@@ -6566,7 +6638,27 @@ wlPatternChart = new Chart(ctx, {
         return "RS flat – stock moving in line with index";
     }
 
+    function rsTrendInfo(rs) {
+        if (rs.length < 4) {
+            return { label: "Insufficient data", color: "#6b7280" }; // gray
+        }
+        const mid = Math.floor(rs.length / 2);
+        const firstHalf = rs.slice(0, mid);
+        const secondHalf = rs.slice(mid);
 
+        const avg1 = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+        const avg2 = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+
+        const changePct = ((avg2 - avg1) / avg1) * 100;
+
+        if (changePct > 3) {
+            return { label: "RS rising – stock outperforming", color: "#137333" }; // green
+        } else if (changePct < -3) {
+            return { label: "RS falling – stock underperforming", color: "#b3261e" }; // red
+        } else {
+            return { label: "RS flat – stock moving in line with index", color: "#374151" }; // normal text
+        }
+    }
 
 </script>
 </body>
