@@ -1,7 +1,18 @@
 # kp_server.py
 # Local server for KP's Stocks (Live) - WITH FIREBASE
-# Whitelist of valid users
-VALID_USERS = {"KP","PK"}  # Add new users here: {"KP", "RA", "ADMIN"}
+
+# ============ USER CONFIG (single source of truth) ============
+# Format: "USERNAME": "PASSWORD"
+# - Passwords are stored as plain text here for simplicity.
+# - If you really want "no password" for a user, use an empty string "".
+# - Add new users here only; do not redefine elsewhere.
+USERS = {
+    "KP": "your_KP_password",
+    "PK": "your_PK_password",
+    # Example: "RA": "ra_secret",
+    # Example with blank password (not recommended): "GUEST": "",
+}
+
 import json
 import os
 from datetime import datetime
@@ -170,8 +181,6 @@ def get_price():
         return jsonify({"error": str(error)}), 500
 
 
-
-
 def get_analysis_for_symbol(user_symbol):
     if not user_symbol:
         return {"error": "symbol parameter required"}
@@ -229,7 +238,21 @@ def get_analysis_for_symbol(user_symbol):
                     short_term_trend += " The 14-day RSI is above 70, which can indicate an overbought condition."
                 elif latest_rsi < 30:
                     short_term_trend += " The 14-day RSI is below 30, which can indicate an oversold condition."
-        return {"symbol": symbol, "name": name, "sector": sector, "industry": industry, "marketCap": market_cap, "pe": pe, "eps": eps, "week52High": week52_high, "week52Low": week52_low, "latestClose": latest_close, "description": description, "shortTermTrend": short_term_trend, "longTermTrend": long_term_trend}
+        return {
+            "symbol": symbol,
+            "name": name,
+            "sector": sector,
+            "industry": industry,
+            "marketCap": market_cap,
+            "pe": pe,
+            "eps": eps,
+            "week52High": week52_high,
+            "week52Low": week52_low,
+            "latestClose": latest_close,
+            "description": description,
+            "shortTermTrend": short_term_trend,
+            "longTermTrend": long_term_trend
+        }
     except Exception as error:
         return {"error": str(error)}
 
@@ -311,7 +334,21 @@ def wishlist():
                 continue
             symbol = item.get("symbol", "")
             yahoo_symbol = to_yahoo_symbol(symbol)
-            row = {"type": "symbol", "symbol": symbol, "yahooSymbol": yahoo_symbol, "price": None, "change": None, "changePercent": None, "dayHigh": None, "dayLow": None, "week52High": None, "week52Low": None, "volume": None, "at52WeekLow": False, "error": None}
+            row = {
+                "type": "symbol",
+                "symbol": symbol,
+                "yahooSymbol": yahoo_symbol,
+                "price": None,
+                "change": None,
+                "changePercent": None,
+                "dayHigh": None,
+                "dayLow": None,
+                "week52High": None,
+                "week52Low": None,
+                "volume": None,
+                "at52WeekLow": False,
+                "error": None
+            }
             try:
                 ticker = yf.Ticker(yahoo_symbol)
                 fast_info = ticker.fast_info
@@ -337,7 +374,17 @@ def wishlist():
                     change = price - previous_close
                     change_percent = (change / previous_close) * 100
                 at_52_week_low = day_low is not None and week52_low is not None and abs(day_low - week52_low) < 0.01
-                row.update({"price": price, "change": change, "changePercent": change_percent, "dayHigh": day_high, "dayLow": day_low, "week52High": week52_high, "week52Low": week52_low, "volume": volume, "at52WeekLow": at_52_week_low})
+                row.update({
+                    "price": price,
+                    "change": change,
+                    "changePercent": change_percent,
+                    "dayHigh": day_high,
+                    "dayLow": day_low,
+                    "week52High": week52_high,
+                    "week52Low": week52_low,
+                    "volume": volume,
+                    "at52WeekLow": at_52_week_low
+                })
             except Exception as error:
                 row["error"] = str(error)
             rows.append(row)
@@ -366,46 +413,41 @@ def get_rates():
 
 
 # ============ VALIDATE ENDPOINT FOR AUTHENTICATION ============
-# Whitelist of valid users - add new usernames here
-VALID_USERS = {"KP", "PK"}  # Add more users like: {"KP", "RA", "ADMIN"}
-
 @app.route("/validate")
 def validate_user_files():
     user = (request.args.get("user") or "").strip().upper()
-    
-    # Check if user is in whitelist
-    if user not in VALID_USERS:
-        return jsonify({"exists": False, "error": "User not found. Please check spelling or contact admin."}), 404
-    
-    # User is valid - check if they have data in Firestore
+    pwd = request.args.get("pwd") or ""
+
+    # Check if user exists and password matches
+    if user not in USERS or USERS[user] != pwd:
+        return jsonify({"exists": False, "error": "Invalid user name or password."}), 404
+
+    # User + password OK - check if they have data in Firestore
     holdings_doc = db.collection('holdings').document(user).get()
-    
+
     if not holdings_doc.exists:
         # First time login - auto-create empty documents with default values
         try:
-            # Create holdings document
             db.collection('holdings').document(user).set({
                 'lots': [],
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
-            
-            # Create rates document with default values
+
             db.collection('rates').document(user).set({
                 'values': [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3],
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
-            
-            # Create wishlist document
+
             db.collection('wishlist').document(user).set({
                 'lines': [],
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
-            
+
             print(f"Auto-created Firestore documents for new user: {user}")
         except Exception as e:
             print(f"Error auto-creating documents for {user}: {e}")
             return jsonify({"exists": False, "error": "Failed to initialize user data"}), 500
-    
+
     return jsonify({"exists": True}), 200
 
 
@@ -439,7 +481,12 @@ def normalise_and_sort_holdings(lots):
             continue
         if not symbol or qty <= 0 or avg_price <= 0:
             continue
-        clean_lots.append({"buydate": buydate, "symbol": symbol, "qty": qty, "avgPrice": round(avg_price, 2)})
+        clean_lots.append({
+            "buydate": buydate,
+            "symbol": symbol,
+            "qty": qty,
+            "avgPrice": round(avg_price, 2)
+        })
     return sorted(clean_lots, key=lambda lot: (parse_holding_buydate(lot["buydate"]), lot["symbol"], lot["qty"], lot["avgPrice"]))
 
 
@@ -474,7 +521,13 @@ def manage_holdings():
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
             
-            return jsonify({"ok": True, "message": "Holding lot removed.", "removedLot": removed_lot, "count": len(sorted_lots), "file": f"Holdings_{user}.json"})
+            return jsonify({
+                "ok": True,
+                "message": "Holding lot removed.",
+                "removedLot": removed_lot,
+                "count": len(sorted_lots),
+                "file": f"Holdings_{user}.json"
+            })
         
         if action == "add":
             lot = payload.get("lot")
@@ -509,12 +562,19 @@ def manage_holdings():
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
             
-            return jsonify({"ok": True, "message": "Holding lot added.", "addedLot": new_lot, "count": len(sorted_lots), "file": f"Holdings_{user}.json"})
+            return jsonify({
+                "ok": True,
+                "message": "Holding lot added.",
+                "addedLot": new_lot,
+                "count": len(sorted_lots),
+                "file": f"Holdings_{user}.json"
+            })
         
         return jsonify({"error": "Invalid action. Use 'add' or 'remove'."}), 400
     
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+
 
 @app.route("/manage-wishlist", methods=["POST"])
 def manage_wishlist():
@@ -586,7 +646,8 @@ def manage_wishlist():
     
     except Exception as error:
         return jsonify({"error": str(error)}), 500
-        
+
+
 @app.route("/save-rates", methods=["POST"])
 def save_rates():
     user = get_user_from_request()
@@ -662,7 +723,14 @@ def chart_data():
                 time_value = int(ts.timestamp()) if use_unix_time else index_value.strftime("%Y-%m-%d")
             except:
                 continue
-            candles.append({"time": time_value, "open": round(open_price, 2), "high": round(high_price, 2), "low": round(low_price, 2), "close": round(close_price, 2), "volume": int(volume) if volume else 0})
+            candles.append({
+                "time": time_value,
+                "open": round(open_price, 2),
+                "high": round(high_price, 2),
+                "low": round(low_price, 2),
+                "close": round(close_price, 2),
+                "volume": int(volume) if volume else 0
+            })
             close_values.append(close_price)
             candle_times.append(time_value)
         if not candles:
@@ -670,12 +738,34 @@ def chart_data():
         rsi_values = calculate_rsi(close_values, rsi_period)
         ema9_values = calculate_ema(close_values, 9)
         ema21_values = calculate_ema(close_values, 21)
-        rsi_data = [{"time": candle_times[i], "value": round(rsi_values[i], 2)} for i in range(len(rsi_values)) if rsi_values[i] is not None]
-        ema9_data = [{"time": candle_times[i], "value": round(ema9_values[i], 2)} for i in range(len(ema9_values)) if ema9_values[i] is not None]
-        ema21_data = [{"time": candle_times[i], "value": round(ema21_values[i], 2)} for i in range(len(ema21_values)) if ema21_values[i] is not None]
-        return jsonify({"symbol": display_nse_symbol(user_symbol), "yahooSymbol": yahoo_symbol, "period": period, "interval": interval, "rsiPeriod": rsi_period, "latestClose": candles[-1]["close"], "latestRsi": rsi_data[-1]["value"] if rsi_data else None, "candles": candles, "rsi": rsi_data, "ema9": ema9_data, "ema21": ema21_data})
+        rsi_data = [
+            {"time": candle_times[i], "value": round(rsi_values[i], 2)}
+            for i in range(len(rsi_values)) if rsi_values[i] is not None
+        ]
+        ema9_data = [
+            {"time": candle_times[i], "value": round(ema9_values[i], 2)}
+            for i in range(len(ema9_values)) if ema9_values[i] is not None
+        ]
+        ema21_data = [
+            {"time": candle_times[i], "value": round(ema21_values[i], 2)}
+            for i in range(len(ema21_values)) if ema21_values[i] is not None
+        ]
+        return jsonify({
+            "symbol": display_nse_symbol(user_symbol),
+            "yahooSymbol": yahoo_symbol,
+            "period": period,
+            "interval": interval,
+            "rsiPeriod": rsi_period,
+            "latestClose": candles[-1]["close"],
+            "latestRsi": rsi_data[-1]["value"] if rsi_data else None,
+            "candles": candles,
+            "rsi": rsi_data,
+            "ema9": ema9_data,
+            "ema21": ema21_data
+        })
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+
 
 @app.route("/pattern-data")
 def pattern_data():
@@ -742,6 +832,7 @@ def pattern_data():
     
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+
 
 @app.route("/wl-pattern-data")
 def wl_pattern_data():
@@ -877,6 +968,5 @@ def daily_history():
         return jsonify({"error": str(error)}), 500
 
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
+    app.run(host="0.00.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
