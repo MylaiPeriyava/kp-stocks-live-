@@ -7,8 +7,8 @@
 # - If you really want "no password" for a user, use an empty string "".
 # - Add new users here only; do not redefine elsewhere.
 USERS = {
-    "KP": "your_KP_password",
-    "PK": "your_PK_password",
+    "KP": "",
+    "PK": "suk",
     # Example: "RA": "ra_secret",
     # Example with blank password (not recommended): "GUEST": "",
 }
