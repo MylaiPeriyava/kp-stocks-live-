@@ -968,5 +968,111 @@ def daily_history():
         return jsonify({"error": str(error)}), 500
 
 
+
+
+# ============ RESEARCH IDEAS (LLM-generated) ============
+import os
+import requests as http_requests
+import re
+import json as json_lib
+
+LLM_API_KEY = os.environ.get("LLM_API_KEY")  # set this in your hosting env
+LLM_API_URL = "https://api.perplexity.ai/chat/completions"  # adjust if using another provider
+
+@app.route("/research-ideas")
+def research_ideas():
+    """
+    Generate research ideas by scanning today's NSE market.
+    Returns JSON: [{"symbol": "...", "reason": "...", "note": "..."}]
+    """
+    if not LLM_API_KEY:
+        return jsonify({"error": "LLM not configured on server"}), 503
+
+    try:
+        base = request.host_url.rstrip("/")
+        def fetch_json(path):
+            r = http_requests.get(base + path, timeout=10)
+            r.raise_for_status()
+            return r.json()
+
+        data_52w_low = fetch_json("/52week-low-ar")
+        data_losers = fetch_json("/top-losers-ar")
+        data_52w_high = fetch_json("/52week-high-ar")
+        data_gainers = fetch_json("/top-gainers-ar")
+        data_vol = fetch_json("/volume-gainers-ar")
+
+        def summarize_table(json_data, label):
+            rows = json_data.get("rows", [])
+            if len(rows) < 2:
+                return f"{label}: (no data)\n"
+            header = rows[0]
+            lines = [label + ":"]
+            for row in rows[1:9]:
+                lines.append(" | ".join(str(c) for c in row))
+            return "\n".join(lines) + "\n"
+
+        market_text = (
+            summarize_table(data_52w_low, "52-Week Low") +
+            summarize_table(data_losers, "Top Losers") +
+            summarize_table(data_52w_high, "52-Week High") +
+            summarize_table(data_gainers, "Top Gainers") +
+            summarize_table(data_vol, "Volume Gainers")
+        )
+
+        prompt = (
+            "You are an Indian equity researcher focusing on delivery trades.\n"
+            "Scan today’s NSE market using the following data and identify 5–8 unusual movers worth researching.\n"
+            "For each, give:\n"
+            "- symbol (NSE symbol, e.g. RELIANCE-EQ)\n"
+            "- reason (why it’s unusual: gap, volume, 52-week break, sector move, etc.)\n"
+            "- note (1–2 lines on what to check: news, results, sector, technicals).\n"
+            "Return ONLY a JSON array of objects with keys: symbol, reason, note.\n\n"
+            "Market data:\n"
+        ) + market_text
+
+        headers = {
+            "Authorization": "Bearer " + LLM_API_KEY,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "sonar",  # or your chosen model
+            "messages": [
+                {"role": "system", "content": "You are a concise Indian equity research assistant. Output valid JSON only."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.3
+        }
+
+        resp = http_requests.post(LLM_API_URL, json=payload, headers=headers, timeout=20)
+        resp.raise_for_status()
+        result = resp.json()
+
+        text = result["choices"][0]["message"]["content"]
+
+        match = re.search(r"\[[\s\S]*\]", text)
+        if not match:
+            return jsonify({"error": "LLM did not return a JSON array"}), 502
+        ideas = json_lib.loads(match.group(0))
+
+        if not isinstance(ideas, list):
+            return jsonify({"error": "LLM response is not a list"}), 502
+
+        clean_ideas = []
+        for item in ideas:
+            if not isinstance(item, dict):
+                continue
+            sym = str(item.get("symbol", "")).strip().upper()
+            reason = str(item.get("reason", "")).strip()
+            note = str(item.get("note", "")).strip()
+            if not sym or not reason:
+                continue
+            clean_ideas.append({"symbol": sym, "reason": reason, "note": note})
+
+        return jsonify(clean_ideas)
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
 if __name__ == "__main__":
-    app.run(host="0.00.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
