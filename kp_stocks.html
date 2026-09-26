@@ -6874,6 +6874,139 @@ wlPatternChart = new Chart(ctx, {
         }
     }
 
+
+    // Ensure these are defined:
+    // const API_BASE = "https://your-app-url.a.run.app";  // your deployed URL
+    // let CURRENT_USER = "USER1"; // or from your login logic
+
+    function getCurrentUser() {
+        return CURRENT_USER || DEFAULT_USER || "USER1";
+    }
+
+    async function loadTrades() {
+        const tbody = document.getElementById("trades-body");
+        tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+
+        const user = getCurrentUser();
+        const url = API_BASE + "/list-trades?user=" + encodeURIComponent(user);
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || ("HTTP " + res.status));
+            }
+
+            const trades = await res.json();
+            tbody.innerHTML = "";
+
+            if (trades.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='7'>No trades added yet.</td></tr>";
+                return;
+            }
+
+            for (const t of trades) {
+                const pl = (t.totalReturned || 0) - (t.totalSpent || 0);
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+                <td>${t.buyDate || ""}</td>
+                <td>${t.sellDate || ""}</td>
+                <td>${t.symbol || ""}</td>
+                <td>${Number(t.totalSpent || 0).toFixed(2)}</td>
+                <td>${Number(t.totalReturned || 0).toFixed(2)}</td>
+                <td style="color:${pl >= 0 ? 'green' : 'red'}">${pl.toFixed(2)}</td>
+                <td>
+                    <button data-trade-id="${t.id}" class="delete-trade-btn">Delete</button>
+                </td>
+            `;
+
+                tbody.appendChild(tr);
+            }
+
+            tbody.querySelectorAll(".delete-trade-btn").forEach(btn => {
+                btn.addEventListener("click", () => deleteTrade(btn.dataset.tradeId));
+            });
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan='7'>Error loading trades: ${err.message}</td></tr>`;
+        }
+    }
+
+    document.getElementById("add-trade-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const user = getCurrentUser();
+        const buyDate = document.getElementById("buy-date").value;
+        const sellDate = document.getElementById("sell-date").value;
+        const symbol = document.getElementById("symbol").value.trim().toUpperCase();
+        const totalSpent = parseFloat(document.getElementById("total-spent").value);
+        const totalReturned = parseFloat(document.getElementById("total-returned").value);
+
+        if (!buyDate || !sellDate || !symbol || isNaN(totalSpent) || isNaN(totalReturned)) {
+            alert("Please fill all fields correctly.");
+            return;
+        }
+
+        const url = API_BASE + "/add-trade?user=" + encodeURIComponent(user);
+
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    buyDate,
+                    sellDate,
+                    symbol,
+                    totalSpent,
+                    totalReturned
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || ("HTTP " + res.status));
+            }
+
+            e.target.reset();
+            await loadTrades();
+        } catch (err) {
+            alert("Failed to add trade: " + err.message);
+        }
+    });
+
+    async function deleteTrade(tradeId) {
+        if (!confirm("Delete this trade?")) return;
+
+        const user = getCurrentUser();
+        const url = API_BASE + "/delete-trade?user=" + encodeURIComponent(user);
+
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tradeId })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || ("HTTP " + res.status));
+            }
+
+            await loadTrades();
+        } catch (err) {
+            alert("Failed to delete trade: " + err.message);
+        }
+    }
+
+    // Hook into your existing showSection()
+    const originalShowSection = window.showSection;
+    window.showSection = function (sectionId) {
+        originalShowSection(sectionId);
+        if (sectionId === "tradesSection") {
+            loadTrades();
+        }
+    };
+
 </script>
 </body>
 </html>
