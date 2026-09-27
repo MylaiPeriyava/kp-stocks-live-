@@ -153,7 +153,6 @@ def scrape_ipogyani_page(url, page=1):
                 if not company or company == 'No data available':
                     continue
                 
-                # Extract by correct column positions
                 sector = cells[1].get_text(strip=True) if len(cells) > 1 else ''
                 listing_date = cells[2].get_text(strip=True) if len(cells) > 2 else ''
                 issue_price = cells[3].get_text(strip=True).replace('Rs ', '').replace(',', '').strip() if len(cells) > 3 else ''
@@ -244,18 +243,18 @@ def get_ipo_data():
                 unique_ipos.append(ipo)
         
         # Sort by listing date (latest first)
-def parse_date(date_str):
-    if not date_str:
-        return datetime(1900, 1, 1)
-    try:
-        for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
+        def parse_date(date_str):
+            if not date_str:
+                return datetime(1900, 1, 1)
             try:
-                return datetime.strptime(date_str.strip(), fmt)
-            except ValueError:
-                continue
-        return datetime(1900, 1, 1)
-    except Exception:
-        return datetime(1900, 1, 1)
+                for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
+                    try:
+                        return datetime.strptime(date_str.strip(), fmt)
+                    except:
+                        continue
+                return datetime(1900, 1, 1)
+            except:
+                return datetime(1900, 1, 1)
         
         unique_ipos.sort(key=lambda x: parse_date(x['listing_date']), reverse=True)
         
@@ -271,36 +270,6 @@ def parse_date(date_str):
         import traceback
         traceback.print_exc()
         return jsonify([])
-
-        
-        # Sort by listing date (latest first)
-def parse_date(date_str):
-    if not date_str:
-        return datetime(1900, 1, 1)
-    try:
-        # Handle "08 May 26" format (2-digit year)
-        for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
-            try:
-                return datetime.strptime(date_str.strip(), fmt)
-            except ValueError:
-                continue
-        return datetime(1900, 1, 1)
-    except:
-        return datetime(1900, 1, 1)
-
-        
-        unique_ipos.sort(key=lambda x: parse_date(x['listing_date']), reverse=True)
-        
-        print(f'Total unique IPOs: {len(unique_ipos)}')
-        return jsonify(unique_ipos)
-        
-    except Exception as e:
-        print(f'Error in /ipo-data: {e}')
-        import traceback
-        traceback.print_exc()
-        return jsonify([])
-
-        
 
 
 # ============ ANAND RATHI SCREENERS (RESTORED) ============
