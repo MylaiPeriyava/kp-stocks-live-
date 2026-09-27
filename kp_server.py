@@ -52,7 +52,7 @@ db = firestore.client()
 
 app = Flask(__name__, static_folder=".")
 # Initialize NSE client
-client = Client()
+nse = client
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Default user
@@ -976,8 +976,6 @@ def daily_history():
         return jsonify({"error": str(error)}), 500
 
 
-
-
 # ============ RESEARCH IDEAS (LLM-generated) ============
 import os
 import requests as http_requests
@@ -1029,10 +1027,10 @@ def research_ideas():
 
         prompt = (
             "You are an Indian equity researcher focusing on delivery trades.\n"
-            "Scan today’s NSE market using the following data and identify 5–8 unusual movers worth researching.\n"
+            "Scan today's NSE market using the following data and identify 5–8 unusual movers worth researching.\n"
             "For each, give:\n"
             "- symbol (NSE symbol, e.g. RELIANCE-EQ)\n"
-            "- reason (why it’s unusual: gap, volume, 52-week break, sector move, etc.)\n"
+            "- reason (why it's unusual: gap, volume, 52-week break, sector move, etc.)\n"
             "- note (1–2 lines on what to check: news, results, sector, technicals).\n"
             "Return ONLY a JSON array of objects with keys: symbol, reason, note.\n\n"
             "Market data:\n"
@@ -1161,6 +1159,7 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
     try:
@@ -1168,7 +1167,7 @@ def get_ipo_data():
         
         # 1. Get Recent IPOs (listed - with listing prices)
         try:
-	recent_ipos = nse.ipo.recent()
+            recent_ipos = nse.ipo.recent()
             for ipo in recent_ipos:
                 issue_price = float(ipo.get('price', 0) or 0)
                 listing_price = float(ipo.get('listing_price', 0) or 0)
@@ -1191,7 +1190,7 @@ def get_ipo_data():
         
         # 2. Get Current IPOs (open for subscription)
         try:
-	current_ipos = nse.ipo.current()
+            current_ipos = nse.ipo.current()
             for ipo in current_ipos:
                 all_ipos.append({
                     'symbol': ipo.get('symbol', ''),
@@ -1208,7 +1207,7 @@ def get_ipo_data():
         
         # 3. Get Upcoming IPOs
         try:
-	upcoming_ipos = nse.ipo.upcoming()
+            upcoming_ipos = nse.ipo.upcoming()
             for ipo in upcoming_ipos:
                 all_ipos.append({
                     'symbol': ipo.get('symbol', ''),
@@ -1231,7 +1230,6 @@ def get_ipo_data():
     except Exception as e:
         print(f'Error: {e}')
         return jsonify([])
-
 
 
 if __name__ == "__main__":
