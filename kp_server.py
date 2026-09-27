@@ -228,6 +228,13 @@ def get_ipo_data():
             ipo['status'] = 'upcoming'
         all_ipos.extend(upcoming_ipos)
         
+        # DEBUG: Print first IPO
+        if all_ipos:
+            print(f'\n=== FIRST IPO DEBUG ===')
+            print(f'Company: {all_ipos[0]["company"]}')
+            print(f'All fields: {all_ipos[0]}')
+            print(f'Total before dedup: {len(all_ipos)}')
+        
         # Remove duplicates
         seen = set()
         unique_ipos = []
@@ -261,6 +268,8 @@ def get_ipo_data():
         import traceback
         traceback.print_exc()
         return jsonify([])
+
+        
 
 
 # ============ ANAND RATHI SCREENERS (RESTORED) ============
