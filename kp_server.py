@@ -1159,44 +1159,113 @@ def delete_trade():
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
     try:
-        url = 'https://www.moneycontrol.com/ipo/listed-ipos/'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'text/html,application/xhtml+xml',
-        }
-        
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        
-        html = response.text
-        
-        # Debug: Save HTML to file for inspection
-        with open('/tmp/mc_ipo.html', 'w', encoding='utf-8') as f:
-            f.write(html)
-        
-        # Try simple parsing
-        ipos = []
-        
-        # Look for any table with IPO data
-        table_matches = re.findall(r'<table[^>]*>([\s\S]{100,10000})</table>', html, re.IGNORECASE)
-        
-        print(f'Found {len(table_matches)} tables')
-        
-        # For now, return sample data so we can build frontend
-        sample = [
-            {
-                'symbol': 'TEST IPO LTD',
-                'listingDate': '2026-09-25',
-                'bidPrice': 550.0,
-                'listedPrice': 638.0,
-                'listingGain': 88.0,
-                'listingGainPercent': 16.0,
-                'subscription': 45.2,
-                'status': 'listed'
-            }
+        # All 4 IPO pages
+        IPO_PAGES = [
+            ('listed', 'https://www.moneycontrol.com/ipo/listed-ipos/'),
+            ('closed', 'https://www.moneycontrol.com/ipo/closed-ipos/'),
+            ('open', 'https://www.moneycontrol.com/ipo/open-ipos/'),
+            ('upcoming', 'https://www.moneycontrol.com/ipo/upcoming-ipos/'),
         ]
         
-        return jsonify(sample)
+        all_ipos = []
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+        }
+        
+        for status, url in IPO_PAGES:
+            try:
+                response = requests.get(url, headers=headers, timeout=15)
+                response.raise_for_status()
+                html = response.text
+                
+                # Parse tables
+                tables = pd.read_html(html)
+                
+                for df in tables:
+                    if len(df) < 2:
+                        continue
+                    
+                    # Normalize column names
+                    df.columns = [str(col).lower().strip() for col in df.columns]
+                    
+                    # Find relevant columns
+                    symbol_col = None
+                    date_col = None
+                    price_cols = []
+                    
+                    for col in df.columns:
+                        col_lower = col.lower()
+                        if any(x in col_lower for x in ['symbol', 'company', 'name', 'issue']):
+                            symbol_col = col
+                        elif any(x in col_lower for x in ['date', 'list']):
+                            date_col = col
+                        elif any(x in col_lower for x in ['price', 'bid', 'issue', 'cap']):
+                            price_cols.append(col)
+                    
+                    if not symbol_col:
+                        continue
+                    
+                    # Extract data
+                    for _, row in df.iterrows():
+                        try:
+                            ipo = {
+                                'symbol': str(row.get(symbol_col, ''))[:50] if pd.notna(row.get(symbol_col)) else '',
+                                'listingDate': str(row.get(date_col, '')) if date_col and pd.notna(row.get(date_col)) else '',
+                                'status': status,
+                                'bidPrice': None,
+                                'listedPrice': None,
+                                'listingGain': None,
+                                'listingGainPercent': None,
+                                'subscription': None,
+                            }
+                            
+                            # Extract prices
+                            if len(price_cols) >= 1:
+                                try:
+                                    ipo['bidPrice'] = float(price_cols[0])
+                                except:
+                                    pass
+                            if len(price_cols) >= 2:
+                                try:
+                                    ipo['listedPrice'] = float(price_cols[1])
+                                except:
+                                    pass
+                            
+                            # Calculate gain if both prices exist
+                            if ipo['bidPrice'] and ipo['listedPrice']:
+                                ipo['listingGain'] = round(ipo['listedPrice'] - ipo['bidPrice'], 2)
+                                ipo['listingGainPercent'] = round((ipo['listingGain'] / ipo['bidPrice']) * 100, 2)
+                            
+                            # Clean symbol
+                            if ipo['symbol']:
+                                ipo['symbol'] = ipo['symbol'].replace('Add to', '').strip()
+                            
+                            all_ipos.append(ipo)
+                            
+                        except Exception as e:
+                            print(f'Row error: {e}')
+                            continue
+                
+            except Exception as e:
+                print(f'Page error ({url}): {e}')
+                continue
+        
+        # Remove duplicates and sort
+        seen = set()
+        unique_ipos = []
+        for ipo in all_ipos:
+            key = (ipo['symbol'], ipo['listingDate'])
+            if key not in seen:
+                seen.add(key)
+                unique_ipos.append(ipo)
+        
+        # Sort by date (newest first)
+        unique_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
+        
+        return jsonify(unique_ipos)
         
     except Exception as e:
         print(f'Error: {e}')
