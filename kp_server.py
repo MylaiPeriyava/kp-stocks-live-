@@ -1153,6 +1153,43 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+// IPO Data Endpoint - Mainboard IPOs from Jan 2026 onwards
+app.get('/ipo-data', async (req, res) => {
+    try {
+        const response = await fetch('https://www.moneycontrol.com/ipo/mainboard-ipo/');
+        const html = await response.text();
+        
+        // Parse HTML (using cheerio if available, or regex)
+        const ipos = parseMoneycontrolIPOs(html);
+        
+        // Filter Jan 2026 onwards
+        const filtered = ipos.filter(ipo => {
+            if (!ipo.listingDate) return true; // Include upcoming
+            const listingDate = new Date(ipo.listingDate);
+            return listingDate >= new Date('2026-01-01');
+        });
+        
+        // Sort: Upcoming first, then by listing date (newest first)
+        filtered.sort((a, b) => {
+            if (!a.listingDate && !b.listingDate) return 0;
+            if (!a.listingDate) return -1;
+            if (!b.listingDate) return 1;
+            return new Date(b.listingDate) - new Date(a.listingDate);
+        });
+        
+        res.json(filtered);
+    } catch (error) {
+        console.error('IPO fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch IPO data' });
+    }
+});
+
+function parseMoneycontrolIPOs(html) {
+    // This will parse the Moneycontrol IPO table
+    // Returns array of IPO objects
+    // Implementation depends on whether you have cheerio installed
+}
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
