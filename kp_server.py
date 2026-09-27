@@ -187,16 +187,7 @@ def get_ipo_data():
                 seen.add(key)
                 unique_ipos.append(ipo)
         
-        # DEBUG: Print date formats
-        print(f'\n=== IPO DATA DEBUG ===')
         print(f'Total unique IPOs: {len(unique_ipos)}')
-        for ipo in unique_ipos[:10]:
-            print(f"Company: {ipo['company']}")
-            print(f"Date raw: '{ipo['listing_date']}'")
-            print(f"Issue price: {ipo['issue_price']}")
-            print(f"Return: {ipo['listing_return']}")
-            print('---')
-        
         return jsonify(unique_ipos)
         
     except Exception as e:
@@ -205,6 +196,52 @@ def get_ipo_data():
         traceback.print_exc()
         return jsonify([])
 
+
+# ============ ANAND RATHI SCREENERS (RESTORED) ============
+def get_anand_rathi_table(url, table_name):
+    try:
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"}, timeout=20)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        table = soup.find("table")
+        if not table:
+            return jsonify({"error": f"{table_name} table not found"}), 500
+        rows = []
+        for tr in table.find_all("tr"):
+            cells = tr.find_all(["th", "td"])
+            if not cells:
+                continue
+            rows.append([cell.get_text(" ", strip=True) for cell in cells])
+        if not rows:
+            return jsonify({"error": f"{table_name} table contained no rows"}), 500
+        return jsonify({"source": "anandrathi", "rows": rows})
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
+@app.route("/52week-low-ar")
+def fifty_two_week_low_ar():
+    return get_anand_rathi_table("https://anandrathi.com/share-market-today/52-weeks-low", "52 Weeks Low")
+
+
+@app.route("/top-losers-ar")
+def top_losers_ar():
+    return get_anand_rathi_table("https://anandrathi.com/share-market-today/top-losers-today", "Top Losers Today")
+
+
+@app.route("/52week-high-ar")
+def week_52_high_ar():
+    return get_anand_rathi_table("https://anandrathi.com/share-market-today/52-weeks-high", "52 Weeks High")
+
+
+@app.route("/top-gainers-ar")
+def top_gainers_ar():
+    return get_anand_rathi_table("https://anandrathi.com/share-market-today/top-gainers-today", "Top Gainers Today")
+
+
+@app.route("/volume-gainers-ar")
+def volume_gainers_ar():
+    return get_anand_rathi_table("https://anandrathi.com/share-market-today/volume-gainers", "Volume Gainers")
 
 
 # ============ CORE ENDPOINTS ============
@@ -928,7 +965,6 @@ def daily_history():
     except ValueError:
         days_int = 30
 
-    # Do NOT transform index symbols that start with '^'
     if user_symbol.startswith("^"):
         yahoo_symbol = user_symbol
     else:
