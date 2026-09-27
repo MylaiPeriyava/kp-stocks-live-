@@ -31,6 +31,10 @@ from firebase_admin import credentials, firestore
 import json
 import os
 
+from flask_cors import CORS
+from nseindiapy import Client
+from datetime import datetime
+
 # Initialize Firebase from environment variable
 firebase_config = os.environ.get('FIREBASE_SERVICE_ACCOUNT')
 
@@ -47,6 +51,8 @@ db = firestore.client()
 
 
 app = Flask(__name__, static_folder=".")
+# Initialize NSE client
+client = Client()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -1161,75 +1167,66 @@ def get_ipo_data():
     try:
         all_ipos = []
         
-        # Scrape Chittorgarh month-wise (2026 Jan to current month)
-        current_year = 2026
-        current_month = 9  # September
+        # 1. Get Recent IPOs (listed - with listing prices)
+        try:
+            recent_ipos = client.ipo.recent()
+            for ipo in recent_ipos:
+                issue_price = float(ipo.get('price', 0) or 0)
+                listing_price = float(ipo.get('listing_price', 0) or 0)
+                
+                listing_gain = listing_price - issue_price if listing_price and issue_price else None
+                listing_gain_percent = round((listing_gain / issue_price * 100), 2) if listing_gain and issue_price else None
+                
+                all_ipos.append({
+                    'symbol': ipo.get('symbol', ''),
+                    'listingDate': ipo.get('listing_date', ''),
+                    'status': 'listed',
+                    'bidPrice': issue_price,
+                    'listedPrice': listing_price,
+                    'listingGain': round(listing_gain, 2) if listing_gain else None,
+                    'listingGainPercent': listing_gain_percent,
+                    'subscription': None,
+                })
+        except Exception as e:
+            print(f'Error fetching recent IPOs: {e}')
         
-        for year in [2026, 2025, 2024]:  # Add more years as needed
-            start_month = 1 if year < current_year else 1
-            end_month = current_month if year == current_year else 12
-            
-            for month in range(start_month, end_month + 1):
-                try:
-                    url = f'https://www.chittorgarh.com/report/ipo-in-india-list-main-board-sme/82/mainboard/?year={year}&month={month}'
-                    headers = {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Accept': 'text/html,application/xhtml+xml',
-                    }
-                    
-                    response = requests.get(url, headers=headers, timeout=15)
-                    
-                    if response.status_code != 200:
-                        continue
-                    
-                    soup = BeautifulSoup(response.text, 'lxml')
-                    
-                    # Find tables
-                    tables = soup.find_all('table')
-                    
-                    for table in tables:
-                        rows = table.find_all('tr')
-                        
-                        for row in rows[1:]:  # Skip header
-                            cols = row.find_all('td')
-                            if len(cols) < 3:
-                                continue
-                            
-                            cells = [cell.get_text(strip=True) for cell in cols]
-                            
-                            # Parse Chittorgarh format
-                            company = cells[0] if len(cells) > 0 else ''
-                            dates = cells[1] if len(cells) > 1 else ''
-                            status = cells[2] if len(cells) > 2 else ''
-                            
-                            # Determine status
-                            ipo_status = 'listed'
-                            if 'upcoming' in status.lower():
-                                ipo_status = 'upcoming'
-                            elif 'open' in status.lower() or 'active' in status.lower():
-                                ipo_status = 'open'
-                            
-                            if company and len(company) < 50:
-                                all_ipos.append({
-                                    'symbol': company.split()[0][:30],
-                                    'listingDate': dates.split('-')[-1].strip() if '-' in dates else dates,
-                                    'status': ipo_status,
-                                    'bidPrice': None,
-                                    'listedPrice': None,
-                                    'listingGain': None,
-                                    'listingGainPercent': None,
-                                    'subscription': None,
-                                })
-                    
-                except Exception as e:
-                    print(f'Month {month}/{year} error: {e}')
-                    continue
+        # 2. Get Current IPOs (open for subscription)
+        try:
+            current_ipos = client.ipo.current()
+            for ipo in current_ipos:
+                all_ipos.append({
+                    'symbol': ipo.get('symbol', ''),
+                    'listingDate': ipo.get('listing_date', ''),
+                    'status': 'open',
+                    'bidPrice': ipo.get('price', None),
+                    'listedPrice': None,
+                    'listingGain': None,
+                    'listingGainPercent': None,
+                    'subscription': None,
+                })
+        except Exception as e:
+            print(f'Error fetching current IPOs: {e}')
         
-        print(f'Total: Found {len(all_ipos)} IPOs')
+        # 3. Get Upcoming IPOs
+        try:
+            upcoming_ipos = client.ipo.upcoming()
+            for ipo in upcoming_ipos:
+                all_ipos.append({
+                    'symbol': ipo.get('symbol', ''),
+                    'listingDate': ipo.get('listing_date', ''),
+                    'status': 'upcoming',
+                    'bidPrice': ipo.get('price', None),
+                    'listedPrice': None,
+                    'listingGain': None,
+                    'listingGainPercent': None,
+                    'subscription': None,
+                })
+        except Exception as e:
+            print(f'Error fetching upcoming IPOs: {e}')
         
-        # Sort by date
         all_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
         
+        print(f'Total IPOs fetched: {len(all_ipos)}')
         return jsonify(all_ipos)
         
     except Exception as e:
