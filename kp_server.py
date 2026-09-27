@@ -13,6 +13,9 @@ USERS = {
     # Example with blank password (not recommended): "GUEST": "",
 }
 
+import re
+from datetime import datetime
+
 import json
 import os
 from datetime import datetime
@@ -1152,6 +1155,190 @@ def delete_trade():
 
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+
+# =====================================================
+# IPO DATA ENDPOINT - Mainboard IPOs from Jan 2026
+# =====================================================
+@app.route('/ipo-data', methods=['GET'])
+def get_ipo_data():
+    try:
+        # Fetch from Moneycontrol Mainboard IPO page
+        url = 'https://www.moneycontrol.com/ipo/mainboard-ipo/'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        html = response.text
+        ipos = parse_moneycontrol_ipos(html)
+        
+        # Filter: Jan 2026 onwards
+        filtered = []
+        for ipo in ipos:
+            if not ipo.get('listingDate'):
+                filtered.append(ipo)  # Include upcoming
+            else:
+                try:
+                    listing_date = datetime.strptime(ipo['listingDate'], '%Y-%m-%d')
+                    if listing_date >= datetime(2026, 1, 1):
+                        filtered.append(ipo)
+                except:
+                    filtered.append(ipo)
+        
+        # Sort: Upcoming first, then by listing date (newest first)
+        def sort_key(ipo):
+            if not ipo.get('listingDate'):
+                return ('0', '')  # Upcoming first
+            return ('1', ipo['listingDate'])
+        
+        filtered.sort(key=sort_key, reverse=True)
+        
+        return jsonify(filtered)
+        
+    except Exception as e:
+        print(f'IPO fetch error: {str(e)}')
+        return jsonify({'error': f'Failed to fetch IPO data: {str(e)}'}), 500
+
+
+def parse_moneycontrol_ipos(html):
+    """Parse Moneycontrol IPO table using regex"""
+    ipos = []
+    
+    # Find the IPO table
+    table_pattern = r'<table[^>]*class="ipo-list"[^>]*>([\s\S]*?)</table>'
+    table_match = re.search(table_pattern, html, re.IGNORECASE)
+    
+    if not table_match:
+        print('IPO table not found')
+        return []
+    
+    table_html = table_match.group(1)
+    
+    # Extract rows
+    row_pattern = r'<tr[^>]*>([\s\S]*?)</tr>'
+    rows = re.findall(row_pattern, table_html, re.IGNORECASE)
+    
+    for row_html in rows:
+        # Skip header rows
+        if '<th' in row_html:
+            continue
+        
+        # Extract cells
+        cell_pattern = r'<td[^>]*>([\s\S]*?)</td>'
+        cells = re.findall(cell_pattern, row_html, re.IGNORECASE)
+        
+        if len(cells) >= 6:
+            # Strip HTML tags from cells
+            cells = [re.sub(r'<[^>]*>', '', cell).strip() for cell in cells]
+            
+            ipo = {
+                'symbol': extract_symbol(cells[0]) if len(cells) > 0 else '',
+                'listingDate': extract_listing_date(cells[1]) if len(cells) > 1 else None,
+                'bidPrice': extract_price(cells[2]) if len(cells) > 2 else None,
+                'listedPrice': extract_price(cells[3]) if len(cells) > 3 else None,
+                'listingGain': extract_price(cells[4]) if len(cells) > 4 else None,
+                'listingGainPercent': extract_percent(cells[4]) if len(cells) > 4 else None,
+                'subscription': extract_subscription(cells[5]) if len(cells) > 5 else None,
+                'status': determine_status(cells[1] if len(cells) > 1 else '', 
+                                         cells[3] if len(cells) > 3 else '')
+            }
+            
+            # Validate - must have symbol
+            if ipo['symbol']:
+                ipos.append(ipo)
+    
+    return ipos
+
+
+def extract_symbol(text):
+    """Extract company name/symbol"""
+    if not text:
+        return ''
+    # Remove extra whitespace and clean
+    return ' '.join(text.split())[:100]
+
+
+def extract_listing_date(text):
+    """Extract date in various formats and convert to YYYY-MM-DD"""
+    if not text:
+        return None
+    
+    date_patterns = [
+        r'(\d{1,2}\s+\w{3}\s+\d{4})',  # 25 Sep 2026
+        r'(\w{3}\s+\d{1,2},?\s+\d{4})',  # Sep 25, 2026
+        r'(\d{4}-\d{2}-\d{2})'  # 2026-09-25
+    ]
+    
+    for pattern in date_patterns:
+        match = re.search(pattern, text)
+        if match:
+            date_str = match.group(1)
+            try:
+                # Try parsing different formats
+                for fmt in ['%d %b %Y', '%b %d, %Y', '%b %d %Y', '%Y-%m-%d']:
+                    try:
+                        date_obj = datetime.strptime(date_str, fmt)
+                        return date_obj.strftime('%Y-%m-%d')
+                    except:
+                        continue
+            except:
+                pass
+    
+    return None
+
+
+def extract_price(text):
+    """Extract numeric price"""
+    if not text or text in ['-', '—']:
+        return None
+    
+    match = re.search(r'[\d,]+\.?\d*', text)
+    if match:
+        try:
+            return float(match.group().replace(',', ''))
+        except:
+            return None
+    return None
+
+
+def extract_percent(text):
+    """Extract percentage value"""
+    if not text:
+        return None
+    
+    match = re.search(r'([\+\-]?\d+\.?\d*)\s*%', text)
+    if match:
+        try:
+            return float(match.group(1))
+        except:
+            return None
+    return None
+
+
+def extract_subscription(text):
+    """Extract subscription multiple (e.g., 45.2x)"""
+    if not text:
+        return None
+    
+    match = re.search(r'([\d\.]+)\s*x?', text, re.IGNORECASE)
+    if match:
+        try:
+            return float(match.group(1))
+        except:
+            return None
+    return None
+
+
+def determine_status(date_text, price_text):
+    """Determine IPO status"""
+    if price_text and price_text not in ['-', '—']:
+        return 'listed'
+    elif 'Open' in date_text or 'Close' in date_text:
+        return 'open'
+    else:
+        return 'upcoming'
+
 
 
 if __name__ == "__main__":
