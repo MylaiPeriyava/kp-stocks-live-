@@ -1161,124 +1161,65 @@ def get_ipo_data():
     try:
         all_ipos = []
         
-        # ============ Scrape NSE India ============
-        try:
-            url = 'https://www.nseindia.com/market-data/all-upcoming-issues-ipo'
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml',
-            }
+        url = 'https://www.nseindia.com/market-data/all-upcoming-issues-ipo'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml',
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'lxml')
+        
+        # Find all tables
+        tables = soup.find_all('table')
+        
+        for table in tables:
+            rows = table.find_all('tr')
             
-            response = requests.get(url, headers=headers, timeout=15)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'lxml')
-            
-            # Find all tables (upcoming, current, past)
-            tables = soup.find_all('table')
-            
-            for table_idx, table in enumerate(tables):
-                rows = table.find_all('tr')
+            for row in rows[1:]:  # Skip header
+                cols = row.find_all('td')
+                if len(cols) < 5:
+                    continue
                 
-                for row in rows[1:]:  # Skip header
-                    cols = row.find_all('td')
-                    if len(cols) < 5:
-                        continue
-                    
-                    try:
-                        cells = [cell.get_text(strip=True) for cell in cols]
-                        
-                        # Parse NSE format (adjust column indices based on actual structure)
-                        symbol = cells[0] if len(cells) > 0 else ''
-                        company = cells[1] if len(cells) > 1 else ''
-                        issue_dates = cells[2] if len(cells) > 2 else ''
-                        price_band = cells[3] if len(cells) > 3 else ''
-                        issue_size = cells[4] if len(cells) > 4 else ''
-                        
-                        # Determine status based on table index
-                        # Table 0 = Upcoming, Table 1 = Current, Table 2+ = Past
-                        if table_idx == 0:
-                            status = 'upcoming'
-                        elif table_idx == 1:
-                            status = 'open'
-                        else:
-                            status = 'listed'
-                        
-                        # Parse price band (e.g., "₹427 - ₹450")
-                        issue_price = None
-                        if price_band and '-' in price_band:
-                            parts = price_band.replace('₹', '').replace(',', '').split('-')
-                            if len(parts) == 2:
-                                try:
-                                    issue_price = float(parts[1].strip())  # Upper band
-                                except:
-                                    pass
-                        
-                        # Extract listing date from issue_dates
-                        listing_date = issue_dates
-                        
-                        # Filter: Only 2026+ IPOs
-                        if '2026' not in str(listing_date) and '2027' not in str(listing_date):
-                            continue
-                        
-                        if symbol and len(symbol) < 50:
-                            ipo = {
-                                'symbol': symbol,
-                                'listingDate': listing_date,
-                                'status': status,
-                                'bidPrice': issue_price,
-                                'listedPrice': None,
-                                'listingGain': None,
-                                'listingGainPercent': None,
-                                'subscription': None,
-                            }
-                            all_ipos.append(ipo)
-                    except Exception as e:
-                        print(f'NSE row error: {e}')
-                        continue
-            
-            print(f'NSE: Found {len(all_ipos)} IPOs')
-            
-        except Exception as e:
-            print(f'NSE error: {e}')
+                cells = [cell.get_text(strip=True) for cell in cols]
+                
+                # Parse NSE format
+                company = cells[0] if len(cells) > 0 else ''
+                security_type = cells[1] if len(cells) > 1 else ''
+                issue_start = cells[2] if len(cells) > 2 else ''
+                issue_end = cells[3] if len(cells) > 3 else ''
+                status = cells[4] if len(cells) > 4 else ''
+                
+                # Filter: Only EQ (mainboard), ignore SME
+                if security_type != 'EQ':
+                    continue
+                
+                # Determine IPO status
+                ipo_status = 'upcoming'
+                if status.lower() == 'active':
+                    ipo_status = 'open'
+                
+                if company and len(company) < 50:
+                    all_ipos.append({
+                        'symbol': company.split()[0][:30],  # First word as symbol
+                        'listingDate': issue_end,
+                        'status': ipo_status,
+                        'bidPrice': None,  # Need to get from elsewhere
+                        'listedPrice': None,
+                        'listingGain': None,
+                        'listingGainPercent': None,
+                        'subscription': None,
+                    })
         
-        # ============ Get Listing Prices from Yahoo Finance ============
-        try:
-            for ipo in all_ipos:
-                if ipo['status'] == 'listed' and ipo['symbol'] and ipo['listingDate']:
-                    try:
-                        # Add .NS for NSE stocks
-                        yf_symbol = f"{ipo['symbol']}.NS"
-                        
-                        # Get historical data for listing date
-                        stock = yf.Ticker(yf_symbol)
-                        hist = stock.history(start=ipo['listingDate'], end=ipo['listingDate'])
-                        
-                        if len(hist) > 0:
-                            open_price = hist['Open'].iloc[0]
-                            ipo['listedPrice'] = round(float(open_price), 2)
-                            
-                            # Calculate gain
-                            if ipo['bidPrice']:
-                                ipo['listingGain'] = round(ipo['listedPrice'] - ipo['bidPrice'], 2)
-                                ipo['listingGainPercent'] = round((ipo['listingGain'] / ipo['bidPrice']) * 100, 2)
-                    except Exception as e:
-                        print(f'Yahoo error for {ipo["symbol"]}: {e}')
-                        continue
-            
-            print(f'Yahoo Finance: Updated listing prices')
-            
-        except Exception as e:
-            print(f'Yahoo Finance error: {e}')
-        
-        # Sort by date
-        all_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
-        
+        print(f'NSE: Found {len(all_ipos)} IPOs')
         return jsonify(all_ipos)
         
     except Exception as e:
         print(f'Error: {e}')
         return jsonify([])
+
 
 
 
