@@ -1,9 +1,8 @@
-flask 
-yfinance
+flask
 requests
 beautifulsoup4
-firebase-admin
-lxml
-nseindiapy
 flask-cors
-
+nseindiapy
+yfinance
+firebase-admin
+pandas
