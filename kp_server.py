@@ -175,8 +175,36 @@ def scrape_ipocentral_2026():
 @app.route("/ipo-data")
 def get_ipo_data():
     """Get all 2026 IPOs from IPO Central"""
-    ipos = scrape_ipocentral_2026()
-    return jsonify(ipos)
+    try:
+        ipos = scrape_ipocentral_2026()
+        
+        # Remove duplicates by company name
+        seen = set()
+        unique_ipos = []
+        for ipo in ipos:
+            key = ipo['company'].lower().strip()
+            if key not in seen:
+                seen.add(key)
+                unique_ipos.append(ipo)
+        
+        # DEBUG: Print date formats
+        print(f'\n=== IPO DATA DEBUG ===')
+        print(f'Total unique IPOs: {len(unique_ipos)}')
+        for ipo in unique_ipos[:10]:
+            print(f"Company: {ipo['company']}")
+            print(f"Date raw: '{ipo['listing_date']}'")
+            print(f"Issue price: {ipo['issue_price']}")
+            print(f"Return: {ipo['listing_return']}")
+            print('---')
+        
+        return jsonify(unique_ipos)
+        
+    except Exception as e:
+        print(f'Error in /ipo-data: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify([])
+
 
 
 # ============ CORE ENDPOINTS ============
