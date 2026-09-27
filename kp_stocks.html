@@ -7008,6 +7008,95 @@ window.showSection = function (sectionId) {
     }
 };
 
+    // IPO Data Loading
+    async function loadIPOData() {
+        try {
+            const response = await fetch('/ipo-data');
+            const ipos = await response.json();
+
+            if (!ipos || ipos.length === 0) {
+                document.getElementById('ipo-section').style.display = 'none';
+                return;
+            }
+
+            // Sort by listing date (newest first)
+            ipos.sort((a, b) => new Date(b.listingDate) - new Date(a.listingDate));
+
+            const tbody = document.getElementById('ipo-tbody');
+            tbody.innerHTML = '';
+
+            ipos.forEach(ipo => {
+                const tr = document.createElement('tr');
+
+                // Determine row color based on status
+                let rowClass = '';
+                let statusBadge = '';
+
+                if (ipo.status === 'upcoming') {
+                    rowClass = 'table-warning'; // Yellow for upcoming
+                    statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
+                } else if (ipo.listingGain < 0) {
+                    rowClass = 'table-success'; // Green for loss (positive green in our scheme)
+                    statusBadge = '<span class="badge bg-success">Listed</span>';
+                } else {
+                    rowClass = ''; // White for gain
+                    statusBadge = '<span class="badge bg-success">Listed</span>';
+                }
+
+                tr.className = rowClass;
+
+                // Format numbers
+                const bidPrice = ipo.bidPrice ? ipo.bidPrice.toFixed(2) : '-';
+                const listedPrice = ipo.listedPrice ? ipo.listedPrice.toFixed(2) : '-';
+                const listingGain = ipo.listingGain !== null && ipo.listingGain !== undefined
+                    ? ipo.listingGain.toFixed(2)
+                    : '-';
+                const listingGainPercent = ipo.listingGainPercent !== null && ipo.listingGainPercent !== undefined
+                    ? ipo.listingGainPercent.toFixed(2) + '%'
+                    : '-';
+                const subscription = ipo.subscription !== null && ipo.subscription !== undefined
+                    ? ipo.subscription.toFixed(2) + 'x'
+                    : '-';
+
+                // Format date
+                const listingDate = ipo.listingDate ? new Date(ipo.listingDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                }) : '-';
+
+                tr.innerHTML = `
+                <td><strong>${ipo.symbol || '-'}</strong></td>
+                <td>${listingDate}</td>
+                <td class="text-end">₹${bidPrice}</td>
+                <td class="text-end">₹${listedPrice}</td>
+                <td class="text-end" style="color: ${ipo.listingGain < 0 ? '#dc3545' : '#198754'}; font-weight: bold;">
+                    ${ipo.listingGain !== null && ipo.listingGain !== undefined ? (ipo.listingGain > 0 ? '+' : '') + listingGain : '-'}
+                </td>
+                <td class="text-end" style="color: ${ipo.listingGainPercent < 0 ? '#dc3545' : '#198754'}; font-weight: bold;">
+                    ${listingGainPercent}
+                </td>
+                <td class="text-end">${subscription}</td>
+                <td class="text-center">${statusBadge}</td>
+            `;
+
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('ipo-section').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error loading IPO data:', error);
+            document.getElementById('ipo-section').style.display = 'none';
+        }
+    }
+
+    // Load IPO data on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        loadIPOData();
+    });
+
+
 </script>
 </body>
 </html>
