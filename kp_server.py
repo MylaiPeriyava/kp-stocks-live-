@@ -1156,7 +1156,7 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-from requests_html import HTMLSession
+from bs4 import BeautifulSoup
 
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
@@ -1169,47 +1169,48 @@ def get_ipo_data():
         ]
         
         all_ipos = []
-        session = HTMLSession()
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        }
         
         for status, url in IPO_PAGES:
             try:
-                r = session.get(url)
-                r.html.render(timeout=20)  # Wait for JS to load
+                response = requests.get(url, headers=headers, timeout=15)
+                response.raise_for_status()
                 
-                # Find all tables
-                tables = r.html.find('table')
+                soup = BeautifulSoup(response.text, 'lxml')
+                tables = soup.find_all('table')
                 
                 for table in tables:
-                    rows = table.find('tr')
+                    rows = table.find_all('tr')
                     
                     for row in rows[1:]:  # Skip header
-                        cols = row.find('td')
+                        cols = row.find_all('td')
                         if len(cols) < 2:
                             continue
                         
-                        # Extract text from each cell
-                        cells = [cell.text.strip() for cell in cols]
+                        cells = [cell.get_text(strip=True) for cell in cols]
                         
-                        # Try to identify symbol (usually first or second column)
-                        symbol = ''
+                        # Extract data
+                        symbol = cells[0] if len(cells) > 0 else ''
                         listing_date = ''
                         prices = []
                         
-                        for i, cell in enumerate(cells):
-                            # Symbol detection
-                            if i == 0 and len(cell) > 2 and len(cell) < 50:
-                                symbol = cell
+                        for cell in cells[1:]:
                             # Date detection
-                            elif any(x in cell.lower() for x in ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', '2025', '2026']):
+                            if any(x in cell.lower() for x in ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']):
                                 listing_date = cell
-                            # Price detection (numeric)
-                            elif cell.replace('.', '').replace(',', '').isdigit():
+                            # Price detection
+                            elif cell.replace('.', '').replace(',', '').replace('₹', '').replace('$', '').replace('Rs', '').replace('rs', '').replace('INR', '').strip():
                                 try:
-                                    prices.append(float(cell.replace(',', '')))
+                                    clean = cell.replace(',', '').replace('₹', '').replace('$', '').replace('Rs', '').replace('rs', '').replace('INR', '')
+                                    prices.append(float(clean))
                                 except:
                                     pass
                         
-                        if symbol:
+                        if symbol and len(symbol) < 50:
                             ipo = {
                                 'symbol': symbol,
                                 'listingDate': listing_date,
@@ -1245,7 +1246,6 @@ def get_ipo_data():
     except Exception as e:
         print(f'Error: {e}')
         return jsonify([])
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
