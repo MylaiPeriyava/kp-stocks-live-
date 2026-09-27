@@ -7014,11 +7014,17 @@ window.showSection = function (sectionId) {
     // IPO Data Loading
     // IPO Data Loading
     async function loadIPOData() {
-        console.log('loadIPOData called!');
+        console.log('=== loadIPOData START ===');
 
         try {
+            console.log('Fetching /ipo-data...');
             const response = await fetch('/ipo-data');
             console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                console.error('Response not OK:', response.status);
+                return;
+            }
 
             const ipos = await response.json();
             console.log('IPOs loaded:', ipos.length);
@@ -7026,97 +7032,32 @@ window.showSection = function (sectionId) {
 
             if (!ipos || ipos.length === 0) {
                 console.log('No IPOs found');
-                document.getElementById('ipo-section').style.display = 'none';
                 return;
             }
 
             const tbody = document.getElementById('ipo-tbody');
+            console.log('tbody element:', tbody);
+
             tbody.innerHTML = '';
+            console.log('Creating rows...');
 
-            ipos.forEach(ipo => {
-                const tr = document.createElement('tr');
-
-                // Determine row color based on status
-                let rowClass = '';
-                let statusBadge = '';
-
-                if (ipo.status === 'upcoming') {
-                    rowClass = 'table-warning';
-                    statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
-                } else if (ipo.listingGain !== null && ipo.listingGain < 0) {
-                    rowClass = 'table-danger';
-                    statusBadge = '<span class="badge bg-success">Listed</span>';
-                } else {
-                    rowClass = '';
-                    statusBadge = '<span class="badge bg-success">Listed</span>';
-                }
-
-                tr.className = rowClass;
-
-                // Format numbers safely
-                const bidPrice = ipo.bidPrice ? ipo.bidPrice.toFixed(2) : '-';
-                const listedPrice = ipo.listedPrice ? ipo.listedPrice.toFixed(2) : '-';
-
-                let listingGain = '-';
-                let listingGainClass = '';
-                if (ipo.listingGain !== null && ipo.listingGain !== undefined) {
-                    listingGain = (ipo.listingGain > 0 ? '+' : '') + ipo.listingGain.toFixed(2);
-                    listingGainClass = ipo.listingGain < 0 ? '#dc3545' : '#198754';
-                }
-
-                let listingGainPercent = '-';
-                let listingGainPercentClass = '';
-                if (ipo.listingGainPercent !== null && ipo.listingGainPercent !== undefined) {
-                    listingGainPercent = ipo.listingGainPercent.toFixed(2) + '%';
-                    listingGainPercentClass = ipo.listingGainPercent < 0 ? '#dc3545' : '#198754';
-                }
-
-                const subscription = ipo.subscription ? ipo.subscription + 'x' : '-';
-
-                // Format date
-                let listingDate = '-';
-                if (ipo.listingDate) {
-                    try {
-                        const dateObj = new Date(ipo.listingDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
-                        listingDate = dateObj.toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                        });
-                    } catch {
-                        listingDate = ipo.listingDate;
-                    }
-                }
-
-                tr.innerHTML = `
-                <td><a href="#" onclick="showSymbolAnalysis('${ipo.symbol}'); return false;" style="color: #0d6efd; text-decoration: none; font-weight: bold;">
-                    ${ipo.symbol || '-'}
-                </a></td>
-                <td>${listingDate}</td>
-                <td class="text-end">₹${bidPrice}</td>
-                <td class="text-end">₹${listedPrice}</td>
-                <td class="text-end" style="color: ${listingGainClass}; font-weight: bold;">
-                    ${listingGain}
-                </td>
-                <td class="text-end" style="color: ${listingGainPercentClass}; font-weight: bold;">
-                    ${listingGainPercent}
-                </td>
-                <td class="text-end">${subscription}</td>
-                <td class="text-center">${statusBadge}</td>
-            `;
-
-                tbody.appendChild(tr);
+            ipos.forEach((ipo, index) => {
+                console.log('Processing IPO', index, ipo.symbol);
+                // ... rest of the code
             });
 
-            console.log('Setting IPO section to visible');
-            document.getElementById('ipo-section').style.display = 'block';
-            console.log('IPO section display:', document.getElementById('ipo-section').style.display);
+            console.log('Setting display to block');
+            const ipoSection = document.getElementById('ipo-section');
+            console.log('ipo-section element:', ipoSection);
+            ipoSection.style.display = 'block';
+            console.log('IPO section display:', ipoSection.style.display);
+            console.log('=== loadIPOData END ===');
 
         } catch (error) {
-            console.error('Error loading IPO data:', error);
-            document.getElementById('ipo-section').style.display = 'none';
+            console.error('=== LOAD IPO DATA ERROR ===', error);
         }
     }
+
 
     // Show symbol analysis (placeholder for future)
     function showSymbolAnalysis(symbol) {
