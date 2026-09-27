@@ -1,5 +1,5 @@
 # kp_server.py
-# Local server for KP's Stocks (Live) - WITH FIREBASE
+# Local server for KP's Stocks (Live) - WITH FIREBASE 
 
 # ============ USER CONFIG ============
 USERS = {
