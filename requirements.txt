@@ -3,4 +3,4 @@ yfinance
 requests
 beautifulsoup4
 firebase-admin
-requests-html
+lxml
