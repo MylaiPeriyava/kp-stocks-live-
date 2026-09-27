@@ -1208,9 +1208,14 @@ def get_all_anandrathi_ipos():
     print('Fetching closed IPOs...')
     page = 1
     while page <= 15:  # Safety limit
+        print(f'Fetching closed IPOs page {page}...')
         rows, has_more = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/closed-ipo', page)
+        print(f'Page {page}: got {len(rows)} rows, has_more={has_more}')
+        
         if not rows:
+            print(f'No more rows on page {page}, stopping')
             break
+        
         for row in rows:
             if len(row) >= 8:
                 all_ipos.append({
@@ -1224,13 +1229,18 @@ def get_all_anandrathi_ipos():
                     'listing_date': row[7] if len(row) > 7 else '',
                     'status': 'listed'
                 })
+        
         if not has_more:
+            print(f'has_more is False, stopping')
             break
         page += 1
+    
+    print(f'Total closed IPOs so far: {len(all_ipos)}')
     
     # Scrape Recent IPOs
     print('Fetching recent IPOs...')
     rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/recent-ipo', 1)
+    print(f'Recent IPOs: got {len(rows)} rows')
     for row in rows:
         if len(row) >= 8:
             all_ipos.append({
@@ -1248,6 +1258,7 @@ def get_all_anandrathi_ipos():
     # Scrape Upcoming IPOs
     print('Fetching upcoming IPOs...')
     rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/upcoming-ipo', 1)
+    print(f'Upcoming IPOs: got {len(rows)} rows')
     for row in rows:
         if len(row) >= 6:
             all_ipos.append({
@@ -1264,6 +1275,7 @@ def get_all_anandrathi_ipos():
     
     print(f'Total IPOs fetched: {len(all_ipos)}')
     return all_ipos
+
 
 
 def extract_issue_price_max(price_str):
