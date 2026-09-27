@@ -7083,19 +7083,31 @@ window.showSection = function (sectionId) {
             const tbody = document.getElementById('ipo-tbody');
             tbody.innerHTML = '';
 
+            // Sort by listing date (most recent first)
+            ipos.sort((a, b) => {
+                const dateA = parseListingDate(a.listing_date || a.listingDate || '');
+                const dateB = parseListingDate(b.listing_date || b.listingDate || '');
+                return dateB - dateA; // Descending order
+            });
+
             ipos.forEach(ipo => {
                 const tr = document.createElement('tr');
 
-                // NEW: Adapt to IPO Central format
+                // Adapt to IPO Central format
                 const symbol = ipo.company ? ipo.company.replace(/[^A-Z0-9]/g, '').toUpperCase().substring(0, 20) : '';
                 const companyName = ipo.company || ipo.companyName || '';
-                const listingDate = ipo.listing_date || ipo.listingDate || '';
+                const listingDateRaw = ipo.listing_date || ipo.listingDate || '';
                 const bidPrice = parseFloat(ipo.issue_price) || 0;
                 const listingReturn = parseFloat(ipo.listing_return) || 0;
                 const listedPrice = bidPrice * (1 + listingReturn / 100);
                 const listingGain = listedPrice - bidPrice;
                 const listingGainPercent = listingReturn;
-                const status = ipo.status || 'listed';
+
+                // Determine status based on listing date
+                const listingDateObj = parseListingDate(listingDateRaw);
+                const now = new Date();
+                const isUpcoming = listingDateObj > now || listingDateRaw === '';
+                const status = isUpcoming ? 'upcoming' : 'listed';
 
                 // Determine row color and badge based on status
                 let rowClass = '';
@@ -7131,10 +7143,10 @@ window.showSection = function (sectionId) {
 
                 // Format date (handle "30-09-2026" format)
                 let listingDateDisplay = '-';
-                if (listingDate) {
+                if (listingDateRaw) {
                     try {
                         // Try DD-MM-YYYY format first
-                        const parts = listingDate.split('-');
+                        const parts = listingDateRaw.split('-');
                         if (parts.length === 3) {
                             const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                             listingDateDisplay = dateObj.toLocaleDateString('en-GB', {
@@ -7144,7 +7156,7 @@ window.showSection = function (sectionId) {
                             });
                         } else {
                             // Fallback for other formats
-                            const dateObj = new Date(listingDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+                            const dateObj = new Date(listingDateRaw.replace(/(\d+)(st|nd|rd|th)/, '$1'));
                             listingDateDisplay = dateObj.toLocaleDateString('en-GB', {
                                 day: 'numeric',
                                 month: 'short',
@@ -7152,7 +7164,7 @@ window.showSection = function (sectionId) {
                             });
                         }
                     } catch {
-                        listingDateDisplay = listingDate;
+                        listingDateDisplay = listingDateRaw;
                     }
                 }
 
@@ -7183,6 +7195,26 @@ window.showSection = function (sectionId) {
             document.getElementById('ipo-section').style.display = 'none';
         }
     }
+
+    // Helper function to parse listing date
+    function parseListingDate(dateStr) {
+        if (!dateStr) return new Date(0); // Return epoch for empty dates
+
+        try {
+            // Try DD-MM-YYYY format first
+            const parts = dateStr.split('-');
+            if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+                return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            }
+
+            // Fallback for other formats
+            return new Date(dateStr.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+        } catch {
+            return new Date(0);
+        }
+    }
+
+
 </script>
 </body>
 </html>
