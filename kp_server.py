@@ -32,7 +32,6 @@ import json
 import os
 
 from flask_cors import CORS
-from nseindiapy import Client
 from datetime import datetime
 
 # Initialize Firebase from environment variable
@@ -51,8 +50,6 @@ db = firestore.client()
 
 
 app = Flask(__name__, static_folder=".")
-# Initialize NSE client
-client = Client()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
