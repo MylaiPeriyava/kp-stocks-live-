@@ -1156,10 +1156,11 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+from requests_html import HTMLSession
+
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
     try:
-        # All 4 IPO pages
         IPO_PAGES = [
             ('listed', 'https://www.moneycontrol.com/ipo/listed-ipos/'),
             ('closed', 'https://www.moneycontrol.com/ipo/closed-ipos/'),
@@ -1168,92 +1169,69 @@ def get_ipo_data():
         ]
         
         all_ipos = []
-        
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-        }
+        session = HTMLSession()
         
         for status, url in IPO_PAGES:
             try:
-                response = requests.get(url, headers=headers, timeout=15)
-                response.raise_for_status()
-                html = response.text
+                r = session.get(url)
+                r.html.render(timeout=20)  # Wait for JS to load
                 
-                # Parse tables
-                tables = pd.read_html(html)
+                # Find all tables
+                tables = r.html.find('table')
                 
-                for df in tables:
-                    if len(df) < 2:
-                        continue
+                for table in tables:
+                    rows = table.find('tr')
                     
-                    # Normalize column names
-                    df.columns = [str(col).lower().strip() for col in df.columns]
-                    
-                    # Find relevant columns
-                    symbol_col = None
-                    date_col = None
-                    price_cols = []
-                    
-                    for col in df.columns:
-                        col_lower = col.lower()
-                        if any(x in col_lower for x in ['symbol', 'company', 'name', 'issue']):
-                            symbol_col = col
-                        elif any(x in col_lower for x in ['date', 'list']):
-                            date_col = col
-                        elif any(x in col_lower for x in ['price', 'bid', 'issue', 'cap']):
-                            price_cols.append(col)
-                    
-                    if not symbol_col:
-                        continue
-                    
-                    # Extract data
-                    for _, row in df.iterrows():
-                        try:
+                    for row in rows[1:]:  # Skip header
+                        cols = row.find('td')
+                        if len(cols) < 2:
+                            continue
+                        
+                        # Extract text from each cell
+                        cells = [cell.text.strip() for cell in cols]
+                        
+                        # Try to identify symbol (usually first or second column)
+                        symbol = ''
+                        listing_date = ''
+                        prices = []
+                        
+                        for i, cell in enumerate(cells):
+                            # Symbol detection
+                            if i == 0 and len(cell) > 2 and len(cell) < 50:
+                                symbol = cell
+                            # Date detection
+                            elif any(x in cell.lower() for x in ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', '2025', '2026']):
+                                listing_date = cell
+                            # Price detection (numeric)
+                            elif cell.replace('.', '').replace(',', '').isdigit():
+                                try:
+                                    prices.append(float(cell.replace(',', '')))
+                                except:
+                                    pass
+                        
+                        if symbol:
                             ipo = {
-                                'symbol': str(row.get(symbol_col, ''))[:50] if pd.notna(row.get(symbol_col)) else '',
-                                'listingDate': str(row.get(date_col, '')) if date_col and pd.notna(row.get(date_col)) else '',
+                                'symbol': symbol,
+                                'listingDate': listing_date,
                                 'status': status,
-                                'bidPrice': None,
-                                'listedPrice': None,
+                                'bidPrice': prices[0] if len(prices) > 0 else None,
+                                'listedPrice': prices[1] if len(prices) > 1 else None,
                                 'listingGain': None,
                                 'listingGainPercent': None,
-                                'subscription': None,
+                                'subscription': prices[2] if len(prices) > 2 else None,
                             }
                             
-                            # Extract prices
-                            if len(price_cols) >= 1:
-                                try:
-                                    ipo['bidPrice'] = float(price_cols[0])
-                                except:
-                                    pass
-                            if len(price_cols) >= 2:
-                                try:
-                                    ipo['listedPrice'] = float(price_cols[1])
-                                except:
-                                    pass
-                            
-                            # Calculate gain if both prices exist
                             if ipo['bidPrice'] and ipo['listedPrice']:
                                 ipo['listingGain'] = round(ipo['listedPrice'] - ipo['bidPrice'], 2)
                                 ipo['listingGainPercent'] = round((ipo['listingGain'] / ipo['bidPrice']) * 100, 2)
                             
-                            # Clean symbol
-                            if ipo['symbol']:
-                                ipo['symbol'] = ipo['symbol'].replace('Add to', '').strip()
-                            
                             all_ipos.append(ipo)
-                            
-                        except Exception as e:
-                            print(f'Row error: {e}')
-                            continue
                 
             except Exception as e:
                 print(f'Page error ({url}): {e}')
                 continue
         
-        # Remove duplicates and sort
+        # Remove duplicates
         seen = set()
         unique_ipos = []
         for ipo in all_ipos:
@@ -1261,9 +1239,6 @@ def get_ipo_data():
             if key not in seen:
                 seen.add(key)
                 unique_ipos.append(ipo)
-        
-        # Sort by date (newest first)
-        unique_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
         
         return jsonify(unique_ipos)
         
