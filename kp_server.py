@@ -1159,47 +1159,118 @@ def delete_trade():
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
     try:
-        # Correct NSE URL for IPOs
-        url = 'https://www.nseindia.com/market-data/live-nse'
+        # Fetch listed IPOs from Moneycontrol
+        url = 'https://www.moneycontrol.com/ipo/listed-ipos/'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://www.moneycontrol.com/'
         }
         
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         
-        # For now, return sample data to test frontend
-        # We'll implement scraping once we confirm the right URL
-        sample_ipos = [
-            {
-                'symbol': 'SAMPLE IPO LTD',
-                'listingDate': '2026-09-25',
-                'bidPrice': 550.0,
-                'listedPrice': 638.0,
-                'listingGain': 88.0,
-                'listingGainPercent': 16.0,
-                'subscription': 45.2,
-                'status': 'listed'
-            },
-            {
-                'symbol': 'UPCOMING CORP',
-                'listingDate': None,
-                'bidPrice': 100.0,
-                'listedPrice': None,
-                'listingGain': None,
-                'listingGainPercent': None,
-                'subscription': 12.5,
-                'status': 'upcoming'
-            }
-        ]
+        html = response.text
+        ipos = parse_moneycontrol_ipo_table(html)
         
-        return jsonify(sample_ipos)
+        # Filter: Jan 2026 onwards + Mainboard only
+        filtered = []
+        for ipo in ipos:
+            # Skip SME
+            if 'SME' in ipo.get('symbol', '').upper():
+                continue
+            
+            # Filter by date
+            if not ipo.get('listingDate'):
+                filtered.append(ipo)
+            else:
+                try:
+                    ld = datetime.strptime(ipo['listingDate'], '%Y-%m-%d')
+                    if ld >= datetime(2026, 1, 1):
+                        filtered.append(ipo)
+                except:
+                    pass
+        
+        # Sort: newest first
+        filtered.sort(key=lambda x: x.get('listingDate', ''), reverse=True)
+        
+        return jsonify(filtered)
         
     except Exception as e:
-        print(f'IPO fetch error: {str(e)}')
-        return jsonify({'error': f'Failed: {str(e)}'}), 500
+        print(f'IPO error: {e}')
+        return jsonify([])
+
+
+def parse_moneycontrol_ipo_table(html):
+    """Parse Moneycontrol IPO table"""
+    ipos = []
+    
+    # Find all table rows
+    rows = re.findall(r'<tr[^>]*>([\s\S]*?)</tr>', html, re.IGNORECASE)
+    
+    for row in rows:
+        # Skip headers
+        if '<th' in row:
+            continue
+        
+        # Extract cells
+        cells = re.findall(r'<td[^>]*>([\s\S]*?)</td>', row, re.IGNORECASE)
+        
+        if len(cells) >= 5:
+            # Clean cell text
+            cells = [re.sub(r'<[^>]*>', '', c).strip() for c in cells]
+            
+            # Parse IPO data
+            ipo = {
+                'symbol': cells[0] if cells else '',
+                'listingDate': extract_mc_date(cells[1] if len(cells) > 1 else ''),
+                'bidPrice': extract_price(cells[2] if len(cells) > 2 else ''),
+                'listedPrice': extract_price(cells[3] if len(cells) > 3 else ''),
+                'listingGain': extract_price(cells[4] if len(cells) > 4 else ''),
+                'listingGainPercent': extract_percent(cells[4] if len(cells) > 4 else ''),
+                'subscription': None,  # Moneycontrol doesn't show this in listed IPOs
+                'status': 'listed'
+            }
+            
+            if ipo['symbol'] and ipo['listingDate']:
+                ipos.append(ipo)
+    
+    return ipos
+
+
+def extract_mc_date(text):
+    """Extract date from Moneycontrol format"""
+    if not text:
+        return None
+    
+    # Moneycontrol date format: "DD Mon YYYY" or "Mon DD, YYYY"
+    patterns = [
+        r'(\d{1,2}\s+\w{3}\s+\d{4})',
+        r'(\w{3}\s+\d{1,2},?\s+\d{4})'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            date_str = match.group(1).replace(',', '')
+            try:
+                return datetime.strptime(date_str, '%d %b %Y').strftime('%Y-%m-%d')
+            except:
+                pass
+    return None
+
+
+def extract_price(text):
+    if not text or text in ['-', '—', '']:
+        return None
+    match = re.search(r'[\d,]+\.?\d*', text)
+    return float(match.group().replace(',', '')) if match else None
+
+
+def extract_percent(text):
+    match = re.search(r'([\+\-]?\d+\.?\d*)\s*%', text)
+    return float(match.group(1)) if match else None
 
 
 if __name__ == "__main__":
