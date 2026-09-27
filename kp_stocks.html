@@ -7071,48 +7071,28 @@ window.showSection = function (sectionId) {
     });
 
     async function loadIPOData() {
-        console.log('=== loadIPOData START ===');
-
         try {
-            console.log('Fetching /ipo-data...');
             const response = await fetch('/ipo-data');
-            console.log('Response status:', response.status);
-
-            if (!response.ok) {
-                console.error('Response not OK:', response.status);
-                return;
-            }
-
             const ipos = await response.json();
-            console.log('IPOs loaded:', ipos.length);
-            console.log('First IPO:', ipos[0]);
 
             if (!ipos || ipos.length === 0) {
-                console.log('No IPOs found');
+                document.getElementById('ipo-section').style.display = 'none';
                 return;
             }
 
             const tbody = document.getElementById('ipo-tbody');
-            console.log('tbody element:', tbody);
-
             tbody.innerHTML = '';
-            console.log('Creating rows...');
 
-            ipos.forEach((ipo, index) => {
-                console.log('Processing IPO', index, ipo.symbol);
-
+            ipos.forEach(ipo => {
                 const tr = document.createElement('tr');
 
-                // Determine row color based on status
+                // Determine row color and badge based on status
                 let rowClass = '';
                 let statusBadge = '';
 
                 if (ipo.status === 'upcoming') {
                     rowClass = 'table-warning';
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
-                } else if (ipo.listingGain !== null && ipo.listingGain < 0) {
-                    rowClass = 'table-danger';
-                    statusBadge = '<span class="badge bg-success">Listed</span>';
                 } else {
                     rowClass = '';
                     statusBadge = '<span class="badge bg-success">Listed</span>';
@@ -7138,7 +7118,14 @@ window.showSection = function (sectionId) {
                     listingGainPercentClass = ipo.listingGainPercent < 0 ? '#dc3545' : '#198754';
                 }
 
-                const subscription = ipo.subscription ? ipo.subscription + 'x' : '-';
+                // Fix subscription - remove trailing 'x' if already present
+                let subscription = '-';
+                if (ipo.subscription) {
+                    subscription = ipo.subscription.toString();
+                    if (!subscription.endsWith('x')) {
+                        subscription += 'x';
+                    }
+                }
 
                 // Format date
                 let listingDate = '-';
@@ -7175,16 +7162,11 @@ window.showSection = function (sectionId) {
                 tbody.appendChild(tr);
             });
 
-            console.log('Setting display to block');
-            const ipoSection = document.getElementById('ipo-section');
-            console.log('ipo-section element:', ipoSection);
-            ipoSection.style.display = 'block';
-            console.log('IPO section display:', ipoSection.style.display);
-            console.log('tbody child count:', tbody.children.length);
-            console.log('=== loadIPOData END ===');
+            document.getElementById('ipo-section').style.display = 'block';
 
         } catch (error) {
-            console.error('=== LOAD IPO DATA ERROR ===', error);
+            console.error('Error loading IPO data:', error);
+            document.getElementById('ipo-section').style.display = 'none';
         }
     }
 
