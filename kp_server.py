@@ -1321,38 +1321,34 @@ def get_ipo_data():
             # Extract max issue price
             issue_price = extract_issue_price_max(ipo.get('issue_price', ''))
             
-            # Get listing price from Yahoo (for listed IPOs only)
-            listing_price = None
-            if ipo.get('status') in ['listed', 'recent']:
-                listing_price = get_listing_price_yahoo(ipo.get('company', ''))
-            
-            # Calculate listing gain
-            listing_gain = None
-            listing_gain_percent = None
-            if issue_price and listing_price:
-                listing_gain = round(listing_price - issue_price, 2)
-                listing_gain_percent = round((listing_gain / issue_price * 100), 2)
-            
-            # Determine status
+            # Determine status based on listing date
+            listing_date_str = ipo.get('listing_date', '').strip()
             status = ipo.get('status', 'unknown')
-            if status == 'upcoming':
-                display_status = 'upcoming'
-            elif ipo.get('listing_date') and ipo['listing_date'].strip():
-                display_status = 'listed'
-            else:
-                display_status = 'open'
+            
+            # Check if listing date is in the future
+            display_status = 'upcoming'
+            if listing_date_str:
+                try:
+                    from datetime import datetime
+                    listing_date = datetime.strptime(listing_date_str, '%d %b %Y')
+                    if listing_date <= datetime.now():
+                        display_status = 'listed'
+                    else:
+                        display_status = 'upcoming'
+                except:
+                    display_status = status
             
             all_ipos.append({
                 'symbol': ipo.get('company', '').strip().upper().replace(' ', ''),
                 'companyName': ipo.get('company', ''),
-                'listingDate': ipo.get('listing_date', ''),
+                'listingDate': listing_date_str,
                 'openDate': ipo.get('open_date', ''),
                 'closeDate': ipo.get('close_date', ''),
                 'status': display_status,
                 'bidPrice': issue_price,
-                'listedPrice': listing_price,
-                'listingGain': listing_gain,
-                'listingGainPercent': listing_gain_percent,
+                'listedPrice': None,  # Skip Yahoo lookup for now
+                'listingGain': None,
+                'listingGainPercent': None,
                 'issueSize': ipo.get('issue_size', ''),
                 'lotSize': ipo.get('lot_size', ''),
                 'subscription': ipo.get('subscription', ''),
@@ -1373,7 +1369,6 @@ def get_ipo_data():
             try:
                 if not date_str or date_str.strip() == '':
                     return datetime.max
-                # Format: "29 Sept 2026"
                 return datetime.strptime(date_str.strip(), '%d %b %Y')
             except:
                 return datetime.max
@@ -1388,7 +1383,6 @@ def get_ipo_data():
         import traceback
         traceback.print_exc()
         return jsonify([])
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
