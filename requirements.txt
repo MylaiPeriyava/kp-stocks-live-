@@ -1,4 +1,4 @@
-flask
+flask 
 yfinance
 requests
 beautifulsoup4
