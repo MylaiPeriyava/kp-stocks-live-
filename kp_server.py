@@ -1156,115 +1156,148 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-from bs4 import BeautifulSoup
-
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
     try:
-        # Use Chittorgarh for historical data (easier to scrape, has full year data)
-        url = 'https://www.chittorgarh.com/report/report-list/116/49/'
-        
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        }
-        
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, 'lxml')
-        
         all_ipos = []
         
-        # Find the main table
-        tables = soup.find_all('table', {'class': 'table table-bordered table-striped'})
-        
-        if not tables:
-            # Fallback: find any table with IPO data
-            tables = soup.find_all('table')
-        
-        for table in tables:
-            rows = table.find_all('tr')
+        # ============ IPOZONE.in (Current Year) ============
+        try:
+            url = 'https://ipozone.in/'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'lxml')
+            
+            # Find table rows
+            rows = soup.find_all('tr')
             
             for row in rows[1:]:  # Skip header
                 cols = row.find_all('td')
-                if len(cols) < 3:
+                if len(cols) < 10:
                     continue
                 
                 try:
-                    # Extract cells
                     cells = [cell.get_text(strip=True) for cell in cols]
                     
-                    # Chittorgarh format: Company | Listing Date | Issue Price | Listing Price | Gain/Loss | Subscription
-                    if len(cells) >= 6:
-                        symbol = cells[0] if len(cells) > 0 else ''
-                        listing_date = cells[1] if len(cells) > 1 else ''
+                    # Parse IPOZONE format
+                    symbol = cells[0] if len(cells) > 0 else ''
+                    ltp = cells[1] if len(cells) > 1 else ''
+                    listing_date = cells[3] if len(cells) > 3 else ''
+                    issue_price = cells[5] if len(cells) > 5 else ''
+                    listing_open = cells[7] if len(cells) > 7 else ''
+                    listing_close = cells[8] if len(cells) > 8 else ''
+                    listing_gain = cells[9] if len(cells) > 9 else ''
+                    
+                    # Clean and convert
+                    issue_price_clean = float(issue_price.replace('₹', '').replace(',', '')) if issue_price and issue_price != 'N/A' else None
+                    listed_price_clean = float(listing_open.replace('₹', '').replace(',', '')) if listing_open and listing_open != 'N/A' else None
+                    
+                    # Calculate gain
+                    listing_gain_clean = None
+                    if issue_price_clean and listed_price_clean:
+                        listing_gain_clean = round(listed_price_clean - issue_price_clean, 2)
+                    
+                    if symbol and len(symbol) < 50:
+                        all_ipos.append({
+                            'symbol': symbol,
+                            'listingDate': listing_date,
+                            'status': 'listed',
+                            'bidPrice': issue_price_clean,
+                            'listedPrice': listed_price_clean,
+                            'listingGain': listing_gain_clean,
+                            'listingGainPercent': None,
+                            'subscription': None,
+                        })
+                except Exception as e:
+                    print(f'IPOZONE row error: {e}')
+                    continue
+            
+            print(f'IPOZONE: Found {len(all_ipos)} IPOs')
+            
+        except Exception as e:
+            print(f'IPOZONE error: {e}')
+        
+        # ============ CapitalMarket.com (Historical, Page 1) ============
+        try:
+            url = 'https://www.capitalmarket.com/markets/IPOs/ipo-historic-table'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'lxml')
+            
+            # Find table
+            tables = soup.find_all('table')
+            
+            for table in tables:
+                rows = table.find_all('tr')
+                
+                for row in rows[1:]:  # Skip header
+                    cols = row.find_all('td')
+                    if len(cols) < 5:
+                        continue
+                    
+                    try:
+                        cells = [cell.get_text(strip=True) for cell in cols]
                         
-                        # Parse prices
-                        try:
-                            bid_price = float(cells[2].replace('₹', '').replace(',', '')) if len(cells) > 2 else None
-                        except:
-                            bid_price = None
+                        # Parse CapitalMarket format
+                        list_date = cells[0] if len(cells) > 0 else ''
+                        company = cells[1] if len(cells) > 1 else ''
+                        issue_price = cells[6] if len(cells) > 6 else ''
+                        list_price = cells[7] if len(cells) > 7 else ''
+                        listing_gain = cells[8] if len(cells) > 8 else ''
                         
-                        try:
-                            listed_price = float(cells[3].replace('₹', '').replace(',', '')) if len(cells) > 3 else None
-                        except:
-                            listed_price = None
-                        
-                        try:
-                            gain_percent = float(cells[4].replace('%', '').replace('+', '')) if len(cells) > 4 else None
-                        except:
-                            gain_percent = None
-                        
-                        try:
-                            subscription = float(cells[5].replace('x', '')) if len(cells) > 5 else None
-                        except:
-                            subscription = None
+                        # Clean prices
+                        issue_price_clean = float(issue_price.replace(',', '')) if issue_price and issue_price != '-' else None
+                        list_price_clean = float(list_price.replace(',', '')) if list_price and list_price != '-' else None
                         
                         # Calculate gain
-                        listing_gain = None
-                        if bid_price and listed_price:
-                            listing_gain = round(listed_price - bid_price, 2)
+                        listing_gain_clean = None
+                        if issue_price_clean and list_price_clean:
+                            listing_gain_clean = round(list_price_clean - issue_price_clean, 2)
                         
-                        # Determine status
-                        status = 'listed'
-                        if not listing_date or listing_date == '-':
-                            status = 'upcoming'
-                        
-                        if symbol and len(symbol) < 50:
-                            ipo = {
-                                'symbol': symbol,
-                                'listingDate': listing_date,
-                                'status': status,
-                                'bidPrice': bid_price,
-                                'listedPrice': listed_price,
-                                'listingGain': listing_gain,
-                                'listingGainPercent': gain_percent,
-                                'subscription': subscription,
-                            }
-                            all_ipos.append(ipo)
-                
-                except Exception as e:
-                    print(f'Row error: {e}')
-                    continue
+                        if company and len(company) < 50:
+                            # Check if already added
+                            exists = any(ipo['symbol'] == company for ipo in all_ipos)
+                            if not exists:
+                                all_ipos.append({
+                                    'symbol': company,
+                                    'listingDate': list_date,
+                                    'status': 'listed',
+                                    'bidPrice': issue_price_clean,
+                                    'listedPrice': list_price_clean,
+                                    'listingGain': listing_gain_clean,
+                                    'listingGainPercent': None,
+                                    'subscription': None,
+                                })
+                    except Exception as e:
+                        print(f'CapitalMarket row error: {e}')
+                        continue
+            
+            print(f'CapitalMarket: Added more IPOs')
+            
+        except Exception as e:
+            print(f'CapitalMarket error: {e}')
         
-        # Remove duplicates
-        seen = set()
-        unique_ipos = []
-        for ipo in all_ipos:
-            key = (ipo['symbol'], ipo['listingDate'])
-            if key not in seen:
-                seen.add(key)
-                unique_ipos.append(ipo)
+        # Sort by date
+        all_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
         
-        # Sort by date (newest first)
-        unique_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
-        
-        return jsonify(unique_ipos)
+        return jsonify(all_ipos)
         
     except Exception as e:
         print(f'Error: {e}')
         return jsonify([])
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
