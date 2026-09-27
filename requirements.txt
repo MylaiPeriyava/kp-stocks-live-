@@ -5,3 +5,4 @@ beautifulsoup4
 firebase-admin
 lxml
 nseindiapy
+flask-cors
