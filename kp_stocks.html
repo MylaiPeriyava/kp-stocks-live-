@@ -3000,6 +3000,38 @@
                     <p style="margin-top: 15px; color: #7f8c8d;">Analyzing intraday patterns...</p>
                 </div>
             </div>
+            <!-- IPO Listing Data Section -->
+            <div id="ipo-section" class="mt-4" style="display:none;">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">📈 IPO Listing Data</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadIPOData()">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0" id="ipo-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 20%;">Symbol</th>
+                                        <th style="width: 15%;">Listing Date</th>
+                                        <th style="width: 12%;" class="text-end">Bid Price</th>
+                                        <th style="width: 12%;" class="text-end">Listed Price</th>
+                                        <th style="width: 12%;" class="text-end">Gain/Loss</th>
+                                        <th style="width: 12%;" class="text-end">Gain %</th>
+                                        <th style="width: 12%;" class="text-end">Subscription</th>
+                                        <th style="width: 5%;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ipo-tbody">
+                                    <!-- IPO rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section id="tradesSection" class="section-anchor" style="display:none;">
