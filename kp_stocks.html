@@ -7022,9 +7022,6 @@ window.showSection = function (sectionId) {
                 return;
             }
 
-            // Sort by listing date (newest first)
-            ipos.sort((a, b) => new Date(b.listingDate) - new Date(a.listingDate));
-
             const tbody = document.getElementById('ipo-tbody');
             tbody.innerHTML = '';
 
@@ -7036,37 +7033,37 @@ window.showSection = function (sectionId) {
                 let statusBadge = '';
 
                 if (ipo.status === 'upcoming') {
-                    rowClass = 'table-warning'; // Yellow for upcoming
+                    rowClass = 'table-warning';
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
-                } else if (ipo.listingGain < 0) {
-                    rowClass = 'table-success'; // Green for loss (positive green in our scheme)
+                } else if (ipo.listingGain !== null && ipo.listingGain < 0) {
+                    rowClass = 'table-danger';
                     statusBadge = '<span class="badge bg-success">Listed</span>';
                 } else {
-                    rowClass = ''; // White for gain
+                    rowClass = '';
                     statusBadge = '<span class="badge bg-success">Listed</span>';
                 }
 
                 tr.className = rowClass;
 
-                // Format numbers
+                // Format numbers safely
                 const bidPrice = ipo.bidPrice ? ipo.bidPrice.toFixed(2) : '-';
                 const listedPrice = ipo.listedPrice ? ipo.listedPrice.toFixed(2) : '-';
-                const listingGain = ipo.listingGain !== null && ipo.listingGain !== undefined
-                    ? ipo.listingGain.toFixed(2)
-                    : '-';
 
-                // Calculate gain % if not provided
-                let listingGainPercent = '-';
-                if (ipo.listingGainPercent !== null && ipo.listingGainPercent !== undefined) {
-                    listingGainPercent = ipo.listingGainPercent.toFixed(2) + '%';
-                } else if (ipo.bidPrice && ipo.listingGain !== null) {
-                    const gainPct = (ipo.listingGain / ipo.bidPrice) * 100;
-                    listingGainPercent = gainPct.toFixed(2) + '%';
+                let listingGain = '-';
+                let listingGainClass = '';
+                if (ipo.listingGain !== null && ipo.listingGain !== undefined) {
+                    listingGain = (ipo.listingGain > 0 ? '+' : '') + ipo.listingGain.toFixed(2);
+                    listingGainClass = ipo.listingGain < 0 ? '#dc3545' : '#198754';
                 }
 
-                const subscription = ipo.subscription !== null && ipo.subscription !== undefined
-                    ? ipo.subscription.toFixed(2) + 'x'
-                    : '-';
+                let listingGainPercent = '-';
+                let listingGainPercentClass = '';
+                if (ipo.listingGainPercent !== null && ipo.listingGainPercent !== undefined) {
+                    listingGainPercent = ipo.listingGainPercent.toFixed(2) + '%';
+                    listingGainPercentClass = ipo.listingGainPercent < 0 ? '#dc3545' : '#198754';
+                }
+
+                const subscription = ipo.subscription ? ipo.subscription + 'x' : '-';
 
                 // Format date
                 let listingDate = '-';
@@ -7090,10 +7087,10 @@ window.showSection = function (sectionId) {
                 <td>${listingDate}</td>
                 <td class="text-end">₹${bidPrice}</td>
                 <td class="text-end">₹${listedPrice}</td>
-                <td class="text-end" style="color: ${ipo.listingGain < 0 ? '#dc3545' : '#198754'}; font-weight: bold;">
-                    ${ipo.listingGain !== null && ipo.listingGain !== undefined ? (ipo.listingGain > 0 ? '+' : '') + listingGain : '-'}
+                <td class="text-end" style="color: ${listingGainClass}; font-weight: bold;">
+                    ${listingGain}
                 </td>
-                <td class="text-end" style="color: ${parseFloat(listingGainPercent) < 0 ? '#dc3545' : '#198754'}; font-weight: bold;">
+                <td class="text-end" style="color: ${listingGainPercentClass}; font-weight: bold;">
                     ${listingGainPercent}
                 </td>
                 <td class="text-end">${subscription}</td>
@@ -7110,7 +7107,6 @@ window.showSection = function (sectionId) {
             document.getElementById('ipo-section').style.display = 'none';
         }
     }
-
     // Show symbol analysis (placeholder for future)
     function showSymbolAnalysis(symbol) {
         alert(`Analysis for ${symbol} will be shown here in a popup/new window.\n\nFuture features:\n- Chart patterns\n- Volume analysis\n- Price targets\n- Support/Resistance levels`);
