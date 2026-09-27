@@ -1158,29 +1158,31 @@ def delete_trade():
 
 # =====================================================
 # IPO DATA ENDPOINT - Mainboard IPOs from Jan 2026
+# Using NSE India official data
 # =====================================================
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
     try:
-        # Updated URL - Moneycontrol IPO page
-        url = 'https://www.moneycontrol.com/ipo/ipo-home/'
+        # NSE India IPO page
+        url = 'https://www.nseindia.com/market-data/initial-public-offers'
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Referer': 'https://www.moneycontrol.com/'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://www.nseindia.com/'
         }
+        
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         
         html = response.text
-        ipos = parse_moneycontrol_ipos(html)
+        ipos = parse_nse_ipos(html)
         
         # Filter: Jan 2026 onwards
         filtered = []
         for ipo in ipos:
             if not ipo.get('listingDate'):
-                filtered.append(ipo)  # Include upcoming
+                filtered.append(ipo)
             else:
                 try:
                     listing_date = datetime.strptime(ipo['listingDate'], '%Y-%m-%d')
@@ -1189,10 +1191,10 @@ def get_ipo_data():
                 except:
                     filtered.append(ipo)
         
-        # Sort: Upcoming first, then by listing date (newest first)
+        # Sort: Upcoming first, then newest first
         def sort_key(ipo):
             if not ipo.get('listingDate'):
-                return ('0', '')  # Upcoming first
+                return ('0', '')
             return ('1', ipo['listingDate'])
         
         filtered.sort(key=sort_key, reverse=True)
@@ -1204,42 +1206,42 @@ def get_ipo_data():
         return jsonify({'error': f'Failed to fetch IPO data: {str(e)}'}), 500
 
 
-def parse_moneycontrol_ipos(html):
-    """Parse Moneycontrol IPO table using regex"""
+def parse_nse_ipos(html):
+    """Parse NSE IPO table"""
     ipos = []
     
-    # Look for IPO rows - Moneycontrol structure
-    # Pattern to match IPO table rows
-    row_pattern = r'<tr[^>]*>([\s\S]*?)</tr>'
-    rows = re.findall(row_pattern, html, re.IGNORECASE)
+    # NSE IPO table has specific structure
+    # Look for table with IPO data
+    table_pattern = r'<table[^>]*>([\s\S]*?)</table>'
+    tables = re.findall(table_pattern, html, re.IGNORECASE)
     
-    for row_html in rows:
-        # Skip header rows and empty rows
-        if '<th' in row_html or not row_html.strip():
+    for table_html in tables:
+        # Check if this table contains IPO data
+        if 'ipo' not in table_html.lower() and 'issue' not in table_html.lower():
             continue
         
-        # Check if this row contains IPO-like data
-        if not any(keyword in row_html.lower() for keyword in ['ipo', 'issue', 'list']):
-            continue
+        # Extract rows
+        row_pattern = r'<tr[^>]*>([\s\S]*?)</tr>'
+        rows = re.findall(row_pattern, table_html, re.IGNORECASE)
         
-        # Extract cells
-        cell_pattern = r'<td[^>]*>([\s\S]*?)</td>'
-        cells = re.findall(cell_pattern, row_html, re.IGNORECASE)
-        
-        if len(cells) >= 5:
-            # Strip HTML tags from cells
-            cells = [re.sub(r'<[^>]*>', '', cell).strip() for cell in cells]
+        for row_html in rows:
+            if '<th' in row_html:
+                continue
             
-            # Try to identify IPO data from cells
-            ipo = extract_ipo_from_cells(cells)
-            if ipo and ipo.get('symbol'):
-                ipos.append(ipo)
+            cell_pattern = r'<td[^>]*>([\s\S]*?)</td>'
+            cells = re.findall(cell_pattern, row_html, re.IGNORECASE)
+            
+            if len(cells) >= 4:
+                cells = [re.sub(r'<[^>]*>', '', cell).strip() for cell in cells]
+                ipo = extract_nse_ipo_from_cells(cells)
+                if ipo and ipo.get('symbol'):
+                    ipos.append(ipo)
     
     return ipos
 
 
-def extract_ipo_from_cells(cells):
-    """Extract IPO data from table cells"""
+def extract_nse_ipo_from_cells(cells):
+    """Extract IPO from NSE table cells"""
     ipo = {
         'symbol': '',
         'listingDate': None,
@@ -1251,38 +1253,33 @@ def extract_ipo_from_cells(cells):
         'status': 'upcoming'
     }
     
-    # Find symbol (usually in first few cells, contains company name)
-    for i, cell in enumerate(cells[:4]):
-        if len(cell) > 3 and len(cell) < 100:
-            # Likely a company name
-            ipo['symbol'] = cell
-            break
+    # First cell usually has symbol/company name
+    if cells:
+        ipo['symbol'] = cells[0].strip()[:100]
     
-    # Find prices and dates
-    for cell in cells:
-        # Check for date
+    # Parse remaining cells for data
+    for cell in cells[1:]:
+        # Date
         if not ipo['listingDate']:
             date = extract_listing_date(cell)
             if date:
                 ipo['listingDate'] = date
         
-        # Check for price
+        # Price
         price = extract_price(cell)
         if price:
             if not ipo['bidPrice']:
                 ipo['bidPrice'] = price
             elif not ipo['listedPrice']:
                 ipo['listedPrice'] = price
-            elif ipo['listedPrice'] and not ipo['listingGain']:
-                ipo['listingGain'] = price
         
-        # Check for percentage (listing gain %)
+        # Percentage
         if not ipo['listingGainPercent']:
             pct = extract_percent(cell)
             if pct is not None:
                 ipo['listingGainPercent'] = pct
         
-        # Check for subscription
+        # Subscription
         if not ipo['subscription']:
             sub = extract_subscription(cell)
             if sub:
@@ -1293,24 +1290,21 @@ def extract_ipo_from_cells(cells):
         ipo['status'] = 'listed'
     elif ipo['listingDate']:
         ipo['status'] = 'open'
-    else:
-        ipo['status'] = 'upcoming'
     
     return ipo
 
 
 def extract_listing_date(text):
-    """Extract date in various formats and convert to YYYY-MM-DD"""
     if not text:
         return None
     
-    date_patterns = [
-        r'(\d{1,2}\s+\w{3}\s+\d{4})',  # 25 Sep 2026
-        r'(\w{3}\s+\d{1,2},?\s+\d{4})',  # Sep 25, 2026
-        r'(\d{4}-\d{2}-\d{2})'  # 2026-09-25
+    patterns = [
+        r'(\d{1,2}\s+\w{3}\s+\d{4})',
+        r'(\w{3}\s+\d{1,2},?\s+\d{4})',
+        r'(\d{4}-\d{2}-\d{2})'
     ]
     
-    for pattern in date_patterns:
+    for pattern in patterns:
         match = re.search(pattern, text)
         if match:
             date_str = match.group(1)
@@ -1328,11 +1322,8 @@ def extract_listing_date(text):
 
 
 def extract_price(text):
-    """Extract numeric price"""
     if not text or text in ['-', '—', '']:
         return None
-    
-    # Skip percentage values
     if '%' in text:
         return None
     
@@ -1346,7 +1337,6 @@ def extract_price(text):
 
 
 def extract_percent(text):
-    """Extract percentage value"""
     if not text:
         return None
     
@@ -1360,7 +1350,6 @@ def extract_percent(text):
 
 
 def extract_subscription(text):
-    """Extract subscription multiple (e.g., 45.2x)"""
     if not text:
         return None
     
@@ -1371,7 +1360,6 @@ def extract_subscription(text):
         except:
             return None
     return None
-
 
 
 if __name__ == "__main__":
