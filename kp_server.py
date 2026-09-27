@@ -1462,5 +1462,78 @@ def get_listing_price_yahoo(symbol):
     except:
         return None
 
+
+@app.route('/ipo-data', methods=['GET'])
+def get_ipo_data():
+    try:
+        all_ipos = []
+        
+        # Fetch all IPOs from Anand Rathi
+        ipos_raw = get_all_anandrathi_ipos()
+        
+        # Process each IPO
+        for ipo in ipos_raw:
+            # Extract max issue price
+            issue_price = extract_issue_price_max(ipo.get('issue_price', ''))
+            
+            # Get listing price from Yahoo (for listed IPOs only)
+            listing_price = None
+            if ipo.get('status') in ['listed', 'recent']:
+                listing_price = get_listing_price_yahoo(ipo.get('company', ''))
+            
+            # Calculate listing gain
+            listing_gain = None
+            listing_gain_percent = None
+            if issue_price and listing_price:
+                listing_gain = round(listing_price - issue_price, 2)
+                listing_gain_percent = round((listing_gain / issue_price * 100), 2)
+            
+            # Determine status
+            status = ipo.get('status', 'unknown')
+            if status == 'upcoming':
+                display_status = 'upcoming'
+            elif ipo.get('listing_date') and ipo['listing_date'].strip():
+                display_status = 'listed'
+            else:
+                display_status = 'open'
+            
+            all_ipos.append({
+                'symbol': ipo.get('company', '').strip().upper().replace(' ', ''),
+                'companyName': ipo.get('company', ''),
+                'listingDate': ipo.get('listing_date', ''),
+                'openDate': ipo.get('open_date', ''),
+                'closeDate': ipo.get('close_date', ''),
+                'status': display_status,
+                'bidPrice': issue_price,
+                'listedPrice': listing_price,
+                'listingGain': listing_gain,
+                'listingGainPercent': listing_gain_percent,
+                'issueSize': ipo.get('issue_size', ''),
+                'lotSize': ipo.get('lot_size', ''),
+                'subscription': ipo.get('subscription', ''),
+            })
+        
+        # Sort by listing date (most recent first)
+        def parse_date(date_str):
+            try:
+                if not date_str or date_str.strip() == '':
+                    return datetime.max
+                # Format: "29 Sept 2026"
+                return datetime.strptime(date_str.strip(), '%d %b %Y')
+            except:
+                return datetime.max
+        
+        all_ipos.sort(key=lambda x: parse_date(x['listingDate']), reverse=True)
+        
+        print(f'Total IPOs returned: {len(all_ipos)}')
+        return jsonify(all_ipos)
+        
+    except Exception as e:
+        print(f'Error in /ipo-data: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify([])
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
