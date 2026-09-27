@@ -211,30 +211,28 @@ def get_ipo_data():
     try:
         all_ipos = []
         
+        print('\n=== FETCHING IPO DATA ===')
+        
         print('Fetching listed IPOs...')
         listed_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/listed-ipo/2026?type=mainboard')
         for ipo in listed_ipos:
             ipo['status'] = 'listed'
         all_ipos.extend(listed_ipos)
+        print(f'Listed IPOs: {len(listed_ipos)}')
         
         print('Fetching live IPOs...')
         live_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/live-ipo')
         for ipo in live_ipos:
             ipo['status'] = 'open'
         all_ipos.extend(live_ipos)
+        print(f'Live IPOs: {len(live_ipos)}')
         
         print('Fetching upcoming IPOs...')
         upcoming_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/upcoming-ipo')
         for ipo in upcoming_ipos:
             ipo['status'] = 'upcoming'
         all_ipos.extend(upcoming_ipos)
-        
-        # DEBUG: Print first IPO
-        if all_ipos:
-            print(f'\n=== FIRST IPO DEBUG ===')
-            print(f'Company: {all_ipos[0]["company"]}')
-            print(f'All fields: {all_ipos[0]}')
-            print(f'Total before dedup: {len(all_ipos)}')
+        print(f'Upcoming IPOs: {len(upcoming_ipos)}')
         
         # Remove duplicates
         seen = set()
@@ -250,7 +248,7 @@ def get_ipo_data():
             if not date_str:
                 return datetime(1900, 1, 1)
             try:
-                for fmt in ['%d %b %Y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
+                for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
                     try:
                         return datetime.strptime(date_str.strip(), fmt)
                     except ValueError:
@@ -258,6 +256,34 @@ def get_ipo_data():
                 return datetime(1900, 1, 1)
             except:
                 return datetime(1900, 1, 1)
+        
+        unique_ipos.sort(key=lambda x: parse_date(x['listing_date']), reverse=True)
+        
+        print(f'\nTotal unique IPOs: {len(unique_ipos)}')
+        print(f'  - Listed: {len([i for i in unique_ipos if i["status"]=="listed"])}')
+        print(f'  - Open: {len([i for i in unique_ipos if i["status"]=="open"])}')
+        print(f'  - Upcoming: {len([i for i in unique_ipos if i["status"]=="upcoming"])}')
+        
+        return jsonify(unique_ipos)
+        
+    except Exception as e:
+        print(f'Error
+        
+        # Sort by listing date (latest first)
+def parse_date(date_str):
+    if not date_str:
+        return datetime(1900, 1, 1)
+    try:
+        # Handle "08 May 26" format (2-digit year)
+        for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
+            try:
+                return datetime.strptime(date_str.strip(), fmt)
+            except ValueError:
+                continue
+        return datetime(1900, 1, 1)
+    except:
+        return datetime(1900, 1, 1)
+
         
         unique_ipos.sort(key=lambda x: parse_date(x['listing_date']), reverse=True)
         
