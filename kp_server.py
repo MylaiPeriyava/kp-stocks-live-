@@ -1,20 +1,11 @@
 # kp_server.py
 # Local server for KP's Stocks (Live) - WITH FIREBASE
 
-# ============ USER CONFIG (single source of truth) ============
-# Format: "USERNAME": "PASSWORD"
-# - Passwords are stored as plain text here for simplicity.
-# - If you really want "no password" for a user, use an empty string "".
-# - Add new users here only; do not redefine elsewhere.
+# ============ USER CONFIG ============
 USERS = {
     "KP": "vsk",
     "PK": "suk",
-    # Example: "RA": "ra_secret",
-    # Example with blank password (not recommended): "GUEST": "",
 }
-
-import re
-from datetime import datetime
 
 import json
 import os
@@ -24,26 +15,19 @@ from flask import Flask, jsonify, request, send_from_directory
 import yfinance as yf
 import requests
 from bs4 import BeautifulSoup
-import urllib.request
-from urllib.parse import urljoin
+from flask_cors import CORS
 
 # Firebase Admin SDK
 import firebase_admin
 from firebase_admin import credentials, firestore
-import json
-import os
 
-from flask_cors import CORS
-from datetime import datetime
-
-# Initialize Firebase from environment variable
+# Initialize Firebase
 firebase_config = os.environ.get('FIREBASE_SERVICE_ACCOUNT')
 
 if firebase_config:
     cred_dict = json.loads(firebase_config)
     cred = credentials.Certificate(cred_dict)
 else:
-    # Fallback for local development
     cred_path = os.path.join(os.path.dirname(__file__), 'firebase-service-account.json')
     cred = credentials.Certificate(cred_path)
 
@@ -52,15 +36,13 @@ db = firestore.client()
 
 
 app = Flask(__name__, static_folder=".")
+CORS(app)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Default user
 DEFAULT_USER = "KP"
 
 
 def get_user_from_request():
-    """Get user from query parameter or default"""
     return (request.args.get("user") or DEFAULT_USER).strip().upper()
 
 
@@ -145,6 +127,59 @@ def calculate_ema(close_values, period):
     return ema_values
 
 
+# ============ IPO DATA ENDPOINT (IPO Central) ============
+def scrape_ipocentral_2026():
+    """Scrape all 2026 Mainboard IPOs from IPO Central"""
+    try:
+        url = 'https://ipocentral.in/ipo-2026/'
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        tables = soup.find_all('table')
+        
+        all_ipos = []
+        
+        for table in tables:
+            for tr in table.find_all('tr')[1:]:
+                cells = tr.find_all(['td', 'th'])
+                if len(cells) >= 4:
+                    row_text = [cell.get_text(strip=True) for cell in cells]
+                    
+                    ipo_name = row_text[0].replace('**', '').strip()
+                    listing_date = row_text[1].strip()
+                    allotment_price = row_text[2].replace('₹', '').replace(',', '').strip()
+                    listing_return = row_text[3].replace('%', '').strip()
+                    
+                    if not ipo_name or not listing_date:
+                        continue
+                    
+                    all_ipos.append({
+                        'company': ipo_name,
+                        'listing_date': listing_date,
+                        'issue_price': allotment_price,
+                        'listing_return': listing_return,
+                        'status': 'listed'
+                    })
+        
+        print(f'IPO Central: fetched {len(all_ipos)} IPOs')
+        return all_ipos
+        
+    except Exception as e:
+        print(f'Error scraping IPO Central: {e}')
+        import traceback
+        traceback.print_exc()
+        return []
+
+
+@app.route("/ipo-data")
+def get_ipo_data():
+    """Get all 2026 IPOs from IPO Central"""
+    ipos = scrape_ipocentral_2026()
+    return jsonify(ipos)
+
+
+# ============ CORE ENDPOINTS ============
 @app.route("/")
 def index():
     return send_from_directory(BASE_DIR, "kp_stocks.html")
@@ -161,7 +196,6 @@ def get_holdings():
             data = doc.to_dict()
             lots = data.get('lots', [])
         else:
-            # Return empty list for new users
             lots = []
         
         return jsonify(lots)
@@ -189,9 +223,12 @@ def get_price():
         return jsonify({"error": str(error)}), 500
 
 
-def get_analysis_for_symbol(user_symbol):
+@app.route("/analysis")
+def analysis():
+    user_symbol = request.args.get("symbol", "").strip()
     if not user_symbol:
-        return {"error": "symbol parameter required"}
+        return jsonify({"error": "symbol parameter required"}), 400
+    
     yahoo_symbol = to_yahoo_symbol(user_symbol)
     try:
         ticker = yf.Ticker(yahoo_symbol)
@@ -208,16 +245,20 @@ def get_analysis_for_symbol(user_symbol):
         fast_info = ticker.fast_info
         latest_close = safe_number(fast_info.get("lastPrice") or info.get("regularMarketPrice") or info.get("currentPrice"))
         description = info.get("longBusinessSummary") or ""
+        
         try:
             hist = ticker.history(period="6mo", interval="1d", auto_adjust=False)
         except:
             hist = None
+        
         close_values = []
         if hist is not None and not hist.empty:
             close_values = [safe_number(row["Close"]) for _, row in hist.iterrows()]
             close_values = [c for c in close_values if c is not None]
+        
         short_term_trend = "No short-term trend analysis available."
         long_term_trend = "No long-term trend analysis available."
+        
         if len(close_values) >= 20:
             recent = close_values[-20:]
             if len(recent) >= 2:
@@ -227,6 +268,7 @@ def get_analysis_for_symbol(user_symbol):
                     short_term_trend = "Over the last 20 trading days, the price has fallen by more than 5%, indicating a negative short-term trend."
                 else:
                     short_term_trend = "Over the last 20 trading days, the price has moved within a narrow range (±5%), indicating a sideways short-term trend."
+        
         if week52_high and week52_low and latest_close:
             if latest_close >= week52_high * 0.9:
                 long_term_trend = "The current price is near its 52-week high (within 10%), suggesting a strong long-term uptrend."
@@ -234,6 +276,7 @@ def get_analysis_for_symbol(user_symbol):
                 long_term_trend = "The current price is near its 52-week low (within 10%), suggesting a weak long-term trend or downtrend."
             else:
                 long_term_trend = "The current price is in the middle of its 52-week range, indicating a neutral long-term trend."
+        
         if len(close_values) >= 15:
             rsi_vals = calculate_rsi(close_values, 14)
             latest_rsi = None
@@ -246,6 +289,7 @@ def get_analysis_for_symbol(user_symbol):
                     short_term_trend += " The 14-day RSI is above 70, which can indicate an overbought condition."
                 elif latest_rsi < 30:
                     short_term_trend += " The 14-day RSI is below 30, which can indicate an oversold condition."
+        
         return {
             "symbol": symbol,
             "name": name,
@@ -263,63 +307,6 @@ def get_analysis_for_symbol(user_symbol):
         }
     except Exception as error:
         return {"error": str(error)}
-
-
-@app.route("/analysis")
-def analysis():
-    user_symbol = request.args.get("symbol", "").strip()
-    if not user_symbol:
-        return jsonify({"error": "symbol parameter required"}), 400
-    result = get_analysis_for_symbol(user_symbol)
-    if "error" in result:
-        return jsonify(result), 400 if "not available" in result["error"] else 500
-    return jsonify(result)
-
-
-def get_anand_rathi_table(url, table_name):
-    try:
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"}, timeout=20)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
-        table = soup.find("table")
-        if not table:
-            return jsonify({"error": f"{table_name} table not found"}), 500
-        rows = []
-        for tr in table.find_all("tr"):
-            cells = tr.find_all(["th", "td"])
-            if not cells:
-                continue
-            rows.append([cell.get_text(" ", strip=True) for cell in cells])
-        if not rows:
-            return jsonify({"error": f"{table_name} table contained no rows"}), 500
-        return jsonify({"source": "anandrathi", "rows": rows})
-    except Exception as error:
-        return jsonify({"error": str(error)}), 500
-
-
-@app.route("/52week-low-ar")
-def fifty_two_week_low_ar():
-    return get_anand_rathi_table("https://anandrathi.com/share-market-today/52-weeks-low", "52 Weeks Low")
-
-
-@app.route("/top-losers-ar")
-def top_losers_ar():
-    return get_anand_rathi_table("https://anandrathi.com/share-market-today/top-losers-today", "Top Losers Today")
-
-
-@app.route("/52week-high-ar")
-def week_52_high_ar():
-    return get_anand_rathi_table("https://anandrathi.com/share-market-today/52-weeks-high", "52 Weeks High")
-
-
-@app.route("/top-gainers-ar")
-def top_gainers_ar():
-    return get_anand_rathi_table("https://anandrathi.com/share-market-today/top-gainers-today", "Top Gainers Today")
-
-
-@app.route("/volume-gainers-ar")
-def volume_gainers_ar():
-    return get_anand_rathi_table("https://anandrathi.com/share-market-today/volume-gainers", "Volume Gainers")
 
 
 @app.route("/wishlist")
@@ -412,7 +399,6 @@ def get_rates():
             data = doc.to_dict()
             values = data.get('values', [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3])
         else:
-            # Default rates
             values = [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3]
         
         return "\n".join(str(v) for v in values), 200, {"Content-Type": "text/plain"}
@@ -420,37 +406,31 @@ def get_rates():
         return "Error reading rates: " + str(error), 500, {"Content-Type": "text/plain"}
 
 
-# ============ VALIDATE ENDPOINT FOR AUTHENTICATION ============
+# ============ VALIDATE ENDPOINT ============
 @app.route("/validate")
-def validate_user_files():
+def validate_user():
     user = (request.args.get("user") or "").strip().upper()
     pwd = request.args.get("pwd") or ""
 
-    # Check if user exists and password matches
     if user not in USERS or USERS[user] != pwd:
         return jsonify({"exists": False, "error": "Invalid user name or password."}), 404
 
-    # User + password OK - check if they have data in Firestore
     holdings_doc = db.collection('holdings').document(user).get()
 
     if not holdings_doc.exists:
-        # First time login - auto-create empty documents with default values
         try:
             db.collection('holdings').document(user).set({
                 'lots': [],
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
-
             db.collection('rates').document(user).set({
                 'values': [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3],
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
-
             db.collection('wishlist').document(user).set({
                 'lines': [],
                 'lastUpdated': firestore.SERVER_TIMESTAMP
             })
-
             print(f"Auto-created Firestore documents for new user: {user}")
         except Exception as e:
             print(f"Error auto-creating documents for {user}: {e}")
@@ -507,7 +487,6 @@ def manage_holdings():
     action = payload.get("action")
     
     try:
-        # Get current holdings from Firebase
         doc_ref = db.collection('holdings').document(user)
         doc = doc_ref.get()
         
@@ -522,7 +501,6 @@ def manage_holdings():
                 return jsonify({"error": "Invalid holding lot index."}), 400
             removed_lot = lots.pop(index)
             
-            # Save back to Firebase
             sorted_lots = normalise_and_sort_holdings(lots)
             doc_ref.set({
                 'lots': sorted_lots,
@@ -533,8 +511,7 @@ def manage_holdings():
                 "ok": True,
                 "message": "Holding lot removed.",
                 "removedLot": removed_lot,
-                "count": len(sorted_lots),
-                "file": f"Holdings_{user}.json"
+                "count": len(sorted_lots)
             })
         
         if action == "add":
@@ -563,7 +540,6 @@ def manage_holdings():
             new_lot = {"buydate": buydate, "symbol": symbol, "qty": qty, "avgPrice": round(avg_price, 2)}
             lots.append(new_lot)
             
-            # Save back to Firebase
             sorted_lots = normalise_and_sort_holdings(lots)
             doc_ref.set({
                 'lots': sorted_lots,
@@ -574,8 +550,7 @@ def manage_holdings():
                 "ok": True,
                 "message": "Holding lot added.",
                 "addedLot": new_lot,
-                "count": len(sorted_lots),
-                "file": f"Holdings_{user}.json"
+                "count": len(sorted_lots)
             })
         
         return jsonify({"error": "Invalid action. Use 'add' or 'remove'."}), 400
@@ -599,7 +574,6 @@ def manage_wishlist():
         return jsonify({"error": "Symbol is required."}), 400
     
     try:
-        # Get current wishlist from Firebase
         doc_ref = db.collection('wishlist').document(user)
         doc = doc_ref.get()
         
@@ -609,11 +583,9 @@ def manage_wishlist():
         else:
             lines = []
         
-        # Normalize lines - convert string items to objects
         normalized_lines = []
         for item in lines:
             if isinstance(item, str):
-                # Old format - convert to object
                 normalized_lines.append({"type": "symbol", "symbol": item})
             elif isinstance(item, dict):
                 normalized_lines.append(item)
@@ -621,15 +593,12 @@ def manage_wishlist():
         lines = normalized_lines
         
         if action == "add":
-            # Check if symbol already exists
             existing_symbols = [item.get('symbol') for item in lines if isinstance(item, dict) and item.get('type') == 'symbol']
             if symbol in existing_symbols:
                 return jsonify({"error": "Symbol already exists in wishlist."}), 400
             
-            # Add new symbol
             lines.append({"type": "symbol", "symbol": symbol})
             
-            # Save back to Firebase
             doc_ref.set({
                 'lines': lines,
                 'lastUpdated': firestore.SERVER_TIMESTAMP
@@ -638,10 +607,8 @@ def manage_wishlist():
             return jsonify({"ok": True, "message": "Symbol added.", "count": len(lines)}), 200
         
         elif action == "remove":
-            # Remove symbol
             lines = [item for item in lines if not (isinstance(item, dict) and item.get('symbol') == symbol)]
             
-            # Save back to Firebase
             doc_ref.set({
                 'lines': lines,
                 'lastUpdated': firestore.SERVER_TIMESTAMP
@@ -670,10 +637,8 @@ def save_rates():
         return jsonify({"error": "Values must be a list of 11 numbers."}), 400
     
     try:
-        # Validate all values are numbers
         values = [float(v) for v in values]
         
-        # Save to Firebase
         doc_ref = db.collection('rates').document(user)
         doc_ref.set({
             'values': values,
@@ -692,45 +657,57 @@ def chart_data():
     period = request.args.get("period", "1mo").strip()
     interval = request.args.get("interval", "1d").strip()
     rsi_period_text = request.args.get("rsi", "14").strip()
+    
     if not user_symbol:
         return jsonify({"error": "symbol parameter required"}), 400
+    
     allowed_periods = {"5d", "1mo", "3mo", "6mo", "1y"}
     allowed_intervals = {"1d", "30m", "60m"}
+    
     if period not in allowed_periods:
         return jsonify({"error": "Unsupported period. Use 5d, 1mo, 3mo, 6mo, or 1y."}), 400
     if interval not in allowed_intervals:
         return jsonify({"error": "Unsupported interval. Use 1d, 30m, or 60m."}), 400
     if interval in ("30m", "60m") and period not in ("5d", "1mo"):
         return jsonify({"error": "Intraday intervals only supported for 5d and 1mo."}), 400
+    
     try:
         rsi_period = int(rsi_period_text)
     except ValueError:
         rsi_period = 14
     rsi_period = max(2, min(rsi_period, 50))
+    
     yahoo_symbol = to_yahoo_symbol(user_symbol)
+    
     try:
         ticker = yf.Ticker(yahoo_symbol)
         history = ticker.history(period=period, interval=interval, auto_adjust=False)
+        
         if history is None or history.empty:
             return jsonify({"error": "No chart data for " + yahoo_symbol}), 404
+        
         candles = []
         close_values = []
         candle_times = []
         use_unix_time = interval in ("30m", "60m")
+        
         for index_value, row in history.iterrows():
             open_price = safe_number(row.get("Open"))
             high_price = safe_number(row.get("High"))
             low_price = safe_number(row.get("Low"))
             close_price = safe_number(row.get("Close"))
             volume = safe_number(row.get("Volume"))
+            
             if open_price is None or high_price is None or low_price is None or close_price is None:
                 continue
+            
             try:
                 import pandas as pd
                 ts = pd.Timestamp(index_value)
                 time_value = int(ts.timestamp()) if use_unix_time else index_value.strftime("%Y-%m-%d")
             except:
                 continue
+            
             candles.append({
                 "time": time_value,
                 "open": round(open_price, 2),
@@ -741,11 +718,14 @@ def chart_data():
             })
             close_values.append(close_price)
             candle_times.append(time_value)
+        
         if not candles:
             return jsonify({"error": "No valid OHLC data"}), 404
+        
         rsi_values = calculate_rsi(close_values, rsi_period)
         ema9_values = calculate_ema(close_values, 9)
         ema21_values = calculate_ema(close_values, 21)
+        
         rsi_data = [
             {"time": candle_times[i], "value": round(rsi_values[i], 2)}
             for i in range(len(rsi_values)) if rsi_values[i] is not None
@@ -758,6 +738,7 @@ def chart_data():
             {"time": candle_times[i], "value": round(ema21_values[i], 2)}
             for i in range(len(ema21_values)) if ema21_values[i] is not None
         ]
+        
         return jsonify({
             "symbol": display_nse_symbol(user_symbol),
             "yahooSymbol": yahoo_symbol,
@@ -777,7 +758,6 @@ def chart_data():
 
 @app.route("/pattern-data")
 def pattern_data():
-    """Dedicated endpoint for pattern analysis - returns raw 5-minute candles"""
     user_symbol = request.args.get("symbol", "").strip()
     days = request.args.get("days", "30").strip()
     
@@ -786,7 +766,7 @@ def pattern_data():
     
     try:
         days_int = int(days)
-        days_int = max(7, min(days_int, 90))  # Limit 7-90 days
+        days_int = max(7, min(days_int, 90))
     except ValueError:
         days_int = 30
     
@@ -794,8 +774,6 @@ def pattern_data():
     
     try:
         ticker = yf.Ticker(yahoo_symbol)
-        
-        # Fetch 5-minute data
         history = ticker.history(period=f"{days_int}d", interval="5m", auto_adjust=False)
         
         if history is None or history.empty:
@@ -844,7 +822,6 @@ def pattern_data():
 
 @app.route("/wl-pattern-data")
 def wl_pattern_data():
-    """5-minute intraday data for WL Pattern analysis."""
     user_symbol = request.args.get("symbol", "").strip()
     days = request.args.get("days", "30").strip()
 
@@ -907,6 +884,7 @@ def wl_pattern_data():
         return jsonify({"error": str(error)}), 500
 
 
+# ============ DAILY HISTORY (for index charts) ============
 @app.route("/daily-history")
 def daily_history():
     """Daily OHLCV history for a symbol (for index vs stock charts)."""
@@ -976,110 +954,7 @@ def daily_history():
         return jsonify({"error": str(error)}), 500
 
 
-# ============ RESEARCH IDEAS (LLM-generated) ============
-import os
-import requests as http_requests
-import re
-import json as json_lib
-
-LLM_API_KEY = os.environ.get("LLM_API_KEY")  # set this in your hosting env
-LLM_API_URL = "https://api.perplexity.ai/chat/completions"  # adjust if using another provider
-
-@app.route("/research-ideas")
-def research_ideas():
-    """
-    Generate research ideas by scanning today's NSE market.
-    Returns JSON: [{"symbol": "...", "reason": "...", "note": "..."}]
-    """
-    if not LLM_API_KEY:
-        return jsonify({"error": "LLM not configured on server"}), 503
-
-    try:
-        base = request.host_url.rstrip("/")
-        def fetch_json(path):
-            r = http_requests.get(base + path, timeout=10)
-            r.raise_for_status()
-            return r.json()
-
-        data_52w_low = fetch_json("/52week-low-ar")
-        data_losers = fetch_json("/top-losers-ar")
-        data_52w_high = fetch_json("/52week-high-ar")
-        data_gainers = fetch_json("/top-gainers-ar")
-        data_vol = fetch_json("/volume-gainers-ar")
-
-        def summarize_table(json_data, label):
-            rows = json_data.get("rows", [])
-            if len(rows) < 2:
-                return f"{label}: (no data)\n"
-            header = rows[0]
-            lines = [label + ":"]
-            for row in rows[1:9]:
-                lines.append(" | ".join(str(c) for c in row))
-            return "\n".join(lines) + "\n"
-
-        market_text = (
-            summarize_table(data_52w_low, "52-Week Low") +
-            summarize_table(data_losers, "Top Losers") +
-            summarize_table(data_52w_high, "52-Week High") +
-            summarize_table(data_gainers, "Top Gainers") +
-            summarize_table(data_vol, "Volume Gainers")
-        )
-
-        prompt = (
-            "You are an Indian equity researcher focusing on delivery trades.\n"
-            "Scan today's NSE market using the following data and identify 5–8 unusual movers worth researching.\n"
-            "For each, give:\n"
-            "- symbol (NSE symbol, e.g. RELIANCE-EQ)\n"
-            "- reason (why it's unusual: gap, volume, 52-week break, sector move, etc.)\n"
-            "- note (1–2 lines on what to check: news, results, sector, technicals).\n"
-            "Return ONLY a JSON array of objects with keys: symbol, reason, note.\n\n"
-            "Market data:\n"
-        ) + market_text
-
-        headers = {
-            "Authorization": "Bearer " + LLM_API_KEY,
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "sonar",  # or your chosen model
-            "messages": [
-                {"role": "system", "content": "You are a concise Indian equity research assistant. Output valid JSON only."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3
-        }
-
-        resp = http_requests.post(LLM_API_URL, json=payload, headers=headers, timeout=20)
-        resp.raise_for_status()
-        result = resp.json()
-
-        text = result["choices"][0]["message"]["content"]
-
-        match = re.search(r"\[[\s\S]*\]", text)
-        if not match:
-            return jsonify({"error": "LLM did not return a JSON array"}), 502
-        ideas = json_lib.loads(match.group(0))
-
-        if not isinstance(ideas, list):
-            return jsonify({"error": "LLM response is not a list"}), 502
-
-        clean_ideas = []
-        for item in ideas:
-            if not isinstance(item, dict):
-                continue
-            sym = str(item.get("symbol", "")).strip().upper()
-            reason = str(item.get("reason", "")).strip()
-            note = str(item.get("note", "")).strip()
-            if not sym or not reason:
-                continue
-            clean_ideas.append({"symbol": sym, "reason": reason, "note": note})
-
-        return jsonify(clean_ideas)
-
-    except Exception as error:
-        return jsonify({"error": str(error)}), 500
-
-
+# ============ TRADE JOURNAL ============
 @app.route("/add-trade", methods=["POST"])
 def add_trade():
     user = get_user_from_request()
@@ -1159,242 +1034,6 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-
-# ============ IPO DATA FUNCTIONS ============
-
-def scrape_anandrathi_ipo_page(base_url, page_num=1):
-    """Scrape a single page of Anand Rathi IPO list"""
-    try:
-        # Build URL with page parameter
-        if page_num == 1:
-            url = base_url
-        else:
-            url = f"{base_url}?page={page_num}"
-        
-        # Fetch page
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=20) as response:
-            html = response.read().decode('utf-8')
-        
-        soup = BeautifulSoup(html, 'html.parser')
-        
-        # Find table
-        table = soup.find('table')
-        if not table:
-            return [], False  # No table, no more pages
-        
-        rows = []
-        for tr in table.find_all('tr')[1:]:  # Skip header
-            cells = tr.find_all(['td', 'th'])
-            if len(cells) >= 8:
-                row_data = [cell.get_text(strip=True) for cell in cells]
-                rows.append(row_data)
-        
-        # Check if there are more pages
-        has_more = page_num < 20  # Safety limit
-        
-        return rows, has_more
-        
-    except Exception as e:
-        print(f'Error scraping page {page_num}: {e}')
-        return [], False
-
-
-def get_all_anandrathi_ipos():
-    """Scrape all IPOs from Anand Rathi (all pages)"""
-    all_ipos = []
-    
-    # Scrape Closed IPOs (historical)
-    print('Fetching closed IPOs...')
-    page = 1
-    while page <= 15:  # Safety limit
-        print(f'Fetching closed IPOs page {page}...')
-        rows, has_more = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/closed-ipo', page)
-        print(f'Page {page}: got {len(rows)} rows, has_more={has_more}')
-        
-        if not rows:
-            print(f'No more rows on page {page}, stopping')
-            break
-        
-        for row in rows:
-            if len(row) >= 8:
-                all_ipos.append({
-                    'company': row[0],
-                    'open_date': row[1],
-                    'close_date': row[2],
-                    'issue_size': row[3],
-                    'issue_price': row[4],
-                    'lot_size': row[5],
-                    'subscription': row[6],
-                    'listing_date': row[7] if len(row) > 7 else '',
-                    'status': 'listed'
-                })
-        
-        if not has_more:
-            print(f'has_more is False, stopping')
-            break
-        page += 1
-    
-    print(f'Total closed IPOs so far: {len(all_ipos)}')
-    
-    # Scrape Recent IPOs
-    print('Fetching recent IPOs...')
-    rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/recent-ipo', 1)
-    print(f'Recent IPOs: got {len(rows)} rows')
-    for row in rows:
-        if len(row) >= 8:
-            all_ipos.append({
-                'company': row[0],
-                'open_date': row[1],
-                'close_date': row[2],
-                'issue_size': row[3],
-                'issue_price': row[4],
-                'lot_size': row[5],
-                'subscription': row[6],
-                'listing_date': row[7] if len(row) > 7 else '',
-                'status': 'recent'
-            })
-    
-    # Scrape Upcoming IPOs
-    print('Fetching upcoming IPOs...')
-    rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/upcoming-ipo', 1)
-    print(f'Upcoming IPOs: got {len(rows)} rows')
-    for row in rows:
-        if len(row) >= 6:
-            all_ipos.append({
-                'company': row[0],
-                'open_date': row[1],
-                'close_date': row[2],
-                'issue_size': row[3],
-                'issue_price': row[4],
-                'lot_size': row[5],
-                'subscription': '',
-                'listing_date': '',
-                'status': 'upcoming'
-            })
-    
-    print(f'Total IPOs fetched: {len(all_ipos)}')
-    return all_ipos
-
-
-
-def extract_issue_price_max(price_str):
-    """Extract max issue price from string like '₹140-148' or '₹32-34'"""
-    try:
-        if not price_str or price_str == '-':
-            return None
-        # Remove ₹ and spaces
-        price_str = price_str.replace('₹', '').replace(' ', '')
-        # Handle range like "140-148"
-        if '-' in price_str:
-            parts = price_str.split('-')
-            return float(parts[-1])  # Take max (upper bound)
-        else:
-            return float(price_str)
-    except:
-        return None
-
-
-def get_listing_price_yahoo(symbol):
-    """Get listing price from Yahoo Finance"""
-    try:
-        if not symbol:
-            return None
-        
-        # Clean symbol
-        symbol = symbol.strip().upper()
-        if symbol.endswith('-EQ') or symbol.endswith('-BE'):
-            symbol = symbol[:-3]
-        
-        yahoo_symbol = symbol + '.NS'
-        ticker = yf.Ticker(yahoo_symbol)
-        
-        # Get first day close price (approximate listing price)
-        hist = ticker.history(period='5d', interval='1d')
-        if hist is not None and not hist.empty:
-            first_close = hist['Close'].iloc[0]
-            return round(float(first_close), 2)
-        
-        return None
-    except:
-        return None
-
-
-@app.route('/ipo-data', methods=['GET'])
-def get_ipo_data():
-    try:
-        all_ipos = []
-        
-        # Fetch all IPOs from Anand Rathi
-        ipos_raw = get_all_anandrathi_ipos()
-        
-        # Process each IPO
-        for ipo in ipos_raw:
-            # Extract max issue price
-            issue_price = extract_issue_price_max(ipo.get('issue_price', ''))
-            
-            # Determine status based on listing date
-            listing_date_str = ipo.get('listing_date', '').strip()
-            status = ipo.get('status', 'unknown')
-            
-            # Check if listing date is in the future
-            display_status = 'upcoming'
-            if listing_date_str:
-                try:
-                    from datetime import datetime
-                    listing_date = datetime.strptime(listing_date_str, '%d %b %Y')
-                    if listing_date <= datetime.now():
-                        display_status = 'listed'
-                    else:
-                        display_status = 'upcoming'
-                except:
-                    display_status = status
-            
-            all_ipos.append({
-                'symbol': ipo.get('company', '').strip().upper().replace(' ', ''),
-                'companyName': ipo.get('company', ''),
-                'listingDate': listing_date_str,
-                'openDate': ipo.get('open_date', ''),
-                'closeDate': ipo.get('close_date', ''),
-                'status': display_status,
-                'bidPrice': issue_price,
-                'listedPrice': None,  # Skip Yahoo lookup for now
-                'listingGain': None,
-                'listingGainPercent': None,
-                'issueSize': ipo.get('issue_size', ''),
-                'lotSize': ipo.get('lot_size', ''),
-                'subscription': ipo.get('subscription', ''),
-            })
-        
-        # Remove duplicates by symbol
-        seen_symbols = set()
-        unique_ipos = []
-        for ipo in all_ipos:
-            if ipo['symbol'] not in seen_symbols:
-                seen_symbols.add(ipo['symbol'])
-                unique_ipos.append(ipo)
-        
-        all_ipos = unique_ipos
-        
-        # Sort by listing date (most recent first)
-        def parse_date(date_str):
-            try:
-                if not date_str or date_str.strip() == '':
-                    return datetime.max
-                return datetime.strptime(date_str.strip(), '%d %b %Y')
-            except:
-                return datetime.max
-        
-        all_ipos.sort(key=lambda x: parse_date(x['listingDate']), reverse=True)
-        
-        print(f'Total IPOs returned: {len(all_ipos)}')
-        return jsonify(all_ipos)
-        
-    except Exception as e:
-        print(f'Error in /ipo-data: {e}')
-        import traceback
-        traceback.print_exc()
-        return jsonify([])
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
