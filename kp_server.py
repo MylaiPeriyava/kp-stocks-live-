@@ -244,18 +244,18 @@ def get_ipo_data():
                 unique_ipos.append(ipo)
         
         # Sort by listing date (latest first)
-        def parse_date(date_str):
-            if not date_str:
-                return datetime(1900, 1, 1)
+def parse_date(date_str):
+    if not date_str:
+        return datetime(1900, 1, 1)
+    try:
+        for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
             try:
-                for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
-                    try:
-                        return datetime.strptime(date_str.strip(), fmt)
-                    except ValueError:
-                        continue
-                return datetime(1900, 1, 1)
-            except:
-                return datetime(1900, 1, 1)
+                return datetime.strptime(date_str.strip(), fmt)
+            except ValueError:
+                continue
+        return datetime(1900, 1, 1)
+    except Exception:
+        return datetime(1900, 1, 1)
         
         unique_ipos.sort(key=lambda x: parse_date(x['listing_date']), reverse=True)
         
