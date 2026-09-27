@@ -7086,11 +7086,22 @@ window.showSection = function (sectionId) {
             ipos.forEach(ipo => {
                 const tr = document.createElement('tr');
 
+                // NEW: Adapt to IPO Central format
+                const symbol = ipo.company ? ipo.company.replace(/[^A-Z0-9]/g, '').toUpperCase().substring(0, 20) : '';
+                const companyName = ipo.company || ipo.companyName || '';
+                const listingDate = ipo.listing_date || ipo.listingDate || '';
+                const bidPrice = parseFloat(ipo.issue_price) || 0;
+                const listingReturn = parseFloat(ipo.listing_return) || 0;
+                const listedPrice = bidPrice * (1 + listingReturn / 100);
+                const listingGain = listedPrice - bidPrice;
+                const listingGainPercent = listingReturn;
+                const status = ipo.status || 'listed';
+
                 // Determine row color and badge based on status
                 let rowClass = '';
                 let statusBadge = '';
 
-                if (ipo.status === 'upcoming') {
+                if (status === 'upcoming') {
                     rowClass = 'table-warning';
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
                 } else {
@@ -7101,61 +7112,64 @@ window.showSection = function (sectionId) {
                 tr.className = rowClass;
 
                 // Format numbers safely
-                const bidPrice = ipo.bidPrice ? ipo.bidPrice.toFixed(2) : '-';
-                const listedPrice = ipo.listedPrice ? ipo.listedPrice.toFixed(2) : '-';
+                const bidPriceDisplay = bidPrice ? bidPrice.toFixed(2) : '-';
+                const listedPriceDisplay = listedPrice ? listedPrice.toFixed(2) : '-';
 
-                let listingGain = '-';
+                let listingGainDisplay = '-';
                 let listingGainClass = '';
-                if (ipo.listingGain !== null && ipo.listingGain !== undefined) {
-                    listingGain = (ipo.listingGain > 0 ? '+' : '') + ipo.listingGain.toFixed(2);
-                    listingGainClass = ipo.listingGain < 0 ? '#dc3545' : '#198754';
+                if (listingGain !== null && listingGain !== undefined) {
+                    listingGainDisplay = (listingGain > 0 ? '+' : '') + listingGain.toFixed(2);
+                    listingGainClass = listingGain < 0 ? '#dc3545' : '#198754';
                 }
 
-                let listingGainPercent = '-';
+                let listingGainPercentDisplay = '-';
                 let listingGainPercentClass = '';
-                if (ipo.listingGainPercent !== null && ipo.listingGainPercent !== undefined) {
-                    listingGainPercent = ipo.listingGainPercent.toFixed(2) + '%';
-                    listingGainPercentClass = ipo.listingGainPercent < 0 ? '#dc3545' : '#198754';
+                if (listingGainPercent !== null && listingGainPercent !== undefined) {
+                    listingGainPercentDisplay = listingGainPercent.toFixed(2) + '%';
+                    listingGainPercentClass = listingGainPercent < 0 ? '#dc3545' : '#198754';
                 }
 
-                // Fix subscription - remove trailing 'x' if already present
-                let subscription = '-';
-                if (ipo.subscription) {
-                    subscription = ipo.subscription.toString();
-                    if (!subscription.endsWith('x')) {
-                        subscription += 'x';
-                    }
-                }
-
-                // Format date
-                let listingDate = '-';
-                if (ipo.listingDate) {
+                // Format date (handle "30-09-2026" format)
+                let listingDateDisplay = '-';
+                if (listingDate) {
                     try {
-                        const dateObj = new Date(ipo.listingDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
-                        listingDate = dateObj.toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                        });
+                        // Try DD-MM-YYYY format first
+                        const parts = listingDate.split('-');
+                        if (parts.length === 3) {
+                            const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                            listingDateDisplay = dateObj.toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                        } else {
+                            // Fallback for other formats
+                            const dateObj = new Date(listingDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+                            listingDateDisplay = dateObj.toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                        }
                     } catch {
-                        listingDate = ipo.listingDate;
+                        listingDateDisplay = listingDate;
                     }
                 }
 
                 tr.innerHTML = `
-                <td><a href="#" onclick="showSymbolAnalysis('${ipo.symbol}'); return false;" style="color: #0d6efd; text-decoration: none; font-weight: bold;">
-                    ${ipo.symbol || '-'}
+                <td><a href="#" onclick="showSymbolAnalysis('${symbol}'); return false;" style="color: #0d6efd; text-decoration: none; font-weight: bold;">
+                    ${companyName || symbol || '-'}
                 </a></td>
-                <td>${listingDate}</td>
-                <td class="text-end">₹${bidPrice}</td>
-                <td class="text-end">₹${listedPrice}</td>
+                <td>${listingDateDisplay}</td>
+                <td class="text-end">₹${bidPriceDisplay}</td>
+                <td class="text-end">₹${listedPriceDisplay}</td>
                 <td class="text-end" style="color: ${listingGainClass}; font-weight: bold;">
-                    ${listingGain}
+                    ${listingGainDisplay}
                 </td>
                 <td class="text-end" style="color: ${listingGainPercentClass}; font-weight: bold;">
-                    ${listingGainPercent}
+                    ${listingGainPercentDisplay}
                 </td>
-                <td class="text-end">${subscription}</td>
+                <td class="text-end">-</td>
                 <td class="text-center">${statusBadge}</td>
             `;
 
@@ -7169,7 +7183,6 @@ window.showSection = function (sectionId) {
             document.getElementById('ipo-section').style.display = 'none';
         }
     }
-
 </script>
 </body>
 </html>
