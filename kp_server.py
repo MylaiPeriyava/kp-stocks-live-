@@ -127,65 +127,131 @@ def calculate_ema(close_values, period):
     return ema_values
 
 
-# ============ IPO DATA ENDPOINT (IPO Central) ============
-def scrape_ipocentral_2026():
-    """Scrape all 2026 Mainboard IPOs from IPO Central"""
+# ============ IPO DATA ENDPOINT (IPOGyani) ============
+
+def scrape_ipogyani_page(url, page=1):
+    """Scrape a single page from IPOGyani"""
     try:
-        url = 'https://ipocentral.in/ipo-2026/'
+        if page > 1:
+            url = f"{url}&page={page}"
+        
         response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
-        tables = soup.find_all('table')
+        table = soup.find('table')
+        if not table:
+            return [], False
         
-        all_ipos = []
+        ipos = []
+        rows = table.find_all('tr')[1:]
         
-        for table in tables:
-            for tr in table.find_all('tr')[1:]:
-                cells = tr.find_all(['td', 'th'])
-                if len(cells) >= 4:
-                    row_text = [cell.get_text(strip=True) for cell in cells]
-                    
-                    ipo_name = row_text[0].replace('**', '').strip()
-                    listing_date = row_text[1].strip()
-                    allotment_price = row_text[2].replace('₹', '').replace(',', '').strip()
-                    listing_return = row_text[3].replace('%', '').strip()
-                    
-                    if not ipo_name or not listing_date:
-                        continue
-                    
-                    all_ipos.append({
-                        'company': ipo_name,
-                        'listing_date': listing_date,
-                        'issue_price': allotment_price,
-                        'listing_return': listing_return,
-                        'status': 'listed'
-                    })
+        for row in rows:
+            cells = row.find_all(['td', 'th'])
+            if len(cells) >= 10:
+                company = cells[0].get_text(strip=True)
+                if not company or company == 'No data available':
+                    continue
+                
+                sector = cells[1].get_text(strip=True) if len(cells) > 1 else ''
+                listing_date = cells[2].get_text(strip=True) if len(cells) > 2 else ''
+                issue_price = cells[3].get_text(strip=True).replace('₹', '').replace(',', '').strip() if len(cells) > 3 else ''
+                listing_price = cells[4].get_text(strip=True).replace('₹', '').replace(',', '').strip() if len(cells) > 4 else ''
+                listing_gain = cells[5].get_text(strip=True).replace('%', '').strip() if len(cells) > 5 else ''
+                close_gain = cells[6].get_text(strip=True).replace('%', '').strip() if len(cells) > 6 else ''
+                subscription = cells[7].get_text(strip=True).replace('x', '').strip() if len(cells) > 7 else ''
+                gmp = cells[8].get_text(strip=True).replace('₹', '').strip() if len(cells) > 8 else ''
+                ai_pred = cells[9].get_text(strip=True) if len(cells) > 9 else ''
+                issue_size = cells[10].get_text(strip=True).replace('Cr', '').replace(',', '').strip() if len(cells) > 10 else ''
+                
+                ipos.append({
+                    'company': company,
+                    'sector': sector,
+                    'listing_date': listing_date,
+                    'issue_price': issue_price,
+                    'listing_price': listing_price,
+                    'listing_gain': listing_gain,
+                    'close_gain': close_gain,
+                    'subscription': subscription,
+                    'gmp': gmp,
+                    'ai_prediction': ai_pred,
+                    'issue_size': issue_size
+                })
         
-        print(f'IPO Central: fetched {len(all_ipos)} IPOs')
-        return all_ipos
+        has_more = len(rows) >= 25
+        return ipos, has_more
         
     except Exception as e:
-        print(f'Error scraping IPO Central: {e}')
-        import traceback
-        traceback.print_exc()
-        return []
+        print(f'Error scraping {url} page {page}: {e}')
+        return [], False
+
+
+def scrape_all_ipogyani_pages(base_url):
+    """Scrape all pages from a IPOGyani URL"""
+    all_ipos = []
+    page = 1
+    
+    while page <= 10:
+        ipos, has_more = scrape_ipogyani_page(base_url, page)
+        if not ipos:
+            break
+        all_ipos.extend(ipos)
+        print(f'Scraped page {page}: {len(ipos)} IPOs, total: {len(all_ipos)}')
+        if not has_more:
+            break
+        page += 1
+    
+    return all_ipos
 
 
 @app.route("/ipo-data")
 def get_ipo_data():
-    """Get all 2026 IPOs from IPO Central"""
+    """Get all IPOs from IPOGyani (Listed + Live + Upcoming)"""
     try:
-        ipos = scrape_ipocentral_2026()
+        all_ipos = []
         
-        # Remove duplicates by company name
+        print('Fetching listed IPOs...')
+        listed_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/listed-ipo/2026?type=mainboard')
+        for ipo in listed_ipos:
+            ipo['status'] = 'listed'
+        all_ipos.extend(listed_ipos)
+        
+        print('Fetching live IPOs...')
+        live_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/live-ipo')
+        for ipo in live_ipos:
+            ipo['status'] = 'open'
+        all_ipos.extend(live_ipos)
+        
+        print('Fetching upcoming IPOs...')
+        upcoming_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/upcoming-ipo')
+        for ipo in upcoming_ipos:
+            ipo['status'] = 'upcoming'
+        all_ipos.extend(upcoming_ipos)
+        
+        # Remove duplicates
         seen = set()
         unique_ipos = []
-        for ipo in ipos:
+        for ipo in all_ipos:
             key = ipo['company'].lower().strip()
             if key not in seen:
                 seen.add(key)
                 unique_ipos.append(ipo)
+        
+        # Sort by listing date (latest first)
+        def parse_date(date_str):
+            if not date_str:
+                return datetime(1900, 1, 1)
+            try:
+                for fmt in ['%d %b %Y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
+                    try:
+                        return datetime.strptime(date_str.strip(), fmt)
+                    except ValueError:
+                        continue
+                return datetime(1900, 1, 1)
+            except:
+                return datetime(1900, 1, 1)
+        
+        unique_ipos.sort(key=lambda x: parse_date(x['listing_date']), reverse=True)
         
         print(f'Total unique IPOs: {len(unique_ipos)}')
         return jsonify(unique_ipos)
