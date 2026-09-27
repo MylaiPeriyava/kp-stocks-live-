@@ -148,19 +148,20 @@ def scrape_ipogyani_page(url, page=1):
         
         for row in rows:
             cells = row.find_all(['td', 'th'])
-            if len(cells) >= 10:
+            if len(cells) >= 11:
                 company = cells[0].get_text(strip=True)
                 if not company or company == 'No data available':
                     continue
                 
+                # Extract by correct column positions
                 sector = cells[1].get_text(strip=True) if len(cells) > 1 else ''
                 listing_date = cells[2].get_text(strip=True) if len(cells) > 2 else ''
-                issue_price = cells[3].get_text(strip=True).replace('₹', '').replace(',', '').strip() if len(cells) > 3 else ''
-                listing_price = cells[4].get_text(strip=True).replace('₹', '').replace(',', '').strip() if len(cells) > 4 else ''
+                issue_price = cells[3].get_text(strip=True).replace('Rs ', '').replace(',', '').strip() if len(cells) > 3 else ''
+                listing_price = cells[4].get_text(strip=True).replace('Rs ', '').replace(',', '').strip() if len(cells) > 4 else ''
                 listing_gain = cells[5].get_text(strip=True).replace('%', '').strip() if len(cells) > 5 else ''
                 close_gain = cells[6].get_text(strip=True).replace('%', '').strip() if len(cells) > 6 else ''
                 subscription = cells[7].get_text(strip=True).replace('x', '').strip() if len(cells) > 7 else ''
-                gmp = cells[8].get_text(strip=True).replace('₹', '').strip() if len(cells) > 8 else ''
+                gmp = cells[8].get_text(strip=True).replace('%', '').replace('+', '').strip() if len(cells) > 8 else ''
                 ai_pred = cells[9].get_text(strip=True) if len(cells) > 9 else ''
                 issue_size = cells[10].get_text(strip=True).replace('Cr', '').replace(',', '').strip() if len(cells) > 10 else ''
                 
