@@ -1161,62 +1161,75 @@ def get_ipo_data():
     try:
         all_ipos = []
         
-        url = 'https://www.nseindia.com/market-data/all-upcoming-issues-ipo'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'text/html,application/xhtml+xml',
-        }
+        # Scrape Chittorgarh month-wise (2026 Jan to current month)
+        current_year = 2026
+        current_month = 9  # September
         
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, 'lxml')
-        
-        # Look for ALL tables and find the one with IPO data
-        all_tables = soup.find_all('table')
-        
-        for table in all_tables:
-            rows = table.find_all('tr')
+        for year in [2026, 2025, 2024]:  # Add more years as needed
+            start_month = 1 if year < current_year else 1
+            end_month = current_month if year == current_year else 12
             
-            # Find table with "Company Name" header
-            if len(rows) > 0:
-                header_row = rows[0]
-                header_text = header_row.get_text().lower()
-                
-                if 'company name' in header_text:
-                    # This is the IPO table!
-                    for row in rows[1:]:
-                        cols = row.find_all('td')
-                        if len(cols) >= 5:
-                            cells = [cell.get_text(strip=True) for cell in cols]
-                            
-                            company = cells[0]
-                            security_type = cells[1]
-                            issue_start = cells[2]
-                            issue_end = cells[3]
-                            status = cells[4]
-                            
-                            # Filter: Only EQ (mainboard)
-                            if security_type != 'EQ':
+            for month in range(start_month, end_month + 1):
+                try:
+                    url = f'https://www.chittorgarh.com/report/ipo-in-india-list-main-board-sme/82/mainboard/?year={year}&month={month}'
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Accept': 'text/html,application/xhtml+xml',
+                    }
+                    
+                    response = requests.get(url, headers=headers, timeout=15)
+                    
+                    if response.status_code != 200:
+                        continue
+                    
+                    soup = BeautifulSoup(response.text, 'lxml')
+                    
+                    # Find tables
+                    tables = soup.find_all('table')
+                    
+                    for table in tables:
+                        rows = table.find_all('tr')
+                        
+                        for row in rows[1:]:  # Skip header
+                            cols = row.find_all('td')
+                            if len(cols) < 3:
                                 continue
                             
-                            ipo_status = 'open' if status.lower() == 'active' else 'upcoming'
+                            cells = [cell.get_text(strip=True) for cell in cols]
+                            
+                            # Parse Chittorgarh format
+                            company = cells[0] if len(cells) > 0 else ''
+                            dates = cells[1] if len(cells) > 1 else ''
+                            status = cells[2] if len(cells) > 2 else ''
+                            
+                            # Determine status
+                            ipo_status = 'listed'
+                            if 'upcoming' in status.lower():
+                                ipo_status = 'upcoming'
+                            elif 'open' in status.lower() or 'active' in status.lower():
+                                ipo_status = 'open'
                             
                             if company and len(company) < 50:
                                 all_ipos.append({
                                     'symbol': company.split()[0][:30],
-                                    'listingDate': issue_end,
+                                    'listingDate': dates.split('-')[-1].strip() if '-' in dates else dates,
                                     'status': ipo_status,
                                     'bidPrice': None,
                                     'listedPrice': None,
                                     'listingGain': None,
                                     'listingGainPercent': None,
-                                    'subscription': float(cells[7]) if len(cells) > 7 and cells[7] else None,
+                                    'subscription': None,
                                 })
                     
-                    break  # Found the table, stop searching
+                except Exception as e:
+                    print(f'Month {month}/{year} error: {e}')
+                    continue
         
-        print(f'NSE: Found {len(all_ipos)} IPOs')
+        print(f'Total: Found {len(all_ipos)} IPOs')
+        
+        # Sort by date
+        all_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
+        
         return jsonify(all_ipos)
         
     except Exception as e:
