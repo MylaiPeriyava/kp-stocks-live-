@@ -1156,210 +1156,50 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-# =====================================================
-# IPO DATA ENDPOINT - Mainboard IPOs from Jan 2026
-# Using NSE India official data
-# =====================================================
 @app.route('/ipo-data', methods=['GET'])
 def get_ipo_data():
     try:
-        # NSE India IPO page
-        url = 'https://www.nseindia.com/market-data/initial-public-offers'
+        # Correct NSE URL for IPOs
+        url = 'https://www.nseindia.com/market-data/live-nse'
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Referer': 'https://www.nseindia.com/'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
         }
         
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         
-        html = response.text
-        ipos = parse_nse_ipos(html)
+        # For now, return sample data to test frontend
+        # We'll implement scraping once we confirm the right URL
+        sample_ipos = [
+            {
+                'symbol': 'SAMPLE IPO LTD',
+                'listingDate': '2026-09-25',
+                'bidPrice': 550.0,
+                'listedPrice': 638.0,
+                'listingGain': 88.0,
+                'listingGainPercent': 16.0,
+                'subscription': 45.2,
+                'status': 'listed'
+            },
+            {
+                'symbol': 'UPCOMING CORP',
+                'listingDate': None,
+                'bidPrice': 100.0,
+                'listedPrice': None,
+                'listingGain': None,
+                'listingGainPercent': None,
+                'subscription': 12.5,
+                'status': 'upcoming'
+            }
+        ]
         
-        # Filter: Jan 2026 onwards
-        filtered = []
-        for ipo in ipos:
-            if not ipo.get('listingDate'):
-                filtered.append(ipo)
-            else:
-                try:
-                    listing_date = datetime.strptime(ipo['listingDate'], '%Y-%m-%d')
-                    if listing_date >= datetime(2026, 1, 1):
-                        filtered.append(ipo)
-                except:
-                    filtered.append(ipo)
-        
-        # Sort: Upcoming first, then newest first
-        def sort_key(ipo):
-            if not ipo.get('listingDate'):
-                return ('0', '')
-            return ('1', ipo['listingDate'])
-        
-        filtered.sort(key=sort_key, reverse=True)
-        
-        return jsonify(filtered)
+        return jsonify(sample_ipos)
         
     except Exception as e:
         print(f'IPO fetch error: {str(e)}')
-        return jsonify({'error': f'Failed to fetch IPO data: {str(e)}'}), 500
-
-
-def parse_nse_ipos(html):
-    """Parse NSE IPO table"""
-    ipos = []
-    
-    # NSE IPO table has specific structure
-    # Look for table with IPO data
-    table_pattern = r'<table[^>]*>([\s\S]*?)</table>'
-    tables = re.findall(table_pattern, html, re.IGNORECASE)
-    
-    for table_html in tables:
-        # Check if this table contains IPO data
-        if 'ipo' not in table_html.lower() and 'issue' not in table_html.lower():
-            continue
-        
-        # Extract rows
-        row_pattern = r'<tr[^>]*>([\s\S]*?)</tr>'
-        rows = re.findall(row_pattern, table_html, re.IGNORECASE)
-        
-        for row_html in rows:
-            if '<th' in row_html:
-                continue
-            
-            cell_pattern = r'<td[^>]*>([\s\S]*?)</td>'
-            cells = re.findall(cell_pattern, row_html, re.IGNORECASE)
-            
-            if len(cells) >= 4:
-                cells = [re.sub(r'<[^>]*>', '', cell).strip() for cell in cells]
-                ipo = extract_nse_ipo_from_cells(cells)
-                if ipo and ipo.get('symbol'):
-                    ipos.append(ipo)
-    
-    return ipos
-
-
-def extract_nse_ipo_from_cells(cells):
-    """Extract IPO from NSE table cells"""
-    ipo = {
-        'symbol': '',
-        'listingDate': None,
-        'bidPrice': None,
-        'listedPrice': None,
-        'listingGain': None,
-        'listingGainPercent': None,
-        'subscription': None,
-        'status': 'upcoming'
-    }
-    
-    # First cell usually has symbol/company name
-    if cells:
-        ipo['symbol'] = cells[0].strip()[:100]
-    
-    # Parse remaining cells for data
-    for cell in cells[1:]:
-        # Date
-        if not ipo['listingDate']:
-            date = extract_listing_date(cell)
-            if date:
-                ipo['listingDate'] = date
-        
-        # Price
-        price = extract_price(cell)
-        if price:
-            if not ipo['bidPrice']:
-                ipo['bidPrice'] = price
-            elif not ipo['listedPrice']:
-                ipo['listedPrice'] = price
-        
-        # Percentage
-        if not ipo['listingGainPercent']:
-            pct = extract_percent(cell)
-            if pct is not None:
-                ipo['listingGainPercent'] = pct
-        
-        # Subscription
-        if not ipo['subscription']:
-            sub = extract_subscription(cell)
-            if sub:
-                ipo['subscription'] = sub
-    
-    # Determine status
-    if ipo['listedPrice'] and ipo['listedPrice'] > 0:
-        ipo['status'] = 'listed'
-    elif ipo['listingDate']:
-        ipo['status'] = 'open'
-    
-    return ipo
-
-
-def extract_listing_date(text):
-    if not text:
-        return None
-    
-    patterns = [
-        r'(\d{1,2}\s+\w{3}\s+\d{4})',
-        r'(\w{3}\s+\d{1,2},?\s+\d{4})',
-        r'(\d{4}-\d{2}-\d{2})'
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, text)
-        if match:
-            date_str = match.group(1)
-            try:
-                for fmt in ['%d %b %Y', '%b %d, %Y', '%b %d %Y', '%Y-%m-%d']:
-                    try:
-                        date_obj = datetime.strptime(date_str, fmt)
-                        return date_obj.strftime('%Y-%m-%d')
-                    except:
-                        continue
-            except:
-                pass
-    
-    return None
-
-
-def extract_price(text):
-    if not text or text in ['-', '—', '']:
-        return None
-    if '%' in text:
-        return None
-    
-    match = re.search(r'₹?\s*([\d,]+\.?\d*)', text)
-    if match:
-        try:
-            return float(match.group(1).replace(',', ''))
-        except:
-            return None
-    return None
-
-
-def extract_percent(text):
-    if not text:
-        return None
-    
-    match = re.search(r'([\+\-]?\d+\.?\d*)\s*%', text)
-    if match:
-        try:
-            return float(match.group(1))
-        except:
-            return None
-    return None
-
-
-def extract_subscription(text):
-    if not text:
-        return None
-    
-    match = re.search(r'([\d\.]+)\s*x', text, re.IGNORECASE)
-    if match:
-        try:
-            return float(match.group(1))
-        except:
-            return None
-    return None
+        return jsonify({'error': f'Failed: {str(e)}'}), 500
 
 
 if __name__ == "__main__":
