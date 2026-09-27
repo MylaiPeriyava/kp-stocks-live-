@@ -13,6 +13,10 @@ USERS = {
     # Example with blank password (not recommended): "GUEST": "",
 }
 
+# For IPO scraping
+import urllib.request
+from urllib.parse import urljoin
+
 import re
 from datetime import datetime
 
@@ -143,6 +147,159 @@ def calculate_ema(close_values, period):
             continue
         ema_values[i] = ((close_values[i] - ema_values[i - 1]) * multiplier) + ema_values[i - 1]
     return ema_values
+
+
+
+def scrape_anandrathi_ipo_page(base_url, page_num=1):
+    """Scrape a single page of Anand Rathi IPO list"""
+    try:
+        # Build URL with page parameter
+        if page_num == 1:
+            url = base_url
+        else:
+            url = f"{base_url}?page={page_num}"
+        
+        # Fetch page
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=20) as response:
+            html = response.read().decode('utf-8')
+        
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # Find table
+        table = soup.find('table')
+        if not table:
+            return [], False  # No table, no more pages
+        
+        rows = []
+        for tr in table.find_all('tr')[1:]:  # Skip header
+            cells = tr.find_all(['td', 'th'])
+            if len(cells) >= 8:
+                row_data = [cell.get_text(strip=True) for cell in cells]
+                rows.append(row_data)
+        
+        # Check if there are more pages
+        has_more = page_num < 20  # Safety limit
+        
+        return rows, has_more
+        
+    except Exception as e:
+        print(f'Error scraping page {page_num}: {e}')
+        return [], False
+
+
+def get_all_anandrathi_ipos():
+    """Scrape all IPOs from Anand Rathi (all pages)"""
+    all_ipos = []
+    
+    # Scrape Closed IPOs (historical)
+    print('Fetching closed IPOs...')
+    page = 1
+    while page <= 15:  # Safety limit
+        rows, has_more = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/closed-ipo', page)
+        if not rows:
+            break
+        for row in rows:
+            if len(row) >= 8:
+                all_ipos.append({
+                    'company': row[0],
+                    'open_date': row[1],
+                    'close_date': row[2],
+                    'issue_size': row[3],
+                    'issue_price': row[4],
+                    'lot_size': row[5],
+                    'subscription': row[6],
+                    'listing_date': row[7] if len(row) > 7 else '',
+                    'status': 'listed'
+                })
+        if not has_more:
+            break
+        page += 1
+    
+    # Scrape Recent IPOs
+    print('Fetching recent IPOs...')
+    rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/recent-ipo', 1)
+    for row in rows:
+        if len(row) >= 8:
+            all_ipos.append({
+                'company': row[0],
+                'open_date': row[1],
+                'close_date': row[2],
+                'issue_size': row[3],
+                'issue_price': row[4],
+                'lot_size': row[5],
+                'subscription': row[6],
+                'listing_date': row[7] if len(row) > 7 else '',
+                'status': 'recent'
+            })
+    
+    # Scrape Upcoming IPOs
+    print('Fetching upcoming IPOs...')
+    rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/upcoming-ipo', 1)
+    for row in rows:
+        if len(row) >= 6:
+            all_ipos.append({
+                'company': row[0],
+                'open_date': row[1],
+                'close_date': row[2],
+                'issue_size': row[3],
+                'issue_price': row[4],
+                'lot_size': row[5],
+                'subscription': '',
+                'listing_date': '',
+                'status': 'upcoming'
+            })
+    
+    print(f'Total IPOs fetched: {len(all_ipos)}')
+    return all_ipos
+
+
+def extract_issue_price_max(price_str):
+    """Extract max issue price from string like '₹140-148' or '₹32-34'"""
+    try:
+        if not price_str or price_str == '-':
+            return None
+        # Remove ₹ and spaces
+        price_str = price_str.replace('₹', '').replace(' ', '')
+        # Handle range like "140-148"
+        if '-' in price_str:
+            parts = price_str.split('-')
+            return float(parts[-1])  # Take max (upper bound)
+        else:
+            return float(price_str)
+    except:
+        return None
+
+
+def get_listing_price_yahoo(symbol):
+    """Get listing price from Yahoo Finance"""
+    try:
+        if not symbol:
+            return None
+        
+        # Clean symbol
+        symbol = symbol.strip().upper()
+        if symbol.endswith('-EQ') or symbol.endswith('-BE'):
+            symbol = symbol[:-3]
+        
+        yahoo_symbol = symbol + '.NS'
+        ticker = yf.Ticker(yahoo_symbol)
+        
+        # Get first day close price (approximate listing price)
+        hist = ticker.history(period='5d', interval='1d')
+        if hist is not None and not hist.empty:
+            first_close = hist['Close'].iloc[0]
+            return round(float(first_close), 2)
+        
+        return None
+    except:
+        return None
+
+
+
+
+
+
 
 
 @app.route("/")
@@ -1160,77 +1317,150 @@ def delete_trade():
         return jsonify({"error": str(error)}), 500
 
 
-@app.route('/ipo-data', methods=['GET'])
-def get_ipo_data():
+def scrape_anandrathi_ipo_page(base_url, page_num=1):
+    """Scrape a single page of Anand Rathi IPO list"""
     try:
-        all_ipos = []
+        # Build URL with page parameter
+        if page_num == 1:
+            url = base_url
+        else:
+            url = f"{base_url}?page={page_num}"
         
-        # 1. Get Recent IPOs (listed - with listing prices)
-        try:
-            recent_ipos = nse.ipo.recent()
-            for ipo in recent_ipos:
-                issue_price = float(ipo.get('price', 0) or 0)
-                listing_price = float(ipo.get('listing_price', 0) or 0)
-                
-                listing_gain = listing_price - issue_price if listing_price and issue_price else None
-                listing_gain_percent = round((listing_gain / issue_price * 100), 2) if listing_gain and issue_price else None
-                
-                all_ipos.append({
-                    'symbol': ipo.get('symbol', ''),
-                    'listingDate': ipo.get('listing_date', ''),
-                    'status': 'listed',
-                    'bidPrice': issue_price,
-                    'listedPrice': listing_price,
-                    'listingGain': round(listing_gain, 2) if listing_gain else None,
-                    'listingGainPercent': listing_gain_percent,
-                    'subscription': None,
-                })
-        except Exception as e:
-            print(f'Error fetching recent IPOs: {e}')
+        # Fetch page
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=20) as response:
+            html = response.read().decode('utf-8')
         
-        # 2. Get Current IPOs (open for subscription)
-        try:
-            current_ipos = nse.ipo.current()
-            for ipo in current_ipos:
-                all_ipos.append({
-                    'symbol': ipo.get('symbol', ''),
-                    'listingDate': ipo.get('listing_date', ''),
-                    'status': 'open',
-                    'bidPrice': ipo.get('price', None),
-                    'listedPrice': None,
-                    'listingGain': None,
-                    'listingGainPercent': None,
-                    'subscription': None,
-                })
-        except Exception as e:
-            print(f'Error fetching current IPOs: {e}')
+        soup = BeautifulSoup(html, 'html.parser')
         
-        # 3. Get Upcoming IPOs
-        try:
-            upcoming_ipos = nse.ipo.upcoming()
-            for ipo in upcoming_ipos:
-                all_ipos.append({
-                    'symbol': ipo.get('symbol', ''),
-                    'listingDate': ipo.get('listing_date', ''),
-                    'status': 'upcoming',
-                    'bidPrice': ipo.get('price', None),
-                    'listedPrice': None,
-                    'listingGain': None,
-                    'listingGainPercent': None,
-                    'subscription': None,
-                })
-        except Exception as e:
-            print(f'Error fetching upcoming IPOs: {e}')
+        # Find table
+        table = soup.find('table')
+        if not table:
+            return [], False  # No table, no more pages
         
-        all_ipos.sort(key=lambda x: x['listingDate'] or '', reverse=True)
+        rows = []
+        for tr in table.find_all('tr')[1:]:  # Skip header
+            cells = tr.find_all(['td', 'th'])
+            if len(cells) >= 8:
+                row_data = [cell.get_text(strip=True) for cell in cells]
+                rows.append(row_data)
         
-        print(f'Total IPOs fetched: {len(all_ipos)}')
-        return jsonify(all_ipos)
+        # Check if there are more pages
+        has_more = page_num < 20  # Safety limit
+        
+        return rows, has_more
         
     except Exception as e:
-        print(f'Error: {e}')
-        return jsonify([])
+        print(f'Error scraping page {page_num}: {e}')
+        return [], False
 
+
+def get_all_anandrathi_ipos():
+    """Scrape all IPOs from Anand Rathi (all pages)"""
+    all_ipos = []
+    
+    # Scrape Closed IPOs (historical)
+    print('Fetching closed IPOs...')
+    page = 1
+    while page <= 15:  # Safety limit
+        rows, has_more = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/closed-ipo', page)
+        if not rows:
+            break
+        for row in rows:
+            if len(row) >= 8:
+                all_ipos.append({
+                    'company': row[0],
+                    'open_date': row[1],
+                    'close_date': row[2],
+                    'issue_size': row[3],
+                    'issue_price': row[4],
+                    'lot_size': row[5],
+                    'subscription': row[6],
+                    'listing_date': row[7] if len(row) > 7 else '',
+                    'status': 'listed'
+                })
+        if not has_more:
+            break
+        page += 1
+    
+    # Scrape Recent IPOs
+    print('Fetching recent IPOs...')
+    rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/recent-ipo', 1)
+    for row in rows:
+        if len(row) >= 8:
+            all_ipos.append({
+                'company': row[0],
+                'open_date': row[1],
+                'close_date': row[2],
+                'issue_size': row[3],
+                'issue_price': row[4],
+                'lot_size': row[5],
+                'subscription': row[6],
+                'listing_date': row[7] if len(row) > 7 else '',
+                'status': 'recent'
+            })
+    
+    # Scrape Upcoming IPOs
+    print('Fetching upcoming IPOs...')
+    rows, _ = scrape_anandrathi_ipo_page('https://anandrathi.com/ipo/upcoming-ipo', 1)
+    for row in rows:
+        if len(row) >= 6:
+            all_ipos.append({
+                'company': row[0],
+                'open_date': row[1],
+                'close_date': row[2],
+                'issue_size': row[3],
+                'issue_price': row[4],
+                'lot_size': row[5],
+                'subscription': '',
+                'listing_date': '',
+                'status': 'upcoming'
+            })
+    
+    print(f'Total IPOs fetched: {len(all_ipos)}')
+    return all_ipos
+
+
+def extract_issue_price_max(price_str):
+    """Extract max issue price from string like '₹140-148' or '₹32-34'"""
+    try:
+        if not price_str or price_str == '-':
+            return None
+        # Remove ₹ and spaces
+        price_str = price_str.replace('₹', '').replace(' ', '')
+        # Handle range like "140-148"
+        if '-' in price_str:
+            parts = price_str.split('-')
+            return float(parts[-1])  # Take max (upper bound)
+        else:
+            return float(price_str)
+    except:
+        return None
+
+
+def get_listing_price_yahoo(symbol):
+    """Get listing price from Yahoo Finance"""
+    try:
+        if not symbol:
+            return None
+        
+        # Clean symbol
+        symbol = symbol.strip().upper()
+        if symbol.endswith('-EQ') or symbol.endswith('-BE'):
+            symbol = symbol[:-3]
+        
+        yahoo_symbol = symbol + '.NS'
+        ticker = yf.Ticker(yahoo_symbol)
+        
+        # Get first day close price (approximate listing price)
+        hist = ticker.history(period='5d', interval='1d')
+        if hist is not None and not hist.empty:
+            first_close = hist['Close'].iloc[0]
+            return round(float(first_close), 2)
+        
+        return None
+    except:
+        return None
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
