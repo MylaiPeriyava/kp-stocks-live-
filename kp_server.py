@@ -267,7 +267,11 @@ def get_ipo_data():
         return jsonify(unique_ipos)
         
     except Exception as e:
-        print(f'Error
+        print(f'Error in /ipo-data: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify([])
+
         
         # Sort by listing date (latest first)
 def parse_date(date_str):
