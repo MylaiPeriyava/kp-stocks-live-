@@ -7014,11 +7014,18 @@ window.showSection = function (sectionId) {
     // IPO Data Loading
     // IPO Data Loading
     async function loadIPOData() {
+        console.log('loadIPOData called!');
+
         try {
             const response = await fetch('/ipo-data');
+            console.log('Response status:', response.status);
+
             const ipos = await response.json();
+            console.log('IPOs loaded:', ipos.length);
+            console.log('First IPO:', ipos[0]);
 
             if (!ipos || ipos.length === 0) {
+                console.log('No IPOs found');
                 document.getElementById('ipo-section').style.display = 'none';
                 return;
             }
@@ -7101,13 +7108,16 @@ window.showSection = function (sectionId) {
                 tbody.appendChild(tr);
             });
 
+            console.log('Setting IPO section to visible');
             document.getElementById('ipo-section').style.display = 'block';
+            console.log('IPO section display:', document.getElementById('ipo-section').style.display);
 
         } catch (error) {
             console.error('Error loading IPO data:', error);
             document.getElementById('ipo-section').style.display = 'none';
         }
     }
+
     // Show symbol analysis (placeholder for future)
     function showSymbolAnalysis(symbol) {
         alert(`Analysis for ${symbol} will be shown here in a popup/new window.\n\nFuture features:\n- Chart patterns\n- Volume analysis\n- Price targets\n- Support/Resistance levels`);
