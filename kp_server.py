@@ -32,7 +32,7 @@ import json
 import os
 
 from flask_cors import CORS
-from nseindiapy import Client
+from nseindiapy import client
 from datetime import datetime
 
 # Initialize Firebase from environment variable
@@ -53,7 +53,6 @@ db = firestore.client()
 app = Flask(__name__, static_folder=".")
 # Initialize NSE client
 client = Client()
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Default user
@@ -1169,7 +1168,7 @@ def get_ipo_data():
         
         # 1. Get Recent IPOs (listed - with listing prices)
         try:
-            recent_ipos = client.ipo.recent()
+	recent_ipos = nse.ipo.recent()
             for ipo in recent_ipos:
                 issue_price = float(ipo.get('price', 0) or 0)
                 listing_price = float(ipo.get('listing_price', 0) or 0)
@@ -1192,7 +1191,7 @@ def get_ipo_data():
         
         # 2. Get Current IPOs (open for subscription)
         try:
-            current_ipos = client.ipo.current()
+	current_ipos = nse.ipo.current()
             for ipo in current_ipos:
                 all_ipos.append({
                     'symbol': ipo.get('symbol', ''),
@@ -1209,7 +1208,7 @@ def get_ipo_data():
         
         # 3. Get Upcoming IPOs
         try:
-            upcoming_ipos = client.ipo.upcoming()
+	upcoming_ipos = nse.ipo.upcoming()
             for ipo in upcoming_ipos:
                 all_ipos.append({
                     'symbol': ipo.get('symbol', ''),
