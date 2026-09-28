@@ -133,9 +133,9 @@ def calculate_ema(close_values, period):
 def scrape_ipomarkets_page(url, page=1):
     """Scrape a single page from IPOMarkets.com"""
     try:
-        # IPOMarkets pagination: ?page=2, ?page=3, etc.
+        # IPOMarkets pagination: /page/2, /page/3, etc.
         if page > 1:
-            url = f"{url}&page={page}"
+            url = f"{url}/page/{page}"
         
         response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
         response.raise_for_status()
@@ -154,13 +154,11 @@ def scrape_ipomarkets_page(url, page=1):
                 # IPOMarkets table structure:
                 # Company | Status | Band / Price | GMP | Sub | Dates | Listing
                 
-                company_cell = cells[0].get_text(strip=True)
-                if not company_cell or company_cell == 'No data available':
+                company = cells[0].get_text(strip=True)
+                if not company:
                     continue
                 
-                # Extract company name (may have link)
-                company = company_cell
-                status_cell = cells[1].get_text(strip=True) if len(cells) > 1 else ''
+                status_cell = cells[1].get_text(strip=True)
                 
                 # Determine status
                 status = 'listed'
@@ -170,80 +168,78 @@ def scrape_ipomarkets_page(url, page=1):
                     status = 'upcoming'
                 
                 # Price band
-                price_band = cells[2].get_text(strip=True) if len(cells) > 2 else ''
+                price_band = cells[2].get_text(strip=True)
                 
                 # GMP
-                gmp = cells[3].get_text(strip=True) if len(cells) > 3 else ''
+                gmp = cells[3].get_text(strip=True)
                 if gmp == '—' or gmp == '-':
                     gmp = ''
                 
                 # Subscription
-                subscription = cells[4].get_text(strip=True) if len(cells) > 4 else ''
+                subscription = cells[4].get_text(strip=True)
                 if subscription == '—' or subscription == '-':
                     subscription = ''
                 
-                # Dates (Open - Close)
-                dates = cells[5].get_text(strip=True) if len(cells) > 5 else ''
+                # Dates (Open - Close) - we DON'T use this for listing date
+                dates = cells[5].get_text(strip=True)
                 
-                # Listing info (price + gain)
-                listing_info = cells[6].get_text(strip=True) if len(cells) > 6 else ''
+                # Listing info (price + gain) - THIS HAS LISTING DATE!
+                listing_info = cells[6].get_text(strip=True)
                 
-                # Parse listing price and gain from listing_info
-                # Format: "₹54.75+₹0.75 (+1.39%)" or "₹54.75"
+                # Parse listing date from listing_info
+                # Format: "Listed 25 Sept" or "25 Sept" or "Listed 1 Oct"
+                listing_date = ''
                 listing_price = ''
                 listing_gain = ''
                 
                 if listing_info and listing_info != '—':
-                    # Try to extract price (first number after ₹)
+                    # Extract listing date (e.g., "Listed 25 Sept" or "25 Sept")
                     import re
+                    date_match = re.search(r'(Listed\s+)?(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)(?:\s+\d{4})?)', listing_info, re.IGNORECASE)
+                    if date_match:
+                        listing_date = date_match.group(2)
+                    
+                    # Extract listing price (₹54.75)
                     price_match = re.search(r'₹([\d,]+\.?\d*)', listing_info)
                     if price_match:
                         listing_price = price_match.group(1).replace(',', '')
                     
-                    # Try to extract gain % (number in parentheses)
+                    # Extract gain % (+1.39%)
                     gain_match = re.search(r'\(([+\-]?[\d.]+)%\)', listing_info)
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Parse issue price from price band (e.g., "₹126–₹134" → use upper bound)
+                # Parse issue price from price band
                 issue_price = ''
                 if price_band and '₹' in price_band:
                     import re
                     prices = re.findall(r'₹([\d,]+\.?\d*)', price_band)
                     if prices:
-                        # Use the last (upper) price
                         issue_price = prices[-1].replace(',', '')
-                
-                # Extract listing date from dates string
-                listing_date = ''
-                if dates and '–' in dates:
-                    # Format: "18 Sept 2026 – 22 Sept 2026" → use close date
-                    parts = dates.split('–')
-                    if len(parts) >= 2:
-                        listing_date = parts[1].strip()
                 
                 ipos.append({
                     'company': company,
-                    'sector': '',  # IPOMarkets doesn't have sector
+                    'sector': '',
                     'listing_date': listing_date,
                     'issue_price': issue_price,
                     'listing_price': listing_price,
                     'listing_gain': listing_gain,
-                    'close_gain': '',  # Not available
+                    'close_gain': '',
                     'subscription': subscription.replace('×', 'x'),
-                    'gmp': gmp,
-                    'ai_prediction': '',  # Not available
-                    'issue_size': '',  # Not available
+                    'gmp': gmp.replace('₹', ''),  # Remove duplicate ₹
+                    'ai_prediction': '',
+                    'issue_size': '',
                     'status': status
                 })
         
-        # Check if there's a next page button
-        has_more = soup.find('a', string='Next') is not None or soup.find('button', string='Next') is not None
+        # Check if there's a next page
+        has_more = soup.find('a', string='Next') is not None
         return ipos, has_more
         
     except Exception as e:
         print(f'Error scraping {url} page {page}: {e}')
         return [], False
+
 
 
 def scrape_all_ipomarkets_pages(base_url):
