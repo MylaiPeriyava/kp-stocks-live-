@@ -1312,32 +1312,27 @@ def research_ideas():
             
             for row in rows:
                 cells = row.find_all(['td', 'th'])
-                if len(cells) >= 12:
+                if len(cells) >= 14:
                     # Get all cell texts
                     cell_texts = [cell.get_text(strip=True) for cell in cells]
                     
-                    # Skip if first cell is a number (S.No) and second is "Company" or "Name"
+                    # Skip header rows
                     if len(cell_texts) > 1 and cell_texts[1].lower() in ['company', 'name']:
                         continue
                     
                     company = cell_texts[1] if len(cell_texts) > 1 else ''
                     
-                    if not company or company.lower() == 'company':
+                    if not company:
                         continue
                     
-                    # Find Vol 1d and Avg Vol 1Wk columns by header position
-                    # Based on Screener.in structure:
-                    # S.No | Name | CMP | P/E | Mar Cap | Div Yld | NP Qtr | Qtr Profit Var | Sales Qtr | Qtr Sales Var | ROCE | Vol 1d | Avg Vol 1Wk | Avg Vol 1Mth
-                    vol_1d_raw = cell_texts[10] if len(cell_texts) > 10 else '0'
-                    avg_vol_1w_raw = cell_texts[11] if len(cell_texts) > 11 else '0'
+                    # CORRECT COLUMN INDICES:
+                    # Vol 1d = index 11, Avg Vol 1Wk = index 12
+                    vol_1d_raw = cell_texts[11] if len(cell_texts) > 11 else '0'
+                    avg_vol_1w_raw = cell_texts[12] if len(cell_texts) > 12 else '0'
                     
-                    # Parse volume numbers (remove commas, handle Cr/Lac)
+                    # Parse volume numbers
                     def parse_vol(v):
                         v = v.replace(',', '').strip()
-                        if 'Cr' in v:
-                            return float(v.replace('Cr', '').strip()) * 10000000
-                        elif 'Lac' in v:
-                            return float(v.replace('Lac', '').strip()) * 100000
                         try:
                             return float(v)
                         except:
@@ -1354,10 +1349,11 @@ def research_ideas():
                         
                         # Only include if volume is actually higher (ratio > 1)
                         if vol_ratio > 1:
+                            cmp = cell_texts[2] if len(cell_texts) > 2 else '-'
                             all_stocks.append({
                                 'symbol': company,
                                 'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
-                                'note': f"CMP: ₹{cell_texts[2] if len(cell_texts) > 2 else '-'}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
+                                'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
             
             # Check if there's a next page
@@ -1378,6 +1374,7 @@ def research_ideas():
         import traceback
         traceback.print_exc()
         return jsonify([])
+
 
 
 
