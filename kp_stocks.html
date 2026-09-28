@@ -7105,10 +7105,12 @@ window.showSection = function (sectionId) {
 
                 // Determine row color and badge based on status
                 let bgColor = '';
+                let textColor = '';
                 let statusBadge = '';
 
                 if (ipo.status === 'upcoming') {
                     bgColor = '#fff3cd';  // Yellow for upcoming
+                    textColor = '#000000';  // Black text
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
                 } else if (ipo.status === 'open') {
                     // For Open IPOs, highlight based on subscription
@@ -7120,20 +7122,27 @@ window.showSection = function (sectionId) {
 
                     if (subValue >= 10) {
                         bgColor = '#198754';  // Dark green for >=10x
+                        textColor = '#ffffff';  // White text for contrast
                     } else if (subValue >= 5) {
                         bgColor = '#20c997';  // Light green/teal for >=5x
+                        textColor = '#000000';  // Black text (light background)
                     } else {
                         bgColor = '#dc3545';  // Red for <5x
+                        textColor = '#ffffff';  // White text for contrast
                     }
                     statusBadge = '<span class="badge bg-info text-dark">Open</span>';
                 } else {
                     bgColor = '';  // White for listed
+                    textColor = '';  // Default black
                     statusBadge = '<span class="badge bg-success">Listed</span>';
                 }
 
-                // Apply background color
+                // Apply background and text color
                 if (bgColor) {
                     tr.style.backgroundColor = bgColor;
+                }
+                if (textColor) {
+                    tr.style.color = textColor;
                 }
 
                 const bidPrice = ipo.issue_price ? parseFloat(ipo.issue_price).toFixed(2) : '-';
@@ -7158,7 +7167,7 @@ window.showSection = function (sectionId) {
                 }
 
                 tr.innerHTML = `
-                <td><a href="#" onclick="showSymbolAnalysis('${ipo.company.replace(/'/g, "\\'")}'); return false;" style="color: #0d6efd; text-decoration: none; font-weight: bold;">
+                <td><a href="#" onclick="showSymbolAnalysis('${ipo.company.replace(/'/g, "\\'")}'); return false;" style="color: ${textColor || '#0d6efd'}; text-decoration: none; font-weight: bold;">
                     ${ipo.company || '-'}
                 </a></td>
                 <td>${ipo.listing_date || '-'}</td>
