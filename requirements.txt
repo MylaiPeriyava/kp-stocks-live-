@@ -6,4 +6,4 @@ nseindiapy
 yfinance
 firebase-admin
 pandas
-python-dateutil==2.8.2
+python-dateutil
