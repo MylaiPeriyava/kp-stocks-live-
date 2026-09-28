@@ -264,15 +264,15 @@ def scrape_all_ipomarkets_pages(base_url):
 
 
 def calculate_subscription_analysis(ipos):
-    """Calculate listing gains at different subscription thresholds"""
+    """Calculate % of IPOs with listing gain at different subscription thresholds"""
     thresholds = [25, 20, 15, 10, 5]
     results = {}
     
     for threshold in thresholds:
+        # Filter listed IPOs with subscription data
         filtered = [ipo for ipo in ipos 
                    if ipo['status'] == 'listed' 
-                   and ipo['subscription'] 
-                   and ipo['listing_gain']]
+                   and ipo['subscription']]
         
         def parse_subscription(sub_str):
             if not sub_str:
@@ -282,29 +282,34 @@ def calculate_subscription_analysis(ipos):
             except:
                 return 0
         
+        # Filter by subscription threshold
         matched = [ipo for ipo in filtered 
                   if parse_subscription(ipo['subscription']) >= threshold]
         
         if matched:
-            gains = []
+            # Count IPOs with gain (including 0%)
+            gain_count = 0
             for ipo in matched:
-                try:
-                    gain_str = ipo['listing_gain'].replace('+', '').replace('%', '')
-                    gain = float(gain_str)
-                    gains.append(gain)
-                except:
-                    pass
+                if ipo['listing_gain']:  # Has gain data (0% or positive)
+                    try:
+                        gain = float(ipo['listing_gain'].replace('+', '').replace('%', ''))
+                        if gain >= 0:  # 0% or positive = gain
+                            gain_count += 1
+                    except:
+                        pass
+                # If listing_gain is empty/blank = LOSS (don't count)
             
-            avg_gain = sum(gains) / len(gains) if gains else 0
-            count = len(matched)
+            total = len(matched)
+            gain_percentage = round((gain_count / total) * 100, 2) if total > 0 else 0
         else:
-            avg_gain = 0
-            count = 0
+            gain_count = 0
+            total = 0
+            gain_percentage = 0
         
         results[threshold] = {
-            'count': count,
-            'avg_gain': round(avg_gain, 2),
-            'total': len(filtered)
+            'count': gain_count,
+            'total': len(matched),
+            'gain_percentage': gain_percentage
         }
     
     return results
