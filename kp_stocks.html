@@ -7093,7 +7093,6 @@ window.showSection = function (sectionId) {
             }
 
             if (!ipos || ipos.length === 0) {
-                console.error('No IPO data received');
                 document.getElementById('ipo-section').style.display = 'none';
                 return;
             }
@@ -7105,33 +7104,37 @@ window.showSection = function (sectionId) {
                 const tr = document.createElement('tr');
 
                 // Determine row color and badge based on status
-                let rowClass = '';
+                let bgColor = '';
                 let statusBadge = '';
 
                 if (ipo.status === 'upcoming') {
-                    rowClass = 'table-warning';
+                    bgColor = '#fff3cd';  // Yellow for upcoming
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
                 } else if (ipo.status === 'open') {
                     // For Open IPOs, highlight based on subscription
                     let subValue = 0;
                     if (ipo.subscription) {
-                        subValue = parseFloat(ipo.subscription.replace('x', '')) || 0;
+                        const subStr = ipo.subscription.toString().replace('x', '').trim();
+                        subValue = parseFloat(subStr) || 0;
                     }
 
                     if (subValue >= 10) {
-                        rowClass = 'table-success';  // Dark green for >=10x
+                        bgColor = '#198754';  // Dark green for >=10x
                     } else if (subValue >= 5) {
-                        rowClass = 'table-info';  // Light green for >=5x
+                        bgColor = '#20c997';  // Light green/teal for >=5x
                     } else {
-                        rowClass = 'table-danger';  // Red for <5x
+                        bgColor = '#dc3545';  // Red for <5x
                     }
                     statusBadge = '<span class="badge bg-info text-dark">Open</span>';
                 } else {
-                    rowClass = '';
+                    bgColor = '';  // White for listed
                     statusBadge = '<span class="badge bg-success">Listed</span>';
                 }
 
-                tr.className = rowClass;
+                // Apply background color
+                if (bgColor) {
+                    tr.style.backgroundColor = bgColor;
+                }
 
                 const bidPrice = ipo.issue_price ? parseFloat(ipo.issue_price).toFixed(2) : '-';
                 const listedPrice = ipo.listing_price ? parseFloat(ipo.listing_price).toFixed(2) : '-';
