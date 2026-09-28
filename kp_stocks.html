@@ -2853,6 +2853,8 @@
                         <tr><td colspan="18">Holdings targets load automatically.</td></tr>
                     </tbody>
                 </table>
+
+
             </div>
 
             <div class="target-actions">
@@ -2871,7 +2873,10 @@
     </section>
     </div>
 
-<!-- END OF PART 1 OF 3 -->
+<!-- END OF PART 1 OF 2 FOR HTML - CONTINUED IN PART 2 -->
+
+
+
 
     <!-- Manage Wishlist -->
     <div class="section-block">
@@ -3048,11 +3053,10 @@
         </section>
 
         <!-- IPO Listing Data Section -->
-        <!-- IPO Listing Data Section -->
         <div id="ipo-section" class="mt-4" style="display:none;">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">📈 IPO Listing Data</h5>
+                    <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
                     <button class="btn btn-sm btn-outline-primary" onclick="loadIPOData()">
                         🔄 Refresh
                     </button>
@@ -3062,14 +3066,14 @@
                         <table class="table table-hover table-sm mb-0" id="ipo-table">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 20%;">Symbol</th>
+                                    <th style="width: 25%;">Symbol</th>
                                     <th style="width: 15%;">Listing Date</th>
-                                    <th style="width: 12%;" class="text-end">Bid Price</th>
+                                    <th style="width: 12%;" class="text-end">Issue Price</th>
                                     <th style="width: 12%;" class="text-end">Listed Price</th>
-                                    <th style="width: 12%;" class="text-end">Gain/Loss</th>
-                                    <th style="width: 12%;" class="text-end">Gain %</th>
+                                    <th style="width: 10%;" class="text-end">Gain %</th>
                                     <th style="width: 12%;" class="text-end">Subscription</th>
-                                    <th style="width: 5%;">Status</th>
+                                    <th style="width: 10%;" class="text-end">GMP</th>
+                                    <th style="width: 4%;">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="ipo-tbody">
@@ -4795,7 +4799,7 @@ function createCharts(candles, rsiData, interval, ema9Data, ema21Data) {
         borderUpColor: "#137333",
         borderDownColor: "#b3261e",
         wickUpColor: "#137333",
-        wickDownColor: "#b3261e",
+        wickDownColor: "#137333",
         priceFormat: { type: "price", precision: 2, minMove: 0.01 }
     });
 
@@ -5562,8 +5566,8 @@ function showSection(sectionId) {
     </p>
 
     <div class="auth-input-row">
-      <label for="authUserName">User Name</label>
-      <input
+        <label for="authUserName">User Name</label>
+        <input
         id="authUserName"
         type="text"
         placeholder="e.g. KP"
@@ -5572,8 +5576,8 @@ function showSection(sectionId) {
     </div>
 
     <div class="auth-input-row">
-      <label for="authUserPwd">Password</label>
-      <input
+        <label for="authUserPwd">Password</label>
+        <input
         id="authUserPwd"
         type="password"
         placeholder="Your password"
@@ -7179,3 +7183,4 @@ window.showSection = function (sectionId) {
 </script>
 </body>
 </html>
+<!-- === END OF kp_stocks.html (PART 2 OF 2) === -->
