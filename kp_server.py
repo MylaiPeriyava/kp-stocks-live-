@@ -1286,6 +1286,8 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+
+
 @app.route("/research-ideas")
 def research_ideas():
     """Scrape Screener.in delivery volume increase screen"""
@@ -1370,18 +1372,26 @@ def research_ideas():
         
         print(f"Total stocks with volume spike: {len(all_stocks)}")
         
-        # Sort by volume ratio (highest first) and return top 20
-        all_stocks.sort(key=lambda x: float(x['reason'].split(':')[1].split('x')[0].strip()), reverse=True)
+        # Remove duplicates (keep first occurrence)
+        seen = set()
+        unique_stocks = []
+        for stock in all_stocks:
+            if stock['symbol'] not in seen:
+                seen.add(stock['symbol'])
+                unique_stocks.append(stock)
         
-        return jsonify(all_stocks[:20])
+        print(f"Unique stocks after dedup: {len(unique_stocks)}")
+        
+        # Sort by volume ratio (highest first) and return ALL unique stocks
+        unique_stocks.sort(key=lambda x: float(x['reason'].split(':')[1].split('x')[0].strip()), reverse=True)
+        
+        return jsonify(unique_stocks)  # ← Return ALL (not just 20)
         
     except Exception as e:
         print(f'Error in /research-ideas: {e}')
         import traceback
         traceback.print_exc()
         return jsonify([])
-
-
 
 
 
