@@ -1286,6 +1286,68 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+@app.route("/research-ideas")
+def research_ideas():
+    """Scrape Screener.in delivery volume increase screen"""
+    try:
+        all_stocks = []
+        base_url = "https://www.screener.in/screens/2241244/delivery-volume-increase/"
+        
+        # Scrape all pages (up to 10 pages for safety)
+        for page in range(1, 11):
+            url = f"{base_url}?page={page}" if page > 1 else base_url
+            print(f"Scraping Screener.in page {page}: {url}")
+            
+            response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            table = soup.find('table')
+            
+            if not table:
+                print(f"No table found on page {page}")
+                break
+            
+            rows = table.find_all('tr')[1:]  # Skip header
+            
+            for row in rows:
+                cells = row.find_all(['td', 'th'])
+                if len(cells) >= 12:
+                    company = cells[1].get_text(strip=True)
+                    cmp = cells[2].get_text(strip=True)
+                    vol_1d = cells[10].get_text(strip=True)
+                    avg_vol_1w = cells[11].get_text(strip=True)
+                    
+                    # Calculate volume ratio
+                    try:
+                        vol_ratio = float(vol_1d.replace(',', '')) / float(avg_vol_1w.replace(',', '')) if avg_vol_1w and avg_vol_1w != '0' else 0
+                    except:
+                        vol_ratio = 0
+                    
+                    all_stocks.append({
+                        'symbol': company,
+                        'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
+                        'note': f"CMP: ₹{cmp}, Vol: {vol_1d}, Avg Vol: {avg_vol_1w}"
+                    })
+            
+            # Check if there's a next page
+            next_page = soup.find('a', string='Next')
+            if not next_page:
+                print(f"No more pages after {page}")
+                break
+        
+        print(f"Total stocks scraped: {len(all_stocks)}")
+        
+        # Return top 20 (or all if less)
+        return jsonify(all_stocks[:20])
+        
+    except Exception as e:
+        print(f'Error in /research-ideas: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify([])
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
