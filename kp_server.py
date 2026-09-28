@@ -399,8 +399,8 @@ def scrape_all_ipomarkets_pages(base_url):
         
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Find the IPO table
-        table = soup.find('table', class=lambda c: c and 'ipo-calendar' in c)
+        # Find the IPO table - FIXED: use class_ instead of class
+        table = soup.find('table', class_=lambda c: c and 'ipo-calendar' in c)
         if not table:
             print(f'No IPO table found on page {page}')
             break
@@ -441,7 +441,7 @@ def scrape_all_ipomarkets_pages(base_url):
                 
                 ipo_data = {
                     'company': company_name,
-                    'company_url': company_url,  # ← NEW: IPOMarkets IPO page URL
+                    'company_url': company_url,
                     'listing_date': cell_texts[1] if len(cell_texts) > 1 else '',
                     'issue_price': cell_texts[2] if len(cell_texts) > 2 else '',
                     'listed_price': cell_texts[3] if len(cell_texts) > 3 else '',
