@@ -6967,48 +6967,61 @@ async function computeAndShowMarketRSInsights(analysis) {
 }
 
     async function loadResearchIdeas() {
-        const status = document.getElementById("researchStatus");
-        const list = document.getElementById("researchIdeasList");
+        const statusEl = document.getElementById('researchStatus');
+        const listEl = document.getElementById('researchIdeasList');
 
-        status.textContent = "Scraping Screener.in delivery volume data...";
-        list.innerHTML = "";
+        statusEl.textContent = 'Loading research ideas...';
+        listEl.innerHTML = '';
 
         try {
-            const response = await fetch("/research-ideas");
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error || ("HTTP " + response.status));
-            }
-            const ideas = await response.json();
+            const response = await fetch('/research-ideas');
+            const stocks = await response.json();
 
-            if (!Array.isArray(ideas) || ideas.length === 0) {
-                status.textContent = "No research ideas generated at this time.";
-                list.innerHTML = '<div class="small">Try again later or after market hours.</div>';
+            if (stocks.length === 0) {
+                statusEl.textContent = 'No unusual movers found today.';
                 return;
             }
 
-            status.textContent = "Research ideas generated at " + formatTime(new Date()) + ".";
+            statusEl.textContent = `Found ${stocks.length} stocks with unusual volume.`;
 
-            let html = '<div style="display: grid; gap: 12px;">';
-            ideas.forEach((item, idx) => {
-                const sym = escapeHtml(item.symbol || "Unknown");
-                const reason = escapeHtml(item.reason || "");
-                const note = escapeHtml(item.note || "");
+            // Create table
+            const table = document.createElement('table');
+            table.style.cssText = 'width: 100%; border-collapse: collapse; font-size: 13px;';
 
-                html +=
-                    '<div style="padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">' +
-                    '<div style="font-weight: 700; color: #111827; margin-bottom: 4px;">' + (idx + 1) + '. ' + sym + '</div>' +
-                    '<div style="color: #374151; margin-bottom: 4px;"><strong>Reason:</strong> ' + reason + '</div>' +
-                    '<div style="color: #4b5563;"><strong>Check:</strong> ' + note + '</div>' +
-                    '</div>';
-            });
-            html += '</div>';
+            // Header
+            table.innerHTML = `
+            <thead>
+                <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 10px 8px; text-align: left;">#</th>
+                    <th style="padding: 10px 8px; text-align: left;">Company</th>
+                    <th style="padding: 10px 8px; text-align: left;">Reason</th>
+                    <th style="padding: 10px 8px; text-align: left;">Details</th>
+                    <th style="padding: 10px 8px; text-align: center;">View</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${stocks.map((stock, index) => `
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px 8px;">${index + 1}</td>
+                        <td style="padding: 10px 8px; font-weight: 500;">${stock.symbol}</td>
+                        <td style="padding: 10px 8px; color: #059669;">${stock.reason}</td>
+                        <td style="padding: 10px 8px; font-size: 12px; color: #6b7280;">${stock.note}</td>
+                        <td style="padding: 10px 8px; text-align: center;">
+                            ${stock.company_url ?
+                    `<a href="${stock.company_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">📈 View Details</a>` :
+                    '<span style="color: #9ca3af;">N/A</span>'
+                }
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
 
-            list.innerHTML = html;
+            listEl.appendChild(table);
+
         } catch (error) {
-            status.textContent = "Failed to generate research ideas: " + error.message;
-            list.innerHTML =
-                '<div class="small">You can try again later. Error: ' + escapeHtml(error.message) + '</div>';
+            console.error('Error loading research ideas:', error);
+            statusEl.textContent = 'Error loading research ideas.';
         }
     }
 
