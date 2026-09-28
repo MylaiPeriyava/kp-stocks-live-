@@ -1322,9 +1322,22 @@ def research_ideas():
                     if len(cell_texts) > 1 and cell_texts[1].lower() in ['company', 'name']:
                         continue
                     
-                    company = cell_texts[1] if len(cell_texts) > 1 else ''
+                    # EXTRACT COMPANY NAME AND URL
+                    company_cell = cells[1] if len(cells) > 1 else None
                     
-                    if not company:
+                    if company_cell:
+                        company_name = company_cell.get_text(strip=True)
+                        # Extract href from the <a> tag
+                        company_link = company_cell.find('a')
+                        if company_link and company_link.get('href'):
+                            company_url = 'https://www.screener.in' + company_link.get('href')
+                        else:
+                            company_url = None
+                    else:
+                        company_name = ''
+                        company_url = None
+                    
+                    if not company_name:
                         continue
                     
                     # CORRECT COLUMN INDICES:
@@ -1343,7 +1356,7 @@ def research_ideas():
                     vol_1d = parse_vol(vol_1d_raw)
                     avg_vol_1w = parse_vol(avg_vol_1w_raw)
                     
-                    print(f"  {company}: Vol={vol_1d_raw} ({vol_1d}), Avg={avg_vol_1w_raw} ({avg_vol_1w})")
+                    print(f"  {company_name}: Vol={vol_1d_raw} ({vol_1d}), Avg={avg_vol_1w_raw} ({avg_vol_1w}), URL={company_url}")
                     
                     # Calculate volume ratio
                     if avg_vol_1w > 0 and vol_1d > 0:
@@ -1353,7 +1366,8 @@ def research_ideas():
                         if vol_ratio > 1:
                             cmp = cell_texts[2] if len(cell_texts) > 2 else '-'
                             all_stocks.append({
-                                'symbol': company,
+                                'symbol': company_name,
+                                'company_url': company_url,  # ← NEW: Screener stock page URL
                                 'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
                                 'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
