@@ -7174,27 +7174,28 @@ window.showSection = function (sectionId) {
         const analysisDiv = document.getElementById('ipo-analysis');
         if (!analysisDiv) return;
 
-        let html = '<div class="mt-4"><h5 class="mb-3">📊 Subscription vs Listing Gain Analysis (2026)</h5>';
+        let html = '<div class="mt-4"><h5 class="mb-3">📊 Subscription vs Listing Gain Probability (2026)</h5>';
         html += '<div class="table-responsive">';
         html += '<table class="table table-bordered table-sm" style="width: 100%;">';
         html += '<thead class="table-primary">';
         html += '<tr>';
         html += '<th style="width: 33%; padding: 12px;">Subscription Threshold</th>';
-        html += '<th style="width: 33%; padding: 12px;">Number of IPOs</th>';
-        html += '<th style="width: 34%; padding: 12px;">Average Listing Gain %</th>';
+        html += '<th style="width: 33%; padding: 12px;">IPOs with Gain</th>';
+        html += '<th style="width: 34%; padding: 12px;">Probability of Gain %</th>';
         html += '</tr></thead><tbody>';
 
         [25, 20, 15, 10, 5].forEach(threshold => {
-            const data = analysis[threshold.toString()] || { count: 0, avg_gain: 0 };
-            const color = data.avg_gain >= 30 ? '#16a34a' : data.avg_gain >= 15 ? '#2563eb' : '#dc2626';
+            const data = analysis[threshold.toString()] || { count: 0, total: 0, gain_percentage: 0 };
+            const color = data.gain_percentage >= 90 ? '#16a34a' : data.gain_percentage >= 70 ? '#2563eb' : '#dc2626';
             html += `<tr>
             <td style="padding: 10px; font-weight: bold; text-align: center;">≥ ${threshold}x</td>
-            <td style="padding: 10px; text-align: center; font-weight: bold;">${data.count}</td>
-            <td style="padding: 10px; text-align: center; font-weight: bold; color: ${color};">${data.avg_gain}%</td>
+            <td style="padding: 10px; text-align: center; font-weight: bold;">${data.count} / ${data.total}</td>
+            <td style="padding: 10px; text-align: center; font-weight: bold; color: ${color};">${data.gain_percentage}%</td>
         </tr>`;
         });
 
-        html += '</tbody></table></div></div>';
+        html += '</tbody></table></div>';
+        html += '<p class="text-muted small mt-2">Note: IPOs with blank Gain % are considered losses. 0% or positive = gain.</p></div>';
         analysisDiv.innerHTML = html;
     }
 
