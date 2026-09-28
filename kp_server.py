@@ -385,6 +385,162 @@ def get_ipo_data():
         return jsonify({'ipos': [], 'analysis': {}})
 
 
+def scrape_all_ipomarkets_pages(base_url):
+    """Scrape all pages from IPOMarkets IPO calendar"""
+    all_ipos = []
+    current_url = base_url
+    
+    page = 1
+    while current_url:
+        print(f'Scraping IPOMarkets page {page}: {current_url}')
+        
+        response = requests.get(current_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Find the IPO table
+        table = soup.find('table', class=lambda c: c and 'ipo-calendar' in c)
+        if not table:
+            print(f'No IPO table found on page {page}')
+            break
+        
+        rows = table.find_all('tr')[1:]  # Skip header
+        
+        for row in rows:
+            cells = row.find_all(['td', 'th'])
+            if len(cells) >= 7:
+                # Get company name cell (usually column 0 or 1)
+                company_cell = cells[0] if len(cells) > 0 else None
+                
+                company_name = ''
+                company_url = None
+                
+                if company_cell:
+                    # Extract company name and URL from the link
+                    company_link = company_cell.find('a')
+                    if company_link:
+                        company_name = company_link.get_text(strip=True)
+                        href = company_link.get('href')
+                        if href:
+                            # Make absolute URL if relative
+                            if href.startswith('/'):
+                                company_url = 'https://ipomarkets.com' + href
+                            elif href.startswith('http'):
+                                company_url = href
+                            else:
+                                company_url = 'https://ipomarkets.com/' + href
+                    else:
+                        company_name = company_cell.get_text(strip=True)
+                
+                if not company_name:
+                    continue
+                
+                # Extract other columns (adjust indices based on actual table structure)
+                cell_texts = [cell.get_text(strip=True) for cell in cells]
+                
+                ipo_data = {
+                    'company': company_name,
+                    'company_url': company_url,  # ← NEW: IPOMarkets IPO page URL
+                    'listing_date': cell_texts[1] if len(cell_texts) > 1 else '',
+                    'issue_price': cell_texts[2] if len(cell_texts) > 2 else '',
+                    'listed_price': cell_texts[3] if len(cell_texts) > 3 else '',
+                    'gain_pct': cell_texts[4] if len(cell_texts) > 4 else '',
+                    'subscription': cell_texts[5] if len(cell_texts) > 5 else '',
+                    'gmp': cell_texts[6] if len(cell_texts) > 6 else '',
+                    'status': determine_ipo_status(cell_texts[1] if len(cell_texts) > 1 else '')
+                }
+                
+                all_ipos.append(ipo_data)
+        
+        # Check for next page link
+        next_link = soup.find('a', class_='next') or soup.find('a', href=lambda h: h and 'page=' in h)
+        if next_link and next_link.get('href'):
+            href = next_link.get('href')
+            if href.startswith('/'):
+                current_url = 'https://ipomarkets.com' + href
+            elif href.startswith('http'):
+                current_url = href
+            else:
+                current_url = 'https://ipomarkets.com/' + href
+            page += 1
+        else:
+            break
+    
+    return all_ipos
+
+
+def determine_ipo_status(listing_date_str):
+    """Determine IPO status based on listing date"""
+    if not listing_date_str:
+        return 'upcoming'
+    
+    try:
+        # Parse the listing date
+        match = re.search(r'(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)(?:\s+\d{4})?)', listing_date_str, re.IGNORECASE)
+        if match:
+            date_str = match.group(1)
+            listing_date = datetime.strptime(date_str.strip(), '%d %b %Y')
+            
+            today = datetime.now()
+            
+            if listing_date < today:
+                return 'listed'
+            elif listing_date.date() == today.date():
+                return 'listing_today'
+            else:
+                return 'upcoming'
+    except:
+        pass
+    
+    return 'upcoming'
+
+
+def calculate_subscription_analysis(ipos):
+    """Calculate subscription analysis for IPOs"""
+    analysis = {}
+    
+    listed_ipos = [ipo for ipo in ipos if ipo['status'] == 'listed']
+    
+    for threshold in [10, 20, 50, 100]:
+        high_sub_ipos = [ipo for ipo in listed_ipos if parse_subscription(ipo['subscription']) >= threshold]
+        gain_ipos = [ipo for ipo in high_sub_ipos if parse_gain(ipo['gain_pct']) > 0]
+        
+        analysis[threshold] = {
+            'count': len(gain_ipos),
+            'total': len(high_sub_ipos),
+            'gain_percentage': (len(gain_ipos) / len(high_sub_ipos) * 100) if high_sub_ipos else 0
+        }
+    
+    return analysis
+
+
+def parse_subscription(sub_str):
+    """Parse subscription number from string like '125.50x'"""
+    if not sub_str:
+        return 0
+    try:
+        match = re.search(r'([\d.]+)', sub_str)
+        if match:
+            return float(match.group(1))
+    except:
+        pass
+    return 0
+
+
+def parse_gain(gain_str):
+    """Parse gain percentage from string like '15.2%' or '-5.3%'"""
+    if not gain_str:
+        return 0
+    try:
+        match = re.search(r'([+-]?[\d.]+)', gain_str)
+        if match:
+            return float(match.group(1))
+    except:
+        pass
+    return 0
+
+
 # ============ ANAND RATHI SCREENERS (RESTORED) ============
 def get_anand_rathi_table(url, table_name):
     try:
