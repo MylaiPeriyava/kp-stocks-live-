@@ -7109,11 +7109,7 @@ window.showSection = function (sectionId) {
                 let statusBadge = '';
 
                 if (ipo.status === 'upcoming') {
-                    bgColor = '#fff3cd';  // Yellow for upcoming
-                    textColor = '#000000';  // Black text
-                    statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
-                } else if (ipo.status === 'open') {
-                    // For Open IPOs, highlight based on subscription
+                    // For Upcoming IPOs (including "Closes today/tomorrow"), highlight based on subscription
                     let subValue = 0;
                     if (ipo.subscription) {
                         const subStr = ipo.subscription.toString().replace('x', '').trim();
@@ -7130,10 +7126,16 @@ window.showSection = function (sectionId) {
                         bgColor = '#dc3545';  // Red for <5x
                         textColor = '#ffffff';  // White text for contrast
                     }
+                    statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
+                } else if (ipo.status === 'open') {
+                    // Open IPOs (allotted, awaiting listing) - Yellow background
+                    bgColor = '#fff3cd';  // Yellow
+                    textColor = '#000000';  // Black text
                     statusBadge = '<span class="badge bg-info text-dark">Open</span>';
                 } else {
-                    bgColor = '';  // White for listed
-                    textColor = '';  // Default black
+                    // Listed IPOs - White background
+                    bgColor = '';
+                    textColor = '';
                     statusBadge = '<span class="badge bg-success">Listed</span>';
                 }
 
