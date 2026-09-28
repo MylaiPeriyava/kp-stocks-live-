@@ -3066,15 +3066,14 @@
                         <table class="table table-hover table-sm mb-0" id="ipo-table">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 22%;">Symbol</th>
-                                    <th style="width: 13%;">Listing Date</th>
+                                    <th style="width: 18%;">Symbol</th>
+                                    <th style="width: 12%;">Listing Date</th>
                                     <th style="width: 10%;" class="text-end">Issue Price</th>
                                     <th style="width: 10%;" class="text-end">Listed Price</th>
                                     <th style="width: 8%;" class="text-end">Gain %</th>
                                     <th style="width: 10%;" class="text-end">Subscription</th>
                                     <th style="width: 8%;" class="text-end">GMP</th>
-                                    <th style="width: 8%;" class="text-end">AI Pred</th>
-                                    <th style="width: 11%;">Status</th>
+                                    <th style="width: 14%;">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="ipo-tbody">
@@ -7082,10 +7081,19 @@ window.showSection = function (sectionId) {
         try {
             const response = await fetch('/ipo-data');
             const data = await response.json();
-            const ipos = data.ipos || [];
-            const analysis = data.analysis || {};
+
+            let ipos = [];
+            let analysis = {};
+
+            if (Array.isArray(data)) {
+                ipos = data;
+            } else if (data && typeof data === 'object') {
+                ipos = data.ipos || [];
+                analysis = data.analysis || {};
+            }
 
             if (!ipos || ipos.length === 0) {
+                console.error('No IPO data received');
                 document.getElementById('ipo-section').style.display = 'none';
                 return;
             }
@@ -7096,6 +7104,7 @@ window.showSection = function (sectionId) {
             ipos.forEach(ipo => {
                 const tr = document.createElement('tr');
 
+                // Determine row color and badge based on status
                 let rowClass = '';
                 let statusBadge = '';
 
@@ -7103,7 +7112,19 @@ window.showSection = function (sectionId) {
                     rowClass = 'table-warning';
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
                 } else if (ipo.status === 'open') {
-                    rowClass = 'table-info';
+                    // For Open IPOs, highlight based on subscription
+                    let subValue = 0;
+                    if (ipo.subscription) {
+                        subValue = parseFloat(ipo.subscription.replace('x', '')) || 0;
+                    }
+
+                    if (subValue >= 10) {
+                        rowClass = 'table-success';  // Dark green for >=10x
+                    } else if (subValue >= 5) {
+                        rowClass = 'table-info';  // Light green for >=5x
+                    } else {
+                        rowClass = 'table-danger';  // Red for <5x
+                    }
                     statusBadge = '<span class="badge bg-info text-dark">Open</span>';
                 } else {
                     rowClass = '';
@@ -7133,12 +7154,6 @@ window.showSection = function (sectionId) {
                     gmp = '₹' + ipo.gmp;
                 }
 
-                let aiPred = '-';
-                if (ipo.ai_prediction) {
-                    const predClass = ipo.ai_prediction === 'APPLY' ? 'text-success' : (ipo.ai_prediction === 'IGNORE' ? 'text-danger' : 'text-warning');
-                    aiPred = `<span class="${predClass}" style="font-weight: bold;">${ipo.ai_prediction}</span>`;
-                }
-
                 tr.innerHTML = `
                 <td><a href="#" onclick="showSymbolAnalysis('${ipo.company.replace(/'/g, "\\'")}'); return false;" style="color: #0d6efd; text-decoration: none; font-weight: bold;">
                     ${ipo.company || '-'}
@@ -7151,15 +7166,16 @@ window.showSection = function (sectionId) {
                 </td>
                 <td class="text-end">${subscription}</td>
                 <td class="text-end">${gmp}</td>
-                <td class="text-end">${aiPred}</td>
                 <td class="text-center">${statusBadge}</td>
             `;
 
                 tbody.appendChild(tr);
             });
 
-            // Display subscription analysis
-            displayAnalysis(analysis);
+            // Display subscription analysis (if available)
+            if (analysis && Object.keys(analysis).length > 0) {
+                displayAnalysis(analysis);
+            }
 
             document.getElementById('ipo-section').style.display = 'block';
 
