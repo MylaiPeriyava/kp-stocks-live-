@@ -190,14 +190,21 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                if 'Listed' in status.lower():
-                    final_status = 'listed'
-                elif 'Allotment awaited' in status.lower() or 'allotted' in status.lower():
-                    final_status = 'open'
-                elif 'upcoming' in status.lower() or 'closes' in status.lower() or 'opens' in status.lower():
-                    final_status = 'upcoming'
-                else:
-                    final_status = 'listed'
+# Determine status - FIXED LOGIC
+if 'Listed' in status:
+    final_status = 'listed'
+elif 'Allotment awaited' in status or 'allotted' in status.lower():
+    final_status = 'open'
+elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
+    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
+    final_status = 'upcoming'
+elif 'Opens' in status:
+    final_status = 'upcoming'
+elif 'upcoming' in status.lower():
+    final_status = 'upcoming'
+else:
+    final_status = 'listed'
+
                 
                 ipos.append({
                     'company': company,
