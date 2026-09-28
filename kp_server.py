@@ -1,6 +1,6 @@
 # kp_server.py
 # Local server for KP's Stocks (Live) - WITH FIREBASE 
-# FIXED v2: IPO scraper uses IPOMarkets.com with correct pagination
+# FIXED v3: Proper multi-page scraping for IPOMarkets
 
 # ============ USER CONFIG ============
 USERS = {
@@ -128,7 +128,7 @@ def calculate_ema(close_values, period):
     return ema_values
 
 
-# ============ IPO DATA ENDPOINT (IPOMarkets - FIXED v2) ============
+# ============ IPO DATA ENDPOINT (IPOMarkets - FIXED v3) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
     """Scrape a single page from IPOMarkets.com"""
@@ -155,25 +155,19 @@ def scrape_ipomarkets_page(base_url, page=1):
         for row in rows:
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 7:
-                # IPOMarkets table structure:
-                # Company | Status | Band / Price | GMP | Sub | Dates | Listing
-                
                 company_raw = cells[0].get_text(strip=True)
                 if not company_raw:
                     continue
                 
                 # Extract company name and check if Mainboard
-                # Format: "Company NameMainboard" or "Company NameSME"
                 if 'Mainboard' in company_raw:
                     company = company_raw.replace('Mainboard', '').strip()
-                    ipo_type = 'Mainboard'
                 elif 'SME' in company_raw:
                     continue  # Skip SME IPOs
                 else:
                     company = company_raw
-                    ipo_type = 'Unknown'
                 
-                status = cells[1].get_text(strip=True)  # "Closes today", "Listed 24 Sept", etc.
+                status = cells[1].get_text(strip=True)
                 price_band = cells[2].get_text(strip=True)
                 gmp = cells[3].get_text(strip=True)
                 subscription = cells[4].get_text(strip=True)
@@ -193,12 +187,10 @@ def scrape_ipomarkets_page(base_url, page=1):
                 listing_gain = ''
                 if listing_info and listing_info != '—':
                     import re
-                    # Extract listing price (₹54.75)
                     price_match = re.search(r'₹([\d,]+\.?\d*)', listing_info)
                     if price_match:
                         listing_price = price_match.group(1).replace(',', '')
                     
-                    # Extract gain % (+1.39%)
                     gain_match = re.search(r'\(([+\-]?[\d.]+)%\)', listing_info)
                     if gain_match:
                         listing_gain = gain_match.group(1)
@@ -206,9 +198,9 @@ def scrape_ipomarkets_page(base_url, page=1):
                 # Determine status
                 if 'Listed' in status.lower():
                     final_status = 'listed'
-                elif 'Allotment awaited' in status.lower() or 'open' in status.lower():
+                elif 'Allotment awaited' in status.lower() or 'allotted' in status.lower():
                     final_status = 'open'
-                elif 'upcoming' in status.lower() or 'closes' in status.lower():
+                elif 'upcoming' in status.lower() or 'closes' in status.lower() or 'opens' in status.lower():
                     final_status = 'upcoming'
                 else:
                     final_status = 'listed'
@@ -216,21 +208,50 @@ def scrape_ipomarkets_page(base_url, page=1):
                 ipos.append({
                     'company': company,
                     'sector': '',
-                    'listing_date': status,  # Use status field as-is (has "Listed 24 Sept" etc.)
+                    'listing_date': status,
                     'issue_price': issue_price,
                     'listing_price': listing_price,
                     'listing_gain': listing_gain,
                     'close_gain': '',
                     'subscription': subscription.replace('×', 'x'),
-                    'gmp': gmp.replace('₹', ''),  # Remove duplicate ₹
+                    'gmp': gmp.replace('₹', ''),
                     'ai_prediction': '',
                     'issue_size': '',
                     'status': final_status,
-                    'ipo_type': ipo_type
+                    'ipo_type': 'Mainboard'
                 })
         
-        # Check if there's a next page
-        has_more = soup.find('a', string='Next') is not None
+        # Check if there's a next page - MULTIPLE METHODS
+        has_more = False
+        
+        # Method 1: Look for "Next" link
+        if soup.find('a', string='Next'):
+            has_more = True
+        
+        # Method 2: Look for pagination div with "Next" button
+        if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
+            has_more = True
+        
+        # Method 3: Look for button with "Next" text
+        if soup.find('button', string=lambda t: t and 'next' in t.lower()):
+            has_more = True
+        
+        # Method 4: Check if current page number is less than total pages
+        pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
+        if pagination:
+            page_numbers = pagination.find_all('a', href=lambda h: h and '/page/' in h)
+            if page_numbers:
+                has_more = True
+        
+        # Method 5: Try to find page 2 link explicitly
+        next_page_url = f"{base_url}/page/{page + 1}"
+        try:
+            test_response = requests.get(next_page_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            if test_response.status_code == 200 and '<table' in test_response.text:
+                has_more = True
+        except:
+            pass
+        
         print(f"Page {page}: {len(ipos)} IPOs, has_more={has_more}")
         return ipos, has_more
         
