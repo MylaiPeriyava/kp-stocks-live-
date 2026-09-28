@@ -365,7 +365,7 @@ def get_ipo_data():
         
         print('\n=== SUBSCRIPTION ANALYSIS ===')
         for threshold, data in analysis.items():
-            print(f'  Subscription >= {threshold}x: {data["count"]} IPOs, Avg Gain: {data["avg_gain"]}%')
+            print(f'  Subscription >= {threshold}x: {data["count"]}/{data["total"]} IPOs with gain, Probability: {data["gain_percentage"]}%')
         
         return jsonify({
             'ipos': unique_ipos,
