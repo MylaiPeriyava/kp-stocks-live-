@@ -1,6 +1,6 @@
 # kp_server.py
 # Local server for KP's Stocks (Live) - WITH FIREBASE 
-# FIXED v3: Proper multi-page scraping for IPOMarkets
+# FIXED v4: Subscription vs Listing Gain Analysis
 
 # ============ USER CONFIG ============
 USERS = {
@@ -10,6 +10,7 @@ USERS = {
 
 import json
 import os
+import re
 from datetime import datetime
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -128,12 +129,11 @@ def calculate_ema(close_values, period):
     return ema_values
 
 
-# ============ IPO DATA ENDPOINT (IPOMarkets - FIXED v3) ============
+# ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
     """Scrape a single page from IPOMarkets.com"""
     try:
-        # IPOMarkets pagination: /page/2, /page/3, etc.
         if page == 1:
             url = base_url
         else:
@@ -150,7 +150,7 @@ def scrape_ipomarkets_page(base_url, page=1):
             return [], False
         
         ipos = []
-        rows = table.find_all('tr')[1:]  # Skip header row
+        rows = table.find_all('tr')[1:]
         
         for row in rows:
             cells = row.find_all(['td', 'th'])
@@ -159,11 +159,10 @@ def scrape_ipomarkets_page(base_url, page=1):
                 if not company_raw:
                     continue
                 
-                # Extract company name and check if Mainboard
                 if 'Mainboard' in company_raw:
                     company = company_raw.replace('Mainboard', '').strip()
                 elif 'SME' in company_raw:
-                    continue  # Skip SME IPOs
+                    continue
                 else:
                     company = company_raw
                 
@@ -174,19 +173,15 @@ def scrape_ipomarkets_page(base_url, page=1):
                 dates = cells[5].get_text(strip=True)
                 listing_info = cells[6].get_text(strip=True)
                 
-                # Parse issue price from price band
                 issue_price = ''
                 if price_band and '₹' in price_band:
-                    import re
                     prices = re.findall(r'₹([\d,]+\.?\d*)', price_band)
                     if prices:
                         issue_price = prices[-1].replace(',', '')
                 
-                # Parse listing price and gain from listing_info
                 listing_price = ''
                 listing_gain = ''
                 if listing_info and listing_info != '—':
-                    import re
                     price_match = re.search(r'₹([\d,]+\.?\d*)', listing_info)
                     if price_match:
                         listing_price = price_match.group(1).replace(',', '')
@@ -195,7 +190,6 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status
                 if 'Listed' in status.lower():
                     final_status = 'listed'
                 elif 'Allotment awaited' in status.lower() or 'allotted' in status.lower():
@@ -221,29 +215,19 @@ def scrape_ipomarkets_page(base_url, page=1):
                     'ipo_type': 'Mainboard'
                 })
         
-        # Check if there's a next page - MULTIPLE METHODS
         has_more = False
         
-        # Method 1: Look for "Next" link
         if soup.find('a', string='Next'):
             has_more = True
-        
-        # Method 2: Look for pagination div with "Next" button
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        
-        # Method 3: Look for button with "Next" text
         if soup.find('button', string=lambda t: t and 'next' in t.lower()):
             has_more = True
-        
-        # Method 4: Check if current page number is less than total pages
         pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
         if pagination:
             page_numbers = pagination.find_all('a', href=lambda h: h and '/page/' in h)
             if page_numbers:
                 has_more = True
-        
-        # Method 5: Try to find page 2 link explicitly
         next_page_url = f"{base_url}/page/{page + 1}"
         try:
             test_response = requests.get(next_page_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
@@ -267,7 +251,7 @@ def scrape_all_ipomarkets_pages(base_url):
     all_ipos = []
     page = 1
     
-    while page <= 10:  # Safety limit
+    while page <= 10:
         ipos, has_more = scrape_ipomarkets_page(base_url, page)
         if not ipos:
             break
@@ -279,21 +263,66 @@ def scrape_all_ipomarkets_pages(base_url):
     return all_ipos
 
 
+def calculate_subscription_analysis(ipos):
+    """Calculate listing gains at different subscription thresholds"""
+    thresholds = [25, 20, 15, 10, 5]
+    results = {}
+    
+    for threshold in thresholds:
+        filtered = [ipo for ipo in ipos 
+                   if ipo['status'] == 'listed' 
+                   and ipo['subscription'] 
+                   and ipo['listing_gain']]
+        
+        def parse_subscription(sub_str):
+            if not sub_str:
+                return 0
+            try:
+                return float(sub_str.replace('x', '').strip())
+            except:
+                return 0
+        
+        matched = [ipo for ipo in filtered 
+                  if parse_subscription(ipo['subscription']) >= threshold]
+        
+        if matched:
+            gains = []
+            for ipo in matched:
+                try:
+                    gain_str = ipo['listing_gain'].replace('+', '').replace('%', '')
+                    gain = float(gain_str)
+                    gains.append(gain)
+                except:
+                    pass
+            
+            avg_gain = sum(gains) / len(gains) if gains else 0
+            count = len(matched)
+        else:
+            avg_gain = 0
+            count = 0
+        
+        results[threshold] = {
+            'count': count,
+            'avg_gain': round(avg_gain, 2),
+            'total': len(filtered)
+        }
+    
+    return results
+
+
 @app.route("/ipo-data")
 def get_ipo_data():
-    """Get all Mainboard IPOs from IPOMarkets"""
+    """Get all Mainboard IPOs from IPOMarkets with subscription analysis"""
     try:
         all_ipos = []
         
         print('\n=== FETCHING IPO DATA FROM IPOMARKETS ===')
         
-        # Scrape all pages from IPOMarkets 2026 calendar
         print('Fetching 2026 Mainboard IPOs from IPOMarkets...')
         all_ipos = scrape_all_ipomarkets_pages('https://ipomarkets.com/ipo-calendar/2026')
         
         print(f'Total IPOs from IPOMarkets: {len(all_ipos)}')
         
-        # Remove duplicates (by company name)
         seen = set()
         unique_ipos = []
         for ipo in all_ipos:
@@ -302,13 +331,10 @@ def get_ipo_data():
                 seen.add(key)
                 unique_ipos.append(ipo)
         
-        # Sort by listing date (latest first)
         def parse_date(date_str):
             if not date_str:
                 return datetime(1900, 1, 1)
             try:
-                # Try to extract date from "Listed 24 Sept" or "24 Sept" format
-                import re
                 match = re.search(r'(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)(?:\s+\d{4})?)', date_str, re.IGNORECASE)
                 if match:
                     date_str = match.group(1)
@@ -329,13 +355,23 @@ def get_ipo_data():
         print(f'  - Open: {len([i for i in unique_ipos if i["status"]=="open"])}')
         print(f'  - Upcoming: {len([i for i in unique_ipos if i["status"]=="upcoming"])}')
         
-        return jsonify(unique_ipos)
+        # Calculate subscription analysis
+        analysis = calculate_subscription_analysis(unique_ipos)
+        
+        print('\n=== SUBSCRIPTION ANALYSIS ===')
+        for threshold, data in analysis.items():
+            print(f'  Subscription >= {threshold}x: {data["count"]} IPOs, Avg Gain: {data["avg_gain"]}%')
+        
+        return jsonify({
+            'ipos': unique_ipos,
+            'analysis': analysis
+        })
         
     except Exception as e:
         print(f'Error in /ipo-data: {e}')
         import traceback
         traceback.print_exc()
-        return jsonify([])
+        return jsonify({'ipos': [], 'analysis': {}})
 
 
 # ============ ANAND RATHI SCREENERS (RESTORED) ============
