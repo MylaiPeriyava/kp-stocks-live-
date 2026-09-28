@@ -1314,21 +1314,56 @@ def research_ideas():
                 cells = row.find_all(['td', 'th'])
                 if len(cells) >= 12:
                     company = cells[1].get_text(strip=True)
+                    
+                    # Skip header row that might appear again
+                    if company.lower() == 'company' or company == 'Name':
+                        continue
+                    
                     cmp = cells[2].get_text(strip=True)
-                    vol_1d = cells[10].get_text(strip=True)
-                    avg_vol_1w = cells[11].get_text(strip=True)
+                    vol_1d_raw = cells[10].get_text(strip=True)
+                    avg_vol_1w_raw = cells[11].get_text(strip=True)
+                    
+                    # Parse volume (might be in Cr or Lakhs)
+                    def parse_volume(vol_str):
+                        if not vol_str or vol_str == '-':
+                            return 0
+                        vol_str = vol_str.replace(',', '').strip()
+                        # Check for Cr suffix
+                        if 'Cr' in vol_str or 'cr' in vol_str:
+                            vol_str = vol_str.replace('Cr', '').replace('cr', '').strip()
+                            try:
+                                return float(vol_str) * 10000000  # Crores to actual
+                            except:
+                                return 0
+                        # Check for Lac suffix
+                        elif 'Lac' in vol_str or 'lac' in vol_str:
+                            vol_str = vol_str.replace('Lac', '').replace('lac', '').strip()
+                            try:
+                                return float(vol_str) * 100000  # Lakhs to actual
+                            except:
+                                return 0
+                        else:
+                            try:
+                                return float(vol_str)
+                            except:
+                                return 0
+                    
+                    vol_1d = parse_volume(vol_1d_raw)
+                    avg_vol_1w = parse_volume(avg_vol_1w_raw)
                     
                     # Calculate volume ratio
-                    try:
-                        vol_ratio = float(vol_1d.replace(',', '')) / float(avg_vol_1w.replace(',', '')) if avg_vol_1w and avg_vol_1w != '0' else 0
-                    except:
+                    if avg_vol_1w > 0:
+                        vol_ratio = vol_1d / avg_vol_1w
+                    else:
                         vol_ratio = 0
                     
-                    all_stocks.append({
-                        'symbol': company,
-                        'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
-                        'note': f"CMP: ₹{cmp}, Vol: {vol_1d}, Avg Vol: {avg_vol_1w}"
-                    })
+                    # Only include if volume is actually higher (ratio > 1)
+                    if vol_ratio > 1:
+                        all_stocks.append({
+                            'symbol': company,
+                            'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
+                            'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
+                        })
             
             # Check if there's a next page
             next_page = soup.find('a', string='Next')
@@ -1336,9 +1371,11 @@ def research_ideas():
                 print(f"No more pages after {page}")
                 break
         
-        print(f"Total stocks scraped: {len(all_stocks)}")
+        print(f"Total stocks with volume spike: {len(all_stocks)}")
         
-        # Return top 20 (or all if less)
+        # Sort by volume ratio (highest first) and return top 20
+        all_stocks.sort(key=lambda x: float(x['reason'].split(':')[1].split('x')[0].strip()), reverse=True)
+        
         return jsonify(all_stocks[:20])
         
     except Exception as e:
