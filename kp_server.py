@@ -1,4 +1,4 @@
-# kp_server.py
+# kp_server.py 
 # Local server for KP's Stocks (Live) - WITH FIREBASE 
 # FIXED v4: Subscription vs Listing Gain Analysis
 
