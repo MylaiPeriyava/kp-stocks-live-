@@ -3066,14 +3066,15 @@
                         <table class="table table-hover table-sm mb-0" id="ipo-table">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 25%;">Symbol</th>
-                                    <th style="width: 15%;">Listing Date</th>
-                                    <th style="width: 12%;" class="text-end">Issue Price</th>
-                                    <th style="width: 12%;" class="text-end">Listed Price</th>
-                                    <th style="width: 10%;" class="text-end">Gain %</th>
-                                    <th style="width: 12%;" class="text-end">Subscription</th>
-                                    <th style="width: 10%;" class="text-end">GMP</th>
-                                    <th style="width: 4%;">Status</th>
+                                    <th style="width: 22%;">Symbol</th>
+                                    <th style="width: 13%;">Listing Date</th>
+                                    <th style="width: 10%;" class="text-end">Issue Price</th>
+                                    <th style="width: 10%;" class="text-end">Listed Price</th>
+                                    <th style="width: 8%;" class="text-end">Gain %</th>
+                                    <th style="width: 10%;" class="text-end">Subscription</th>
+                                    <th style="width: 8%;" class="text-end">GMP</th>
+                                    <th style="width: 8%;" class="text-end">AI Pred</th>
+                                    <th style="width: 11%;">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="ipo-tbody">
@@ -3084,6 +3085,10 @@
                 </div>
             </div>
         </div>
+
+        <!-- Subscription Analysis Section -->
+        <div id="ipo-analysis" class="mt-4"></div>
+
 
         <section id="tradesSection" class="section-anchor" style="display:none;">
             <h2>My Past Trades</h2>
@@ -7076,7 +7081,9 @@ window.showSection = function (sectionId) {
     async function loadIPOData() {
         try {
             const response = await fetch('/ipo-data');
-            const ipos = await response.json();
+            const data = await response.json();
+            const ipos = data.ipos || [];
+            const analysis = data.analysis || {};
 
             if (!ipos || ipos.length === 0) {
                 document.getElementById('ipo-section').style.display = 'none';
@@ -7089,7 +7096,6 @@ window.showSection = function (sectionId) {
             ipos.forEach(ipo => {
                 const tr = document.createElement('tr');
 
-                // Determine row color and badge based on status
                 let rowClass = '';
                 let statusBadge = '';
 
@@ -7106,7 +7112,6 @@ window.showSection = function (sectionId) {
 
                 tr.className = rowClass;
 
-                // Format numbers safely
                 const bidPrice = ipo.issue_price ? parseFloat(ipo.issue_price).toFixed(2) : '-';
                 const listedPrice = ipo.listing_price ? parseFloat(ipo.listing_price).toFixed(2) : '-';
 
@@ -7153,6 +7158,9 @@ window.showSection = function (sectionId) {
                 tbody.appendChild(tr);
             });
 
+            // Display subscription analysis
+            displayAnalysis(analysis);
+
             document.getElementById('ipo-section').style.display = 'block';
 
         } catch (error) {
@@ -7160,6 +7168,36 @@ window.showSection = function (sectionId) {
             document.getElementById('ipo-section').style.display = 'none';
         }
     }
+
+
+    function displayAnalysis(analysis) {
+        const analysisDiv = document.getElementById('ipo-analysis');
+        if (!analysisDiv) return;
+
+        let html = '<div class="mt-4"><h5 class="mb-3">📊 Subscription vs Listing Gain Analysis (2026)</h5>';
+        html += '<div class="table-responsive">';
+        html += '<table class="table table-bordered table-sm" style="width: 100%;">';
+        html += '<thead class="table-primary">';
+        html += '<tr>';
+        html += '<th style="width: 33%; padding: 12px;">Subscription Threshold</th>';
+        html += '<th style="width: 33%; padding: 12px;">Number of IPOs</th>';
+        html += '<th style="width: 34%; padding: 12px;">Average Listing Gain %</th>';
+        html += '</tr></thead><tbody>';
+
+        [25, 20, 15, 10, 5].forEach(threshold => {
+            const data = analysis[threshold.toString()] || { count: 0, avg_gain: 0 };
+            const color = data.avg_gain >= 30 ? '#16a34a' : data.avg_gain >= 15 ? '#2563eb' : '#dc2626';
+            html += `<tr>
+            <td style="padding: 10px; font-weight: bold; text-align: center;">≥ ${threshold}x</td>
+            <td style="padding: 10px; text-align: center; font-weight: bold;">${data.count}</td>
+            <td style="padding: 10px; text-align: center; font-weight: bold; color: ${color};">${data.avg_gain}%</td>
+        </tr>`;
+        });
+
+        html += '</tbody></table></div></div>';
+        analysisDiv.innerHTML = html;
+    }
+
 
     // Helper function to parse listing date
     function parseListingDate(dateStr) {
