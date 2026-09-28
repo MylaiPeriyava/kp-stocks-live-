@@ -1356,8 +1356,14 @@ def research_ideas():
                                 'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
             
-            # Check if there's a next page
-            next_page = soup.find('a', string='Next')
+            # Check if there's a next page - FIXED DETECTION
+            next_page = soup.find('a', href=lambda h: h and '?page=' in h and 'Next' in h)
+            if not next_page:
+                # Fallback: check for any ?page= link
+                page_links = soup.find_all('a', href=lambda h: h and '?page=' in h)
+                if page_links:
+                    next_page = page_links[-1]
+            
             if not next_page:
                 print(f"No more pages after {page}")
                 break
