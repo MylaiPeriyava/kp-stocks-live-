@@ -6964,51 +6964,52 @@ async function computeAndShowMarketRSInsights(analysis) {
     }
 }
 
-async function loadResearchIdeas() {
-    const status = document.getElementById("researchStatus");
-    const list = document.getElementById("researchIdeasList");
+    async function loadResearchIdeas() {
+        const status = document.getElementById("researchStatus");
+        const list = document.getElementById("researchIdeasList");
 
-    status.textContent = "Generating research ideas...";
-    list.innerHTML = "";
+        status.textContent = "Scraping Screener.in delivery volume data...";
+        list.innerHTML = "";
 
-    try {
-        const response = await fetch("/research-ideas");
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || ("HTTP " + response.status));
+        try {
+            const response = await fetch("/research-ideas");
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || ("HTTP " + response.status));
+            }
+            const ideas = await response.json();
+
+            if (!Array.isArray(ideas) || ideas.length === 0) {
+                status.textContent = "No research ideas generated at this time.";
+                list.innerHTML = '<div class="small">Try again later or after market hours.</div>';
+                return;
+            }
+
+            status.textContent = "Research ideas generated at " + formatTime(new Date()) + ".";
+
+            let html = '<div style="display: grid; gap: 12px;">';
+            ideas.forEach((item, idx) => {
+                const sym = escapeHtml(item.symbol || "Unknown");
+                const reason = escapeHtml(item.reason || "");
+                const note = escapeHtml(item.note || "");
+
+                html +=
+                    '<div style="padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">' +
+                    '<div style="font-weight: 700; color: #111827; margin-bottom: 4px;">' + (idx + 1) + '. ' + sym + '</div>' +
+                    '<div style="color: #374151; margin-bottom: 4px;"><strong>Reason:</strong> ' + reason + '</div>' +
+                    '<div style="color: #4b5563;"><strong>Check:</strong> ' + note + '</div>' +
+                    '</div>';
+            });
+            html += '</div>';
+
+            list.innerHTML = html;
+        } catch (error) {
+            status.textContent = "Failed to generate research ideas: " + error.message;
+            list.innerHTML =
+                '<div class="small">You can try again later. Error: ' + escapeHtml(error.message) + '</div>';
         }
-        const ideas = await response.json();
-
-        if (!Array.isArray(ideas) || ideas.length === 0) {
-            status.textContent = "No research ideas generated at this time.";
-            list.innerHTML = '<div class="small">Try again later or after market hours.</div>';
-            return;
-        }
-
-        status.textContent = "Research ideas generated at " + formatTime(new Date()) + ".";
-
-        let html = '<div style="display: grid; gap: 12px;">';
-        ideas.forEach((item, idx) => {
-            const sym = escapeHtml(item.symbol || "Unknown");
-            const reason = escapeHtml(item.reason || "");
-            const note = escapeHtml(item.note || "");
-
-            html +=
-                '<div style="padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">' +
-                '<div style="font-weight: 700; color: #111827; margin-bottom: 4px;">' + (idx + 1) + '. ' + sym + '</div>' +
-                '<div style="color: #374151; margin-bottom: 4px;"><strong>Reason:</strong> ' + reason + '</div>' +
-                '<div style="color: #4b5563;"><strong>Check:</strong> ' + note + '</div>' +
-                '</div>';
-        });
-        html += '</div>';
-
-        list.innerHTML = html;
-    } catch (error) {
-        status.textContent = "Failed to generate research ideas: " + error.message;
-        list.innerHTML =
-            '<div class="small">You can try again later. Error: ' + escapeHtml(error.message) + '</div>';
     }
-}
+
 
 function getCurrentUser() {
     return CURRENT_USER || "USER1";
