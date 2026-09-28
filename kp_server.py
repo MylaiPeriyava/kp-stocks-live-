@@ -1,5 +1,6 @@
 # kp_server.py
 # Local server for KP's Stocks (Live) - WITH FIREBASE 
+# FIXED: IPO scraper now uses IPOMarkets.com instead of IPOGyani
 
 # ============ USER CONFIG ============
 USERS = {
@@ -127,11 +128,12 @@ def calculate_ema(close_values, period):
     return ema_values
 
 
-# ============ IPO DATA ENDPOINT (IPOGyani) ============
+# ============ IPO DATA ENDPOINT (IPOMarkets - FIXED) ============
 
-def scrape_ipogyani_page(url, page=1):
-    """Scrape a single page from IPOGyani"""
+def scrape_ipomarkets_page(url, page=1):
+    """Scrape a single page from IPOMarkets.com"""
     try:
+        # IPOMarkets pagination: ?page=2, ?page=3, etc.
         if page > 1:
             url = f"{url}&page={page}"
         
@@ -144,41 +146,99 @@ def scrape_ipogyani_page(url, page=1):
             return [], False
         
         ipos = []
-        rows = table.find_all('tr')[1:]
+        rows = table.find_all('tr')[1:]  # Skip header row
         
         for row in rows:
             cells = row.find_all(['td', 'th'])
-            if len(cells) >= 11:
-                company = cells[0].get_text(strip=True)
-                if not company or company == 'No data available':
+            if len(cells) >= 7:
+                # IPOMarkets table structure:
+                # Company | Status | Band / Price | GMP | Sub | Dates | Listing
+                
+                company_cell = cells[0].get_text(strip=True)
+                if not company_cell or company_cell == 'No data available':
                     continue
                 
-                sector = cells[1].get_text(strip=True) if len(cells) > 1 else ''
-                listing_date = cells[2].get_text(strip=True) if len(cells) > 2 else ''
-                issue_price = cells[3].get_text(strip=True).replace('Rs ', '').replace(',', '').strip() if len(cells) > 3 else ''
-                listing_price = cells[4].get_text(strip=True).replace('Rs ', '').replace(',', '').strip() if len(cells) > 4 else ''
-                listing_gain = cells[5].get_text(strip=True).replace('%', '').strip() if len(cells) > 5 else ''
-                close_gain = cells[6].get_text(strip=True).replace('%', '').strip() if len(cells) > 6 else ''
-                subscription = cells[7].get_text(strip=True).replace('x', '').strip() if len(cells) > 7 else ''
-                gmp = cells[8].get_text(strip=True).replace('%', '').replace('+', '').strip() if len(cells) > 8 else ''
-                ai_pred = cells[9].get_text(strip=True) if len(cells) > 9 else ''
-                issue_size = cells[10].get_text(strip=True).replace('Cr', '').replace(',', '').strip() if len(cells) > 10 else ''
+                # Extract company name (may have link)
+                company = company_cell
+                status_cell = cells[1].get_text(strip=True) if len(cells) > 1 else ''
+                
+                # Determine status
+                status = 'listed'
+                if 'Allotment awaited' in status_cell.lower() or 'open' in status_cell.lower():
+                    status = 'open'
+                elif 'upcoming' in status_cell.lower():
+                    status = 'upcoming'
+                
+                # Price band
+                price_band = cells[2].get_text(strip=True) if len(cells) > 2 else ''
+                
+                # GMP
+                gmp = cells[3].get_text(strip=True) if len(cells) > 3 else ''
+                if gmp == '—' or gmp == '-':
+                    gmp = ''
+                
+                # Subscription
+                subscription = cells[4].get_text(strip=True) if len(cells) > 4 else ''
+                if subscription == '—' or subscription == '-':
+                    subscription = ''
+                
+                # Dates (Open - Close)
+                dates = cells[5].get_text(strip=True) if len(cells) > 5 else ''
+                
+                # Listing info (price + gain)
+                listing_info = cells[6].get_text(strip=True) if len(cells) > 6 else ''
+                
+                # Parse listing price and gain from listing_info
+                # Format: "₹54.75+₹0.75 (+1.39%)" or "₹54.75"
+                listing_price = ''
+                listing_gain = ''
+                
+                if listing_info and listing_info != '—':
+                    # Try to extract price (first number after ₹)
+                    import re
+                    price_match = re.search(r'₹([\d,]+\.?\d*)', listing_info)
+                    if price_match:
+                        listing_price = price_match.group(1).replace(',', '')
+                    
+                    # Try to extract gain % (number in parentheses)
+                    gain_match = re.search(r'\(([+\-]?[\d.]+)%\)', listing_info)
+                    if gain_match:
+                        listing_gain = gain_match.group(1)
+                
+                # Parse issue price from price band (e.g., "₹126–₹134" → use upper bound)
+                issue_price = ''
+                if price_band and '₹' in price_band:
+                    import re
+                    prices = re.findall(r'₹([\d,]+\.?\d*)', price_band)
+                    if prices:
+                        # Use the last (upper) price
+                        issue_price = prices[-1].replace(',', '')
+                
+                # Extract listing date from dates string
+                listing_date = ''
+                if dates and '–' in dates:
+                    # Format: "18 Sept 2026 – 22 Sept 2026" → use close date
+                    parts = dates.split('–')
+                    if len(parts) >= 2:
+                        listing_date = parts[1].strip()
                 
                 ipos.append({
                     'company': company,
-                    'sector': sector,
+                    'sector': '',  # IPOMarkets doesn't have sector
                     'listing_date': listing_date,
                     'issue_price': issue_price,
                     'listing_price': listing_price,
                     'listing_gain': listing_gain,
-                    'close_gain': close_gain,
-                    'subscription': subscription,
+                    'close_gain': '',  # Not available
+                    'subscription': subscription.replace('×', 'x'),
                     'gmp': gmp,
-                    'ai_prediction': ai_pred,
-                    'issue_size': issue_size
+                    'ai_prediction': '',  # Not available
+                    'issue_size': '',  # Not available
+                    'status': status
                 })
         
-        has_more = len(rows) >= 25
+        # Check if there's a next page button
+        has_more = soup.find('a', string='Next') is not None or soup.find('button', string='Next') is not None
         return ipos, has_more
         
     except Exception as e:
@@ -186,13 +246,13 @@ def scrape_ipogyani_page(url, page=1):
         return [], False
 
 
-def scrape_all_ipogyani_pages(base_url):
-    """Scrape all pages from a IPOGyani URL"""
+def scrape_all_ipomarkets_pages(base_url):
+    """Scrape all pages from IPOMarkets"""
     all_ipos = []
     page = 1
     
-    while page <= 10:
-        ipos, has_more = scrape_ipogyani_page(base_url, page)
+    while page <= 10:  # Safety limit
+        ipos, has_more = scrape_ipomarkets_page(base_url, page)
         if not ipos:
             break
         all_ipos.extend(ipos)
@@ -206,34 +266,25 @@ def scrape_all_ipogyani_pages(base_url):
 
 @app.route("/ipo-data")
 def get_ipo_data():
-    """Get all IPOs from IPOGyani (Listed + Live + Upcoming)"""
+    """Get all IPOs from IPOMarkets (Listed + Live + Upcoming)"""
     try:
         all_ipos = []
         
-        print('\n=== FETCHING IPO DATA ===')
+        print('\n=== FETCHING IPO DATA FROM IPOMARKETS ===')
         
-        print('Fetching listed IPOs...')
-        listed_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/listed-ipo/2026?type=mainboard')
+        # Scrape all pages from IPOMarkets 2026 calendar
+        print('Fetching 2026 IPOs from IPOMarkets...')
+        listed_ipos = scrape_all_ipomarkets_pages('https://ipomarkets.com/ipo-calendar/2026')
+        
         for ipo in listed_ipos:
-            ipo['status'] = 'listed'
+            # Ensure status is set
+            if 'status' not in ipo:
+                ipo['status'] = 'listed'
+        
         all_ipos.extend(listed_ipos)
-        print(f'Listed IPOs: {len(listed_ipos)}')
+        print(f'Total IPOs from IPOMarkets: {len(listed_ipos)}')
         
-        print('Fetching live IPOs...')
-        live_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/live-ipo')
-        for ipo in live_ipos:
-            ipo['status'] = 'open'
-        all_ipos.extend(live_ipos)
-        print(f'Live IPOs: {len(live_ipos)}')
-        
-        print('Fetching upcoming IPOs...')
-        upcoming_ipos = scrape_all_ipogyani_pages('https://ipogyani.com/upcoming-ipo')
-        for ipo in upcoming_ipos:
-            ipo['status'] = 'upcoming'
-        all_ipos.extend(upcoming_ipos)
-        print(f'Upcoming IPOs: {len(upcoming_ipos)}')
-        
-        # Remove duplicates
+        # Remove duplicates (by company name)
         seen = set()
         unique_ipos = []
         for ipo in all_ipos:
@@ -247,7 +298,8 @@ def get_ipo_data():
             if not date_str:
                 return datetime(1900, 1, 1)
             try:
-                for fmt in ['%d %b %y', '%d %b %Y', '%d %B %y', '%d %B %Y', '%d-%m-%Y', '%Y-%m-%d']:
+                # Handle formats like "22 Sept 2026", "22 September 2026", etc.
+                for fmt in ['%d %b %Y', '%d %B %Y', '%d %b %y', '%d %B %y', '%d-%m-%Y', '%Y-%m-%d']:
                     try:
                         return datetime.strptime(date_str.strip(), fmt)
                     except:
@@ -1176,3 +1228,5 @@ def delete_trade():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
+
+# === END OF kp_server.py (PART 1 OF 1) ===
