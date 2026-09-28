@@ -2,8 +2,6 @@ flask
 requests
 beautifulsoup4
 flask-cors
-nseindiapy
 yfinance
 firebase-admin
 pandas
-python-dateutil
