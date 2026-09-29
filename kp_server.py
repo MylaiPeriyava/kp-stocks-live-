@@ -132,30 +132,60 @@ def calculate_ema(close_values, period):
 # ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
-    """Scrape a single page from IPOMarkets.com - MINIMAL CHANGE"""
+    """Scrape a single page from IPOMarkets.com - WITH MAXIMUM DEBUGGING"""
     try:
         if page == 1:
             url = base_url
         else:
             url = f"{base_url}/page/{page}"
         
-        print(f"Scraping: {url}")
-        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
+        print(f"\n=== SCRAPING {url} ===")
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml',
+        }
+        
+        print(f"Sending request...")
+        response = requests.get(url, headers=headers, timeout=30)
+        print(f"Response status: {response.status_code}")
+        print(f"Response length: {len(response.text)} chars")
+        
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Check page title
+        page_title = soup.title.string if soup.title else 'No title'
+        print(f"Page title: {page_title}")
+        
         table = soup.find('table')
         if not table:
-            print(f"No table found on page {page}")
+            print(f"❌ ERROR: No table found!")
+            # Try to find any table
+            all_tables = soup.find_all('table')
+            print(f"Found {len(all_tables)} tables total")
             return [], False
         
-        ipos = []
-        rows = table.find_all('tr')[1:]
+        print(f"✅ Table found!")
         
+        ipos = []
+        rows = table.find_all('tr')[1:]  # Skip header
+        print(f"Found {len(rows)} data rows")
+        
+        for i, row in enumerate(rows[:3]):  # Just log first 3 rows
+            cells = row.find_all(['td', 'th'])
+            print(f"  Row {i+1}: {len(cells)} cells")
+            if len(cells) >= 7:
+                company_raw = cells[0].get_text(strip=True)
+                status = cells[1].get_text(strip=True)
+                print(f"    Company: '{company_raw}'")
+                print(f"    Status: '{status}'")
+        
+        # Now process all rows
         for row in rows:
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 7:
-                # OLD LOGIC - JUST GET TEXT
                 company_raw = cells[0].get_text(strip=True)
                 
                 if not company_raw:
@@ -168,7 +198,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                 else:
                     company = company_raw
                 
-                # NEW: EXTRACT URL
+                # EXTRACT URL
                 company_link = cells[0].find('a')
                 company_url = None
                 if company_link and company_link.get('href'):
@@ -199,7 +229,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - CASE INSENSITIVE + FALLBACK
+                # Determine status
                 status_lower = status.lower()
                 
                 if 'listed' in status_lower:
@@ -231,35 +261,25 @@ def scrape_ipomarkets_page(base_url, page=1):
                     'ipo_type': 'Mainboard'
                 })
         
-        has_more = False
+        print(f"✅ Scraped {len(ipos)} IPOs from page {page}")
+        if ipos:
+            print(f"   First IPO: {ipos[0]['company']} - Status: {ipos[0]['status']}")
         
+        has_more = False
         if soup.find('a', string='Next'):
             has_more = True
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        if soup.find('button', string=lambda t: t and 'next' in h.lower()):
-            has_more = True
-        pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
-        if pagination:
-            page_numbers = pagination.find_all('a', href=lambda h: h and '/page/' in h)
-            if page_numbers:
-                has_more = True
-        next_page_url = f"{base_url}/page/{page + 1}"
-        try:
-            test_response = requests.get(next_page_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
-            if test_response.status_code == 200 and '<table' in test_response.text:
-                has_more = True
-        except:
-            pass
         
-        print(f"Page {page}: {len(ipos)} IPOs, has_more={has_more}")
+        print(f"has_more={has_more}")
         return ipos, has_more
         
     except Exception as e:
-        print(f'Error scraping page {page}: {e}')
+        print(f'❌ ERROR scraping page {page}: {e}')
         import traceback
         traceback.print_exc()
         return [], False
+
 
 
 
