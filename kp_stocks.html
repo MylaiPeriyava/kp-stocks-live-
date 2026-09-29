@@ -16,11 +16,86 @@
     <!-- ========================================================= -->
     <style>
 
-        #ipo-table td:first-child {
+        /* Market Indices Section */
+        .indices-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            color: white;
+        }
+
+        .indices-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .indices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .index-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+            .index-card:hover {
+                transform: translateY(-2px);
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+        .index-name {
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .index-value {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .index-change {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .change-points {
+            margin-right: 8px;
+        }
+
+        .change-percent {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+            .change-percent.positive {
+                background: rgba(34, 197, 94, 0.3);
+                color: #86efac;
+            }
+
+            .change-percent.negative {
+            background: #ipo-table td:first-child {
             max-width: 18%;
             word-wrap: break-word;
             white-space: normal;
         }
+
 
         /* IPO Section Styles */
         #ipo-section {
@@ -1920,7 +1995,7 @@
 
     <!-- Holdings -->
 <div class="section-block active">
-<section id="holdingsSection" class="section-anchor">
+    <section id="holdingsSection" class="section-anchor">
         <div class="card">
             <div class="row-label">Holdings (live from server)</div>
 
@@ -1954,12 +2029,10 @@
                 </button>
 
                 <label class="auto-refresh-label" for="autoRefreshToggle">
-                    <input
-                        type="checkbox"
-                        id="autoRefreshToggle"
-                        checked
-                        onchange="setAutoRefresh(this.checked)"
-                    >
+                    <input type="checkbox"
+                           id="autoRefreshToggle"
+                           checked
+                           onchange="setAutoRefresh(this.checked)">
                     Auto refresh prices every 60 seconds
                 </label>
             </div>
@@ -2108,6 +2181,98 @@
                 </div>
             </div>
         </div>
+
+        <!-- Market Indices Section -->
+        <div class="indices-section" id="indicesSection">
+            <div class="indices-title">📊 Market Indices</div>
+
+            <div class="indices-grid">
+                <!-- NIFTY 50 -->
+                <div class="index-card" id="index-nifty50">
+                    <div class="index-name">NIFTY 50</div>
+                    <div class="index-value" id="nifty50-value">-</div>
+                    <div class="index-change" id="nifty50-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+
+                <!-- SENSEX -->
+                <div class="index-card" id="index-sensex">
+                    <div class="index-name">SENSEX</div>
+                    <div class="index-value" id="sensex-value">-</div>
+                    <div class="index-change" id="sensex-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+
+                <!-- NIFTY BANK -->
+                <div class="index-card" id="index-niftybank">
+                    <div class="index-name">NIFTY BANK</div>
+                    <div class="index-value" id="niftybank-value">-</div>
+                    <div class="index-change" id="niftybank-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+
+                <!-- NIFTY IT -->
+                <div class="index-card" id="index-niftyit">
+                    <div class="index-name">NIFTY IT</div>
+                    <div class="index-value" id="niftyit-value">-</div>
+                    <div class="index-change" id="niftyit-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+
+                <!-- NIFTY FMCG -->
+                <div class="index-card" id="index-niftyfmcg">
+                    <div class="index-name">NIFTY FMCG</div>
+                    <div class="index-value" id="niftyfmcg-value">-</div>
+                    <div class="index-change" id="niftyfmcg-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+
+                <!-- NIFTY PHARMA -->
+                <div class="index-card" id="index-niftypharma">
+                    <div class="index-name">NIFTY PHARMA</div>
+                    <div class="index-value" id="niftypharma-value">-</div>
+                    <div class="index-change" id="niftypharma-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+
+                <!-- NIFTY AUTO -->
+                <div class="index-card" id="index-niftyauto">
+                    <div class="index-name">NIFTY AUTO</div>
+                    <div class="index-value" id="niftyauto-value">-</div>
+                    <div class="index-change" id="niftyauto-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+
+                <!-- NIFTY METAL -->
+                <div class="index-card" id="index-niftymetal">
+                    <div class="index-name">NIFTY METAL</div>
+                    <div class="index-value" id="niftymetal-value">-</div>
+                    <div class="index-change" id="niftymetal-change">
+                        <span class="change-points">-</span>
+                        <span class="change-percent">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="indices-refresh-status" id="indicesRefreshStatus">
+                Loading indices...
+            </div>
+        </div>
+
     </section>
     </div>
 
@@ -4041,6 +4206,8 @@ async function refreshAllPrices(isInitialLoad = false) {
     } finally {
         isRefreshingPrices = false;
     }
+
+    await refreshIndices();
 }
 
 function setAutoRefresh(enabled) {
@@ -7443,6 +7610,100 @@ window.showSection = function (sectionId) {
             return new Date(0);
         }
     }
+
+
+    // ============ MARKET INDICES ============
+    const INDICES_CONFIG = {
+        nifty50: { yahooSymbol: '^NSEI', name: 'NIFTY 50' },
+        sensex: { yahooSymbol: '^BSESN', name: 'SENSEX' },
+        niftybank: { yahooSymbol: '^NSEBANK', name: 'NIFTY BANK' },
+        niftyit: { yahooSymbol: '^CNXIT', name: 'NIFTY IT' },
+        niftyfmcg: { yahooSymbol: '^CNXFMCG', name: 'NIFTY FMCG' },
+        niftypharma: { yahooSymbol: '^CNXPHARMA', name: 'NIFTY PHARMA' },
+        niftyauto: { yahooSymbol: '^CNXAUTO', name: 'NIFTY AUTO' },
+        niftymetal: { yahooSymbol: '^CNXMETAL', name: 'NIFTY METAL' }
+    };
+
+    async function refreshIndices() {
+        const statusEl = document.getElementById('indicesRefreshStatus');
+        if (!statusEl) return;
+
+        try {
+            statusEl.textContent = 'Updating indices...';
+
+            const promises = Object.keys(INDICES_CONFIG).map(async (key) => {
+                const config = INDICES_CONFIG[key];
+                try {
+                    const response = await fetch(`/price?symbol=${config.yahooSymbol}`);
+                    if (!response.ok) throw new Error('Failed');
+                    const data = await response.json();
+                    updateIndexCard(key, data);
+                } catch (error) {
+                    console.warn(`Failed to load ${config.name}:`, error);
+                }
+            });
+
+            await Promise.all(promises);
+            statusEl.textContent = `Indices updated at ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}`;
+        } catch (error) {
+            console.error('Error refreshing indices:', error);
+            statusEl.textContent = 'Failed to update indices';
+        }
+    }
+
+    function updateIndexCard(key, data) {
+        const valueEl = document.getElementById(`${key}-value`);
+        const changePointsEl = document.getElementById(`${key}-change`)?.querySelector('.change-points');
+        const changePercentEl = document.getElementById(`${key}-change`)?.querySelector('.change-percent');
+
+        if (!valueEl) return;
+
+        const price = data.price;
+        const previousClose = data.previous_close;
+
+        if (price && previousClose) {
+            const change = price - previousClose;
+            const changePercent = (change / previousClose) * 100;
+
+            valueEl.textContent = price.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+            if (changePointsEl) {
+                const sign = change >= 0 ? '+' : '';
+                changePointsEl.textContent = `${sign}${change.toFixed(2)}`;
+                changePointsEl.style.color = change >= 0 ? '#86efac' : '#fca5a5';
+            }
+
+            if (changePercentEl) {
+                const sign = changePercent >= 0 ? '+' : '';
+                changePercentEl.textContent = `${sign}${changePercent.toFixed(2)}%`;
+                changePercentEl.className = `change-percent ${changePercent >= 0 ? 'positive' : 'negative'}`;
+            }
+        } else {
+            valueEl.textContent = '-';
+            if (changePointsEl) changePointsEl.textContent = '-';
+            if (changePercentEl) changePercentEl.textContent = '-';
+        }
+    }
+
+    // Modify existing refreshAllPrices to include indices
+    const originalRefreshAllPrices = window.refreshAllPrices;
+    window.refreshAllPrices = async function (isInitialLoad = false) {
+        if (originalRefreshAllPrices) {
+            await originalRefreshAllPrices(isInitialLoad);
+        }
+        // Refresh indices too
+        await refreshIndices();
+    };
+
+    // Load indices on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        // Existing load code...
+
+        // Add indices refresh after initial load
+        setTimeout(() => {
+            refreshIndices();
+        }, 2000);
+    });
 
 
 </script>
