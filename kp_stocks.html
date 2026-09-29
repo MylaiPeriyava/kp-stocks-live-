@@ -7445,7 +7445,47 @@ window.showSection = function (sectionId) {
     }
 
 
+    document.addEventListener('DOMContentLoaded', function () {
+        // Hide all sections, show only holdings
+        document.querySelectorAll('.section-block').forEach(el => el.classList.remove('active'));
+        const holdingsBlock = document.getElementById('holdingsSection')?.closest('.section-block');
+        if (holdingsBlock) {
+            holdingsBlock.classList.add('active');
+        }
 
+        // Load initial data
+        loadHoldings();
+        refreshWishlist(true);
+        loadIPOData();
+
+        // Initialize chart and start auto-refresh
+        onChartIntervalChange();
+        startAutoRefresh();
+
+        // Initialize portfolio targets table
+        if (typeof computeAndRenderPortfolioTargets === 'function') {
+            const requiredPercent = parseFloat(document.getElementById('targetPercent')?.value) || 0;
+            computeAndRenderPortfolioTargets(requiredPercent);
+        }
+
+        // Add listener to target percent input to update table
+        const targetPercentInput = document.getElementById('targetPercent');
+        if (targetPercentInput) {
+            targetPercentInput.addEventListener('input', function () {
+                const requiredPercent = parseFloat(this.value) || 0;
+                if (typeof computeAndRenderPortfolioTargets === 'function') {
+                    computeAndRenderPortfolioTargets(requiredPercent);
+                }
+            });
+        }
+
+        // Update stop loss after initial load
+        setTimeout(() => {
+            if (typeof updateStopLossTable === 'function') {
+                updateStopLossTable();
+            }
+        }, 100);
+    });
 
 </script>
 </body>
