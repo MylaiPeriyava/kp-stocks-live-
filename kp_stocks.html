@@ -10,172 +10,7 @@
     <!-- Chart.js for scatter plots (WL Pattern) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- ========================================================= -->
-    <!-- ==================== ALL CSS STYLES ==================== -->
-    <!-- ========================================================= -->
-    <!-- ========================================================= -->
     <style>
-
-        /* Market Indices Section */
-        .indices-section {
-            margin-top: 24px;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            color: white;
-        }
-
-        .indices-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 16px;
-            text-align: center;
-        }
-
-        .indices-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-        }
-
-        .index-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 10px;
-            padding: 16px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.2s, background 0.2s;
-        }
-
-            .index-card:hover {
-                transform: translateY(-2px);
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-        .index-name {
-            font-size: 13px;
-            font-weight: 600;
-            opacity: 0.9;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .index-value {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
-
-        .index-change {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .change-points {
-            margin-right: 8px;
-        }
-
-        .change-percent {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-        }
-
-            .change-percent.positive {
-                background: rgba(34, 197, 94, 0.3);
-                color: #86efac;
-            }
-
-            .change-percent.negative {
-            background: #ipo-table td:first-child {
-            max-width: 18%;
-            word-wrap: break-word;
-            white-space: normal;
-        }
-
-
-        /* IPO Section Styles */
-        #ipo-section {
-            margin-top: 1.5rem;
-        }
-
-            #ipo-section .card {
-                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            }
-
-        #ipo-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-            #ipo-table thead th {
-                font-weight: 600;
-                font-size: 0.875rem;
-                padding: 0.75rem 1rem;
-                border-bottom: 2px solid #dee2e6;
-            }
-
-            #ipo-table tbody td {
-                padding: 0.75rem 1rem;
-                vertical-align: middle;
-                font-size: 0.875rem;
-            }
-
-            #ipo-table tbody tr:hover {
-                background-color: #f8f9fa;
-            }
-
-        /* Status badges */
-        #ipo-section .badge {
-            padding: 0.35rem 0.65rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border-radius: 0.25rem;
-        }
-
-        /* Responsive table */
-        #ipo-section .table-responsive {
-            overflow-x: auto;
-        }
-
-        .index-vs-stock-block {
-            margin-top: 24px;
-            padding: 14px;
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-
-            .index-vs-stock-block h4 {
-                margin: 0 0 10px 0;
-                color: #111827;
-                font-size: 15px;
-                font-weight: 700;
-            }
-
-
-        /* Smooth fade-in for the main header text */
-        #pageHeaderTitle {
-            opacity: 0;
-            animation: kpHeaderFadeIn 0.35s ease-out forwards;
-        }
-
-        @keyframes kpHeaderFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-2px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
         /* ----- Core variables and base styles ----- */
         :root {
             --blue: #0b5cab;
@@ -284,7 +119,6 @@
                 text-decoration: none;
                 white-space: nowrap;
             }
-
 
                 .top-menu a:hover {
                     color: #ffffff;
@@ -1181,7 +1015,7 @@
             text-align: right;
         }
 
-        /* ----- Chart + RSI ----- */
+        /* ----- Chart RSI ----- */
         .chart-card {
             border-color: #abd6d1;
         }
@@ -1246,18 +1080,18 @@
             border-radius: 8px;
         }
 
-        .chart-summary-label {
-            margin-bottom: 5px;
-            color: #356c67;
-            font-size: 12px;
-            font-weight: bold;
-        }
+            .chart-summary-box .chart-summary-label {
+                margin-bottom: 5px;
+                color: #356c67;
+                font-size: 12px;
+                font-weight: bold;
+            }
 
-        .chart-summary-value {
-            color: #084c47;
-            font-size: 20px;
-            font-weight: bold;
-        }
+            .chart-summary-box .chart-summary-value {
+                color: #084c47;
+                font-size: 20px;
+                font-weight: bold;
+            }
 
         .chart-panel {
             margin-top: 16px;
@@ -1372,7 +1206,7 @@
                 font-size: 13px;
             }
 
-        /* ----- Manage holdings ----- */
+        /* ----- Manage holdings section ----- */
         .manage-card {
             border-color: #a7b3c7;
         }
@@ -1420,7 +1254,7 @@
             line-height: 1.4;
         }
 
-        /* ----- Target calculator ----- */
+        /* ----- Target calculator section ----- */
         .target-card {
             border-color: #c792ea;
         }
@@ -1507,255 +1341,176 @@
                 color: #4a148c;
             }
 
-        .portfolio-targets-details {
+        /* ----- IPO Section Styles ----- */
+        #ipo-section {
+            margin-top: 1.5rem;
+        }
+
+            #ipo-section .card {
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            }
+
+        #ipo-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            #ipo-table thead th {
+                font-weight: 600;
+                font-size: 0.875rem;
+                padding: 0.75rem 1rem;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            #ipo-table tbody td {
+                padding: 0.75rem 1rem;
+                vertical-align: middle;
+                font-size: 0.875rem;
+            }
+
+            #ipo-table tbody tr:hover {
+                background-color: #f8f9fa;
+            }
+
+            #ipo-table td:first-child {
+                max-width: 18%;
+                word-wrap: break-word;
+                white-space: normal;
+            }
+
+        /* Status badges */
+        #ipo-section .badge {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 0.25rem;
+        }
+
+        /* Responsive table */
+        #ipo-section .table-responsive {
             overflow-x: auto;
         }
 
-        .portfolio-targets-table {
-            min-width: 1700px !important;
-            font-size: 12px;
-        }
-
-            .portfolio-targets-table th, .portfolio-targets-table td {
-                padding: 7px 8px;
-                text-align: right;
-                white-space: nowrap;
-            }
-
-                .portfolio-targets-table th:first-child, .portfolio-targets-table td:first-child {
-                    text-align: left;
-                }
-
-            .portfolio-targets-table th {
-                position: sticky;
-                top: 0;
-                z-index: 2;
-            }
-
-            .portfolio-targets-table td.target-reached {
-                color: #075b2a;
-                font-weight: 800;
-                background: #e9f7ed;
-            }
-
-            .portfolio-targets-table td.target-loss {
-                color: #b3261e;
-                font-weight: 800;
-                background: #fce4e2;
-            }
-
-            .portfolio-targets-table td.portfolio-final-target {
-                color: #4a148c;
-                font-weight: 800;
-                background: #f3e5f5;
-            }
-
-        /* ----- Section visibility control ----- */
-        .section-block {
-            display: none;
-        }
-
-            .section-block.active {
-                display: block;
-            }
-
-        /* ----- Pattern Analysis (WL Status table) ----- */
-        .pattern-controls {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .pattern-row {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-            .pattern-row label {
-                font-weight: 600;
-                color: #2c3e50;
-            }
-
-            .pattern-row select {
-                padding: 8px 12px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                font-size: 14px;
-                min-width: 150px;
-            }
-
-        .pattern-period-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .pattern-period-btn {
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-            .pattern-period-btn:hover {
-                background: #f0f0f0;
-            }
-
-            .pattern-period-btn.active {
-                background: #3498db;
-                color: white;
-                border-color: #3498db;
-            }
-
-        .pattern-analyze-btn {
-            padding: 10px 24px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-
-            .pattern-analyze-btn:hover {
-                background: #219a52;
-            }
-
-        .pattern-results {
-            margin-top: 30px;
-        }
-
-        .pattern-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .pattern-stat {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-
-        .pattern-stat-label {
-            display: block;
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-bottom: 5px;
-        }
-
-        .pattern-stat-value {
-            display: block;
-            font-size: 18px;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-
-        .pattern-chart-container {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .pattern-insights {
-            background: #fffbea;
-            border: 1px solid #f1c40f;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-            .pattern-insights h3 {
-                margin: 0 0 15px 0;
-                color: #f39c12;
-                font-size: 16px;
-            }
-
-            .pattern-insights ul {
-                margin: 0;
-                padding-left: 20px;
-            }
-
-            .pattern-insights li {
-                margin-bottom: 8px;
-                color: #2c3e50;
-            }
-
-        .pattern-loading {
-            text-align: center;
-            padding: 40px;
-        }
-
-            .pattern-loading p {
-                margin-top: 15px;
-                color: #7f8c8d;
-            }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ----- WL Pattern Analysis (scatter chart) ----- */
-        .wl-pattern-period-btn {
-            padding: 8px 16px;
-            border: 1px solid #ddd;
+        .index-vs-stock-block {
+            margin-top: 24px;
+            padding: 14px;
             background: #ffffff;
-            color: #173b63;
-            border-radius: 6px;
-            cursor: pointer;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+            .index-vs-stock-block h4 {
+                margin: 0 0 10px 0;
+                color: #111827;
+                font-size: 15px;
+                font-weight: 700;
+            }
+
+        /* Market Indices Section */
+        .indices-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            color: white;
+        }
+
+        .indices-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .indices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .index-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+            .index-card:hover {
+                transform: translateY(-2px);
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+        .index-name {
             font-size: 13px;
-            transition: all 0.2s;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-            .wl-pattern-period-btn:hover {
-                background: #f0f0f0;
+        .index-value {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .index-change {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .change-points {
+            margin-right: 8px;
+        }
+
+        .change-percent {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+            .change-percent.positive {
+                background: rgba(34, 197, 94, 0.3);
+                color: #86efac;
             }
 
-            .wl-pattern-period-btn.active {
-                background: #3498db;
-                color: #ffffff;
-                border-color: #3498db;
+            .change-percent.negative {
+                background: rgba(239, 68, 68, 0.3);
+                color: #fca5a5;
             }
 
+        .indices-refresh-status {
+            margin-top: 12px;
+            font-size: 12px;
+            opacity: 0.8;
+            text-align: center;
+        }
 
-        @keyframes wlPatternSpin {
-            0% {
-                transform: rotate(0deg);
+        /* Smooth fade-in for the main header text */
+        #pageHeaderTitle {
+            opacity: 0;
+            animation: kpHeaderFadeIn 0.35s ease-out forwards;
+        }
+
+        @keyframes kpHeaderFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-2px);
             }
 
-            100% {
-                transform: rotate(360deg);
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        /* ----- Responsive tweaks ----- */
+        /* ----- Responsive adjustments ----- */
         @media (max-width: 1100px) {
             .chart-controls {
                 grid-template-columns: repeat(3, minmax(160px, 1fr));
@@ -1854,7 +1609,6 @@
         }
     </style>
 </head>
-
 <body>
 <div class="wrap">
 
