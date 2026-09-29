@@ -252,21 +252,74 @@ def scrape_ipomarkets_page(base_url, page=1):
         return [], False
 
 
-def scrape_all_ipomarkets_pages(base_url):
-    """Scrape all pages from IPOMarkets"""
-    all_ipos = []
-    page = 1
+def scrape_ipomarkets_page(base_url, page):
+    """Scrape a single page from IPOMarkets - UPDATED to extract URL"""
+    url = f"{base_url}?page={page}" if page > 1 else base_url
     
-    while page <= 10:
-        ipos, has_more = scrape_ipomarkets_page(base_url, page)
-        if not ipos:
-            break
-        all_ipos.extend(ipos)
-        if not has_more:
-            break
-        page += 1
+    response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+    response.raise_for_status()
     
-    return all_ipos
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Find the IPO table
+    table = soup.find('table', class_=lambda c: c and 'ipo' in c.lower())
+    if not table:
+        table = soup.find('table')
+    
+    if not table:
+        return [], False
+    
+    rows = table.find_all('tr')[1:]  # Skip header
+    
+    ipos = []
+    for row in rows:
+        cells = row.find_all(['td', 'th'])
+        if len(cells) >= 5:
+            # EXTRACT COMPANY NAME AND URL
+            company_cell = cells[0] if len(cells) > 0 else None
+            
+            company_name = ''
+            company_url = None
+            
+            if company_cell:
+                company_link = company_cell.find('a')
+                if company_link:
+                    company_name = company_link.get_text(strip=True)
+                    href = company_link.get('href')
+                    if href:
+                        if href.startswith('/'):
+                            company_url = 'https://ipomarkets.com' + href
+                        elif href.startswith('http'):
+                            company_url = href
+                        else:
+                            company_url = 'https://ipomarkets.com/' + href
+                else:
+                    company_name = company_cell.get_text(strip=True)
+            
+            if not company_name:
+                continue
+            
+            cell_texts = [cell.get_text(strip=True) for cell in cells]
+            
+            ipo_data = {
+                'company': company_name,
+                'company_url': company_url,  # ← NEW
+                'listing_date': cell_texts[1] if len(cell_texts) > 1 else '',
+                'issue_price': cell_texts[2] if len(cell_texts) > 2 else '',
+                'listed_price': cell_texts[3] if len(cell_texts) > 3 else '',
+                'gain_pct': cell_texts[4] if len(cell_texts) > 4 else '',
+                'subscription': cell_texts[5] if len(cell_texts) > 5 else '',
+                'gmp': cell_texts[6] if len(cell_texts) > 6 else '',
+                'status': 'listed'  # Or your existing status logic
+            }
+            
+            ipos.append(ipo_data)
+    
+    # Check if there's a next page
+    has_more = soup.find('a', class_='next') is not None
+    
+    return ipos, has_more
+
 
 
 def calculate_subscription_analysis(ipos):
