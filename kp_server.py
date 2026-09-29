@@ -267,7 +267,6 @@ def scrape_ipomarkets_page(base_url, page=1):
         traceback.print_exc()
         return [], False
 
-
 def scrape_all_ipomarkets_pages(base_url):
     """Scrape all pages from IPOMarkets"""
     all_ipos = []
