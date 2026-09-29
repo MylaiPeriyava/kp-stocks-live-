@@ -220,16 +220,22 @@ def scrape_ipomarkets_page(base_url, page=1):
                 else:
                     final_status = 'listed'
                 
+                # Clean subscription: remove "exchange basis" and ensure single 'x'
+                sub_clean = subscription.replace('×', 'x')
+                if 'x' in sub_clean:
+                    # Take only the part before 'x', then add single 'x'
+                    sub_clean = sub_clean.split('x')[0] + 'x'
+                
                 ipos.append({
                     'company': company,
-                    'company_url': company_url,  # ← ADDED THIS
+                    'company_url': company_url,
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
                     'listing_price': listing_price,
                     'listing_gain': listing_gain,
                     'close_gain': '',
-                    'subscription': subscription.replace('×', 'x'),
+                    'subscription': sub_clean,
                     'gmp': gmp.replace('₹', ''),
                     'ai_prediction': '',
                     'issue_size': '',
