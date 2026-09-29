@@ -211,7 +211,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - FIXED LOGIC
+                # Determine status - IMPROVED LOGIC
                 status_lower = status.lower()
                 
                 if 'listed' in status_lower:
@@ -250,7 +250,7 @@ def scrape_ipomarkets_page(base_url, page=1):
             has_more = True
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        if soup.find('button', string=lambda t: t and 'next' in t.lower()):
+        if soup.find('button', string=lambda t: t and 'next' in h.lower()):
             has_more = True
         pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
         if pagination:
@@ -273,7 +273,6 @@ def scrape_ipomarkets_page(base_url, page=1):
         import traceback
         traceback.print_exc()
         return [], False
-
 
 
 def scrape_all_ipomarkets_pages(base_url):
