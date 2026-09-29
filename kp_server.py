@@ -211,19 +211,21 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status
-                if 'Listed' in status:
+                # Determine status - FIXED LOGIC
+                status_lower = status.lower()
+                
+                if 'listed' in status_lower:
                     final_status = 'listed'
-                elif 'Allotment awaited' in status or 'allotted' in status.lower():
+                elif 'allotment' in status_lower or 'allotted' in status_lower:
                     final_status = 'open'
-                elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
-                    final_status = 'upcoming'
-                elif 'Opens' in status:
-                    final_status = 'upcoming'
-                elif 'upcoming' in status.lower():
+                elif 'closes' in status_lower or 'opens' in status_lower:
                     final_status = 'upcoming'
                 else:
-                    final_status = 'listed'
+                    # If it has listing gain/price data, it's listed
+                    if listing_gain or (listing_price and listing_price != ''):
+                        final_status = 'listed'
+                    else:
+                        final_status = 'upcoming'
                 
                 ipos.append({
                     'company': company,
@@ -271,6 +273,7 @@ def scrape_ipomarkets_page(base_url, page=1):
         import traceback
         traceback.print_exc()
         return [], False
+
 
 
 def scrape_all_ipomarkets_pages(base_url):
