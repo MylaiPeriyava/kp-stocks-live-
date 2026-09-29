@@ -132,7 +132,7 @@ def calculate_ema(close_values, period):
 # ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
-    """Scrape a single page from IPOMarkets.com"""
+    """Scrape a single page from IPOMarkets.com - UPDATED to extract URL"""
     try:
         if page == 1:
             url = base_url
@@ -155,7 +155,28 @@ def scrape_ipomarkets_page(base_url, page=1):
         for row in rows:
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 7:
-                company_raw = cells[0].get_text(strip=True)
+                # EXTRACT COMPANY NAME AND URL
+                company_cell = cells[0]
+                company_link = company_cell.find('a')
+                
+                company_name = ''
+                company_url = None
+                
+                if company_link:
+                    company_name = company_link.get_text(strip=True)
+                    href = company_link.get('href')
+                    if href:
+                        if href.startswith('/'):
+                            company_url = 'https://ipomarkets.com' + href
+                        elif href.startswith('http'):
+                            company_url = href
+                        else:
+                            company_url = 'https://ipomarkets.com/' + href
+                else:
+                    company_name = company_cell.get_text(strip=True)
+                
+                company_raw = company_name
+                
                 if not company_raw:
                     continue
                 
@@ -190,23 +211,25 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - FIXED LOGIC (PROPERLY INDENTED)
-                if 'Listed' in status:
+                # Determine status - FIXED LOGIC
+                status_lower = status.lower()
+                
+                if 'listed' in status_lower:
                     final_status = 'listed'
-                elif 'Allotment awaited' in status or 'allotted' in status.lower():
+                elif 'allotment' in status_lower or 'allotted' in status_lower:
                     final_status = 'open'
-                elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
-                    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
-                    final_status = 'upcoming'
-                elif 'Opens' in status:
-                    final_status = 'upcoming'
-                elif 'upcoming' in status.lower():
+                elif 'closes' in status_lower or 'opens' in status_lower:
                     final_status = 'upcoming'
                 else:
-                    final_status = 'listed'
+                    # If it has listing gain/price data, it's listed
+                    if listing_gain or (listing_price and listing_price != ''):
+                        final_status = 'listed'
+                    else:
+                        final_status = 'upcoming'
                 
                 ipos.append({
                     'company': company,
+                    'company_url': company_url,
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
@@ -252,6 +275,7 @@ def scrape_ipomarkets_page(base_url, page=1):
         return [], False
 
 
+
 def scrape_all_ipomarkets_pages(base_url):
     """Scrape all pages from IPOMarkets"""
     all_ipos = []
@@ -284,7 +308,11 @@ def calculate_subscription_analysis(ipos):
             if not sub_str:
                 return 0
             try:
-                return float(sub_str.replace('x', '').strip())
+                # Clean and parse subscription
+                clean_sub = str(sub_str).replace('×', 'x').replace('—', '').strip()
+                if not clean_sub:
+                    return 0
+                return float(clean_sub.replace('x', '').strip())
             except:
                 return 0
         
@@ -1286,6 +1314,7 @@ def delete_trade():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+
 @app.route("/research-ideas")
 def research_ideas():
     """Scrape Screener.in delivery volume increase screen"""
@@ -1320,7 +1349,25 @@ def research_ideas():
                     if len(cell_texts) > 1 and cell_texts[1].lower() in ['company', 'name']:
                         continue
                     
-                    company = cell_texts[1] if len(cell_texts) > 1 else ''
+                    # EXTRACT COMPANY NAME AND URL
+                    company_cell = cells[1] if len(cells) > 1 else None
+                    
+                    company_name = ''
+                    company_url = None
+                    
+                    if company_cell:
+                        company_name = company_cell.get_text(strip=True)
+                        # Extract href from the <a> tag
+                        company_link = company_cell.find('a')
+                        if company_link and company_link.get('href'):
+                            company_url = 'https://www.screener.in' + company_link.get('href')
+                        else:
+                            company_url = None
+                    else:
+                        company_name = ''
+                        company_url = None
+                    
+                    company = company_name
                     
                     if not company:
                         continue
@@ -1341,7 +1388,7 @@ def research_ideas():
                     vol_1d = parse_vol(vol_1d_raw)
                     avg_vol_1w = parse_vol(avg_vol_1w_raw)
                     
-                    print(f"  {company}: Vol={vol_1d_raw} ({vol_1d}), Avg={avg_vol_1w_raw} ({avg_vol_1w})")
+                    print(f"  {company}: Vol={vol_1d_raw} ({vol_1d}), Avg={avg_vol_1w_raw} ({avg_vol_1w}), URL={company_url}")
                     
                     # Calculate volume ratio
                     if avg_vol_1w > 0 and vol_1d > 0:
@@ -1352,31 +1399,45 @@ def research_ideas():
                             cmp = cell_texts[2] if len(cell_texts) > 2 else '-'
                             all_stocks.append({
                                 'symbol': company,
+                                'company_url': company_url,
                                 'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
                                 'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
             
-            # Check if there's a next page
-            next_page = soup.find('a', string='Next')
+            # Check if there's a next page - FIXED DETECTION
+            next_page = soup.find('a', href=lambda h: h and '?page=' in h and 'Next' in h)
+            if not next_page:
+                # Fallback: check for any ?page= link
+                page_links = soup.find_all('a', href=lambda h: h and '?page=' in h)
+                if page_links:
+                    next_page = page_links[-1]
+            
             if not next_page:
                 print(f"No more pages after {page}")
                 break
         
         print(f"Total stocks with volume spike: {len(all_stocks)}")
         
-        # Sort by volume ratio (highest first) and return top 20
-        all_stocks.sort(key=lambda x: float(x['reason'].split(':')[1].split('x')[0].strip()), reverse=True)
+        # Remove duplicates (keep first occurrence)
+        seen = set()
+        unique_stocks = []
+        for stock in all_stocks:
+            if stock['symbol'] not in seen:
+                seen.add(stock['symbol'])
+                unique_stocks.append(stock)
         
-        return jsonify(all_stocks[:20])
+        print(f"Unique stocks after dedup: {len(unique_stocks)}")
+        
+        # Sort by volume ratio (highest first) and return ALL unique stocks
+        unique_stocks.sort(key=lambda x: float(x['reason'].split(':')[1].split('x')[0].strip()), reverse=True)
+        
+        return jsonify(unique_stocks)
         
     except Exception as e:
         print(f'Error in /research-ideas: {e}')
         import traceback
         traceback.print_exc()
         return jsonify([])
-
-
-
 
 
 if __name__ == "__main__":
