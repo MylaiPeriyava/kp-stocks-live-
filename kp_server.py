@@ -155,9 +155,24 @@ def scrape_ipomarkets_page(base_url, page=1):
         for row in rows:
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 7:
-                company_raw = cells[0].get_text(strip=True)
+                # Get the company cell
+                company_cell = cells[0]
+                
+                # Extract company name
+                company_raw = company_cell.get_text(strip=True)
                 if not company_raw:
                     continue
+                
+                # Extract company URL from the <a> tag
+                company_url = None
+                company_link = company_cell.find('a')
+                if company_link and company_link.get('href'):
+                    href = company_link.get('href')
+                    # Convert relative URL to absolute
+                    if href.startswith('/'):
+                        company_url = 'https://ipomarkets.com' + href
+                    else:
+                        company_url = href
                 
                 if 'Mainboard' in company_raw:
                     company = company_raw.replace('Mainboard', '').strip()
@@ -207,6 +222,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                 
                 ipos.append({
                     'company': company,
+                    'company_url': company_url,  # ← ADDED THIS
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
