@@ -1322,7 +1322,25 @@ def research_ideas():
                     if len(cell_texts) > 1 and cell_texts[1].lower() in ['company', 'name']:
                         continue
                     
-                    company = cell_texts[1] if len(cell_texts) > 1 else ''
+                    # EXTRACT COMPANY NAME AND URL
+                    company_cell = cells[1] if len(cells) > 1 else None
+                    
+                    company_name = ''
+                    company_url = None
+                    
+                    if company_cell:
+                        company_name = company_cell.get_text(strip=True)
+                        # Extract href from the <a> tag
+                        company_link = company_cell.find('a')
+                        if company_link and company_link.get('href'):
+                            company_url = 'https://www.screener.in' + company_link.get('href')
+                        else:
+                            company_url = None
+                    else:
+                        company_name = ''
+                        company_url = None
+                    
+                    company = company_name
                     
                     if not company:
                         continue
@@ -1343,7 +1361,7 @@ def research_ideas():
                     vol_1d = parse_vol(vol_1d_raw)
                     avg_vol_1w = parse_vol(avg_vol_1w_raw)
                     
-                    print(f"  {company}: Vol={vol_1d_raw} ({vol_1d}), Avg={avg_vol_1w_raw} ({avg_vol_1w})")
+                    print(f"  {company}: Vol={vol_1d_raw} ({vol_1d}), Avg={avg_vol_1w_raw} ({avg_vol_1w}), URL={company_url}")
                     
                     # Calculate volume ratio
                     if avg_vol_1w > 0 and vol_1d > 0:
@@ -1354,6 +1372,7 @@ def research_ideas():
                             cmp = cell_texts[2] if len(cell_texts) > 2 else '-'
                             all_stocks.append({
                                 'symbol': company,
+                                'company_url': company_url,  # ← NEW
                                 'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
                                 'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
@@ -1385,15 +1404,13 @@ def research_ideas():
         # Sort by volume ratio (highest first) and return ALL unique stocks
         unique_stocks.sort(key=lambda x: float(x['reason'].split(':')[1].split('x')[0].strip()), reverse=True)
         
-        return jsonify(unique_stocks)  # ← Return ALL (not just 20)
+        return jsonify(unique_stocks)
         
     except Exception as e:
         print(f'Error in /research-ideas: {e}')
         import traceback
         traceback.print_exc()
         return jsonify([])
-
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
