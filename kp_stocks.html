@@ -7476,8 +7476,31 @@ window.showSection = function (sectionId) {
         // Initialize chart and start auto-refresh
         onChartIntervalChange();
         startAutoRefresh();
-    });
 
+        // Initialize portfolio targets table
+        if (typeof computeAndRenderPortfolioTargets === 'function') {
+            const requiredPercent = parseFloat(document.getElementById('targetPercent')?.value) || 0;
+            computeAndRenderPortfolioTargets(requiredPercent);
+        }
+
+        // Add listener to target percent input to update table
+        const targetPercentInput = document.getElementById('targetPercent');
+        if (targetPercentInput) {
+            targetPercentInput.addEventListener('input', function () {
+                const requiredPercent = parseFloat(this.value) || 0;
+                if (typeof computeAndRenderPortfolioTargets === 'function') {
+                    computeAndRenderPortfolioTargets(requiredPercent);
+                }
+            });
+        }
+
+        // Update stop loss after initial load
+        setTimeout(() => {
+            if (typeof updateStopLossTable === 'function') {
+                updateStopLossTable();
+            }
+        }, 100);
+    });
 
 </script>
 </body>
