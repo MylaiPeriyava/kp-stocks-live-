@@ -132,7 +132,7 @@ def calculate_ema(close_values, period):
 # ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
-    """Scrape a single page from IPOMarkets.com - FIXED with company_url and case-insensitive status"""
+    """Scrape a single page from IPOMarkets.com - MINIMAL CHANGE"""
     try:
         if page == 1:
             url = base_url
@@ -155,27 +155,8 @@ def scrape_ipomarkets_page(base_url, page=1):
         for row in rows:
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 7:
-                # EXTRACT COMPANY NAME AND URL
-                company_cell = cells[0]
-                company_link = company_cell.find('a')
-                
-                company_name = ''
-                company_url = None
-                
-                if company_link:
-                    company_name = company_link.get_text(strip=True)
-                    href = company_link.get('href')
-                    if href:
-                        if href.startswith('/'):
-                            company_url = 'https://ipomarkets.com' + href
-                        elif href.startswith('http'):
-                            company_url = href
-                        else:
-                            company_url = 'https://ipomarkets.com/' + href
-                else:
-                    company_name = company_cell.get_text(strip=True)
-                
-                company_raw = company_name
+                # OLD LOGIC - JUST GET TEXT
+                company_raw = cells[0].get_text(strip=True)
                 
                 if not company_raw:
                     continue
@@ -186,6 +167,13 @@ def scrape_ipomarkets_page(base_url, page=1):
                     continue
                 else:
                     company = company_raw
+                
+                # NEW: EXTRACT URL
+                company_link = cells[0].find('a')
+                company_url = None
+                if company_link and company_link.get('href'):
+                    href = company_link.get('href')
+                    company_url = 'https://ipomarkets.com' + href if href.startswith('/') else href
                 
                 status = cells[1].get_text(strip=True)
                 price_band = cells[2].get_text(strip=True)
@@ -211,7 +199,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - CASE INSENSITIVE + FALLBACK TO LISTING DATA
+                # Determine status - CASE INSENSITIVE + FALLBACK
                 status_lower = status.lower()
                 
                 if 'listed' in status_lower:
@@ -221,7 +209,6 @@ def scrape_ipomarkets_page(base_url, page=1):
                 elif 'closes' in status_lower or 'opens' in status_lower:
                     final_status = 'upcoming'
                 else:
-                    # If it has listing gain/price data, it's listed
                     if listing_gain or (listing_price and listing_price != ''):
                         final_status = 'listed'
                     else:
