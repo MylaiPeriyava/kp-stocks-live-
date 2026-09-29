@@ -196,7 +196,6 @@ def scrape_ipomarkets_page(base_url, page=1):
                 elif 'Allotment awaited' in status or 'allotted' in status.lower():
                     final_status = 'open'
                 elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
-                    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
                     final_status = 'upcoming'
                 elif 'Opens' in status:
                     final_status = 'upcoming'
@@ -207,6 +206,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                 
                 ipos.append({
                     'company': company,
+                    'company_url': None,  # ← ONLY CHANGE: ADDED THIS
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
@@ -227,7 +227,7 @@ def scrape_ipomarkets_page(base_url, page=1):
             has_more = True
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        if soup.find('button', string=lambda t: t and 'next' in t.lower()):
+        if soup.find('button', string=lambda t: t and 'next' in h.lower()):
             has_more = True
         pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
         if pagination:
@@ -296,14 +296,13 @@ def calculate_subscription_analysis(ipos):
             # Count IPOs with gain (including 0%)
             gain_count = 0
             for ipo in matched:
-                if ipo['listing_gain']:  # Has gain data (0% or positive)
+                if ipo['listing_gain']:
                     try:
                         gain = float(ipo['listing_gain'].replace('+', '').replace('%', ''))
-                        if gain >= 0:  # 0% or positive = gain
+                        if gain >= 0:
                             gain_count += 1
                     except:
                         pass
-                # If listing_gain is empty/blank = LOSS (don't count)
             
             total = len(matched)
             gain_percentage = round((gain_count / total) * 100, 2) if total > 0 else 0
@@ -366,7 +365,6 @@ def get_ipo_data():
         print(f'  - Open: {len([i for i in unique_ipos if i["status"]=="open"])}')
         print(f'  - Upcoming: {len([i for i in unique_ipos if i["status"]=="upcoming"])}')
         
-        # Calculate subscription analysis
         analysis = calculate_subscription_analysis(unique_ipos)
         
         print('\n=== SUBSCRIPTION ANALYSIS ===')
@@ -1287,7 +1285,6 @@ def delete_trade():
         return jsonify({"error": str(error)}), 500
 
 
-
 @app.route("/research-ideas")
 def research_ideas():
     """Scrape Screener.in delivery volume increase screen"""
@@ -1295,7 +1292,6 @@ def research_ideas():
         all_stocks = []
         base_url = "https://www.screener.in/screens/2241244/delivery-volume-increase/"
         
-        # Scrape all pages (up to 10 pages for safety)
         for page in range(1, 11):
             url = f"{base_url}?page={page}" if page > 1 else base_url
             print(f"Scraping Screener.in page {page}: {url}")
@@ -1310,19 +1306,16 @@ def research_ideas():
                 print(f"No table found on page {page}")
                 break
             
-            rows = table.find_all('tr')[1:]  # Skip header
+            rows = table.find_all('tr')[1:]
             
             for row in rows:
                 cells = row.find_all(['td', 'th'])
                 if len(cells) >= 14:
-                    # Get all cell texts
                     cell_texts = [cell.get_text(strip=True) for cell in cells]
                     
-                    # Skip header rows
                     if len(cell_texts) > 1 and cell_texts[1].lower() in ['company', 'name']:
                         continue
                     
-                    # EXTRACT COMPANY NAME AND URL
                     company_cell = cells[1] if len(cells) > 1 else None
                     
                     company_name = ''
@@ -1330,27 +1323,18 @@ def research_ideas():
                     
                     if company_cell:
                         company_name = company_cell.get_text(strip=True)
-                        # Extract href from the <a> tag
                         company_link = company_cell.find('a')
                         if company_link and company_link.get('href'):
                             company_url = 'https://www.screener.in' + company_link.get('href')
-                        else:
-                            company_url = None
-                    else:
-                        company_name = ''
-                        company_url = None
                     
                     company = company_name
                     
                     if not company:
                         continue
                     
-                    # CORRECT COLUMN INDICES:
-                    # Vol 1d = index 11, Avg Vol 1Wk = index 12
                     vol_1d_raw = cell_texts[11] if len(cell_texts) > 11 else '0'
                     avg_vol_1w_raw = cell_texts[12] if len(cell_texts) > 12 else '0'
                     
-                    # Parse volume numbers
                     def parse_vol(v):
                         v = v.replace(',', '').strip()
                         try:
@@ -1363,24 +1347,20 @@ def research_ideas():
                     
                     print(f"  {company}: Vol={vol_1d_raw} ({vol_1d}), Avg={avg_vol_1w_raw} ({avg_vol_1w}), URL={company_url}")
                     
-                    # Calculate volume ratio
                     if avg_vol_1w > 0 and vol_1d > 0:
                         vol_ratio = vol_1d / avg_vol_1w
                         
-                        # Only include if volume is actually higher (ratio > 1)
                         if vol_ratio > 1:
                             cmp = cell_texts[2] if len(cell_texts) > 2 else '-'
                             all_stocks.append({
                                 'symbol': company,
-                                'company_url': company_url,  # ← NEW
+                                'company_url': company_url,
                                 'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
                                 'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
             
-            # Check if there's a next page - FIXED DETECTION
             next_page = soup.find('a', href=lambda h: h and '?page=' in h and 'Next' in h)
             if not next_page:
-                # Fallback: check for any ?page= link
                 page_links = soup.find_all('a', href=lambda h: h and '?page=' in h)
                 if page_links:
                     next_page = page_links[-1]
@@ -1391,7 +1371,6 @@ def research_ideas():
         
         print(f"Total stocks with volume spike: {len(all_stocks)}")
         
-        # Remove duplicates (keep first occurrence)
         seen = set()
         unique_stocks = []
         for stock in all_stocks:
@@ -1401,7 +1380,6 @@ def research_ideas():
         
         print(f"Unique stocks after dedup: {len(unique_stocks)}")
         
-        # Sort by volume ratio (highest first) and return ALL unique stocks
         unique_stocks.sort(key=lambda x: float(x['reason'].split(':')[1].split('x')[0].strip()), reverse=True)
         
         return jsonify(unique_stocks)
@@ -1411,6 +1389,7 @@ def research_ideas():
         import traceback
         traceback.print_exc()
         return jsonify([])
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
