@@ -1510,6 +1510,15 @@
             }
         }
 
+        /* ----- Section visibility control ----- */
+        .section-block {
+            display: none !important;
+        }
+
+            .section-block.active {
+                display: block !important;
+            }
+
         /* ----- Responsive adjustments ----- */
         @media (max-width: 1100px) {
             .chart-controls {
@@ -1609,6 +1618,7 @@
         }
     </style>
 </head>
+
 <body>
 <div class="wrap">
 
