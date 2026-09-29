@@ -132,7 +132,7 @@ def calculate_ema(close_values, period):
 # ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
-    """Scrape a single page from IPOMarkets.com - CASE INSENSITIVE STATUS"""
+    """Scrape a single page from IPOMarkets.com - WITH company_url"""
     try:
         if page == 1:
             url = base_url
@@ -166,6 +166,13 @@ def scrape_ipomarkets_page(base_url, page=1):
                 else:
                     company = company_raw
                 
+                # EXTRACT COMPANY URL - MINIMAL ADDITION
+                company_link = cells[0].find('a')
+                company_url = None
+                if company_link and company_link.get('href'):
+                    href = company_link.get('href')
+                    company_url = 'https://ipomarkets.com' + href if href.startswith('/') else href
+                
                 status = cells[1].get_text(strip=True)
                 price_band = cells[2].get_text(strip=True)
                 gmp = cells[3].get_text(strip=True)
@@ -190,25 +197,23 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - CASE INSENSITIVE (FIXED)
-                status_lower = status.lower()
-                
-                if 'listed' in status_lower:
+                # Determine status - EXACT OLD LOGIC (WORKING)
+                if 'Listed' in status:
                     final_status = 'listed'
-                elif 'Allotment awaited' in status or 'allotted' in status_lower:
+                elif 'Allotment awaited' in status or 'allotted' in status.lower():
                     final_status = 'open'
                 elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
                     final_status = 'upcoming'
                 elif 'Opens' in status:
                     final_status = 'upcoming'
-                elif 'upcoming' in status_lower:
+                elif 'upcoming' in status.lower():
                     final_status = 'upcoming'
                 else:
                     final_status = 'listed'
                 
                 ipos.append({
                     'company': company,
-                    'company_url': None,  # ← Keep as None for now
+                    'company_url': company_url,  # ← ONLY CHANGE: ADDED THIS LINE
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
