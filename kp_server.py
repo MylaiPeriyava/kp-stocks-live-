@@ -132,7 +132,7 @@ def calculate_ema(close_values, period):
 # ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
-    """Scrape a single page from IPOMarkets.com"""
+    """Scrape a single page from IPOMarkets.com - FIXED with company_url and case-insensitive status"""
     try:
         if page == 1:
             url = base_url
@@ -155,7 +155,28 @@ def scrape_ipomarkets_page(base_url, page=1):
         for row in rows:
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 7:
-                company_raw = cells[0].get_text(strip=True)
+                # EXTRACT COMPANY NAME AND URL
+                company_cell = cells[0]
+                company_link = company_cell.find('a')
+                
+                company_name = ''
+                company_url = None
+                
+                if company_link:
+                    company_name = company_link.get_text(strip=True)
+                    href = company_link.get('href')
+                    if href:
+                        if href.startswith('/'):
+                            company_url = 'https://ipomarkets.com' + href
+                        elif href.startswith('http'):
+                            company_url = href
+                        else:
+                            company_url = 'https://ipomarkets.com/' + href
+                else:
+                    company_name = company_cell.get_text(strip=True)
+                
+                company_raw = company_name
+                
                 if not company_raw:
                     continue
                 
@@ -190,23 +211,25 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - FIXED LOGIC (PROPERLY INDENTED)
-                if 'Listed' in status:
+                # Determine status - CASE INSENSITIVE + FALLBACK TO LISTING DATA
+                status_lower = status.lower()
+                
+                if 'listed' in status_lower:
                     final_status = 'listed'
-                elif 'Allotment awaited' in status or 'allotted' in status.lower():
+                elif 'allotment' in status_lower or 'allotted' in status_lower:
                     final_status = 'open'
-                elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
-                    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
-                    final_status = 'upcoming'
-                elif 'Opens' in status:
-                    final_status = 'upcoming'
-                elif 'upcoming' in status.lower():
+                elif 'closes' in status_lower or 'opens' in status_lower:
                     final_status = 'upcoming'
                 else:
-                    final_status = 'listed'
+                    # If it has listing gain/price data, it's listed
+                    if listing_gain or (listing_price and listing_price != ''):
+                        final_status = 'listed'
+                    else:
+                        final_status = 'upcoming'
                 
                 ipos.append({
                     'company': company,
+                    'company_url': company_url,
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
@@ -227,7 +250,7 @@ def scrape_ipomarkets_page(base_url, page=1):
             has_more = True
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        if soup.find('button', string=lambda t: t and 'next' in t.lower()):
+        if soup.find('button', string=lambda t: t and 'next' in h.lower()):
             has_more = True
         pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
         if pagination:
@@ -250,6 +273,7 @@ def scrape_ipomarkets_page(base_url, page=1):
         import traceback
         traceback.print_exc()
         return [], False
+
 
 
 def scrape_all_ipomarkets_pages(base_url):
