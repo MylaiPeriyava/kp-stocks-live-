@@ -7181,10 +7181,6 @@ window.showSection = function (sectionId) {
         alert(`Analysis for ${symbol} will be shown here in a popup/new window.\n\nFuture features:\n- Chart patterns\n- Volume analysis\n- Price targets\n- Support/Resistance levels`);
     }
 
-    // Load IPO data on page load
-    document.addEventListener('DOMContentLoaded', function () {
-        loadIPOData();
-    });
 
     function displayAnalysis(analysis) {
         const analysisDiv = document.getElementById('ipo-analysis');
@@ -7449,14 +7445,27 @@ window.showSection = function (sectionId) {
         await refreshIndices();
     };
 
-    // Load indices on page load
     document.addEventListener('DOMContentLoaded', function () {
-        // Existing load code...
+        // Hide all sections, show only holdings
+        document.querySelectorAll('.section-block').forEach(el => el.classList.remove('active'));
+        const holdingsBlock = document.getElementById('holdingsSection')?.closest('.section-block');
+        if (holdingsBlock) {
+            holdingsBlock.classList.add('active');
+        }
 
-        // Add indices refresh after initial load
+        // Load initial data
+        loadHoldings();
+        refreshWishlist(true);
+        loadIPOData();
+
+        // Load indices after 2 seconds
         setTimeout(() => {
             refreshIndices();
         }, 2000);
+
+        // Initialize chart and start auto-refresh
+        onChartIntervalChange();
+        startAutoRefresh();
     });
 
 
