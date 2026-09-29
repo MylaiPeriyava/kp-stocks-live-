@@ -488,19 +488,36 @@ def get_price():
     symbol = request.args.get("symbol", "").strip()
     if not symbol:
         return jsonify({"error": "symbol parameter required"}), 400
-    yahoo_symbol = to_yahoo_symbol(symbol)
+    
+    # Handle index symbols (like ^NSEI, ^BSESN)
+    if symbol.startswith('^'):
+        yahoo_symbol = symbol
+    else:
+        yahoo_symbol = to_yahoo_symbol(symbol)
+    
     try:
         ticker = yf.Ticker(yahoo_symbol)
         fast_info = ticker.fast_info
         last_price = safe_number(fast_info.get("lastPrice"))
+        previous_close = safe_number(fast_info.get("previousClose"))
+        
         if last_price is None:
             info = ticker.info
             last_price = safe_number(info.get("regularMarketPrice") or info.get("currentPrice"))
+            previous_close = safe_number(info.get("regularMarketPreviousClose") or info.get("previousClose"))
+        
         if last_price is None:
             return jsonify({"error": "price not available"}), 404
-        return jsonify({"symbol": display_nse_symbol(symbol), "yahoo_symbol": yahoo_symbol, "price": last_price})
+        
+        return jsonify({
+            "symbol": symbol,
+            "yahoo_symbol": yahoo_symbol,
+            "price": last_price,
+            "previous_close": previous_close  # ← ADDED FOR INDICES
+        })
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+
 
 
 @app.route("/analysis")
