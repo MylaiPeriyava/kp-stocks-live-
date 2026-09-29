@@ -11,6 +11,7 @@ USERS = {
 import json
 import os
 import re
+import time  # ADDED - needed for rate limiting
 from datetime import datetime
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -288,6 +289,7 @@ def scrape_all_ipomarkets_pages(base_url):
         if not has_more:
             break
         page += 1
+        time.sleep(1)  # Rate limiting
     
     return all_ipos
 
@@ -359,6 +361,7 @@ def get_ipo_data():
         print('Fetching 2026 Mainboard IPOs from IPOMarkets...')
         all_ipos = scrape_all_ipomarkets_pages('https://ipomarkets.com/ipo-calendar/2026')
         
+        print(f'>>> DEBUG: all_ipos = {all_ipos[:3] if all_ipos else []}')  # DEBUG LINE
         print(f'Total IPOs from IPOMarkets: {len(all_ipos)}')
         
         seen = set()
