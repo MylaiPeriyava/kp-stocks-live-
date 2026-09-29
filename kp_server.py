@@ -132,7 +132,7 @@ def calculate_ema(close_values, period):
 # ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
-    """Scrape a single page from IPOMarkets.com - WITH company_url"""
+    """Scrape a single page from IPOMarkets.com"""
     try:
         if page == 1:
             url = base_url
@@ -166,13 +166,6 @@ def scrape_ipomarkets_page(base_url, page=1):
                 else:
                     company = company_raw
                 
-                # EXTRACT COMPANY URL - MINIMAL ADDITION
-                company_link = cells[0].find('a')
-                company_url = None
-                if company_link and company_link.get('href'):
-                    href = company_link.get('href')
-                    company_url = 'https://ipomarkets.com' + href if href.startswith('/') else href
-                
                 status = cells[1].get_text(strip=True)
                 price_band = cells[2].get_text(strip=True)
                 gmp = cells[3].get_text(strip=True)
@@ -197,12 +190,13 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - EXACT OLD LOGIC (WORKING)
+                # Determine status - FIXED LOGIC (PROPERLY INDENTED)
                 if 'Listed' in status:
                     final_status = 'listed'
                 elif 'Allotment awaited' in status or 'allotted' in status.lower():
                     final_status = 'open'
                 elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
+                    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
                     final_status = 'upcoming'
                 elif 'Opens' in status:
                     final_status = 'upcoming'
@@ -213,7 +207,6 @@ def scrape_ipomarkets_page(base_url, page=1):
                 
                 ipos.append({
                     'company': company,
-                    'company_url': company_url,  # ← ONLY CHANGE: ADDED THIS LINE
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
@@ -234,7 +227,7 @@ def scrape_ipomarkets_page(base_url, page=1):
             has_more = True
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        if soup.find('button', string=lambda t: t and 'next' in h.lower()):
+        if soup.find('button', string=lambda t: t and 'next' in t.lower()):
             has_more = True
         pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
         if pagination:
@@ -259,41 +252,21 @@ def scrape_ipomarkets_page(base_url, page=1):
         return [], False
 
 
-
-
 def scrape_all_ipomarkets_pages(base_url):
     """Scrape all pages from IPOMarkets"""
     all_ipos = []
     page = 1
     
-    print(f"\n=== STARTING MULTI-PAGE SCRAPE ===")
-    print(f"Base URL: {base_url}")
-    
-    while page <= 10:  # Max 10 pages for safety
-        print(f"\n--- Scraping page {page} ---")
+    while page <= 10:
         ipos, has_more = scrape_ipomarkets_page(base_url, page)
-        
-        print(f"Page {page}: Got {len(ipos)} IPOs, has_more={has_more}")
-        
         if not ipos:
-            print(f"No more IPOs found, stopping")
             break
-        
         all_ipos.extend(ipos)
-        
         if not has_more:
-            print(f"No 'next' page found, stopping")
             break
-        
         page += 1
-        time.sleep(1)  # Rate limiting
-    
-    print(f"\n=== SCRAPE COMPLETE ===")
-    print(f"Total pages: {page}")
-    print(f"Total IPOs: {len(all_ipos)}")
     
     return all_ipos
-
 
 
 def calculate_subscription_analysis(ipos):
