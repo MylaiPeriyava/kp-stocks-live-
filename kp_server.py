@@ -227,7 +227,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                 
                 ipos.append({
                     'company': company,
-                    'company_url': company_url,  # ← NEW
+                    'company_url': company_url,
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
@@ -272,15 +272,28 @@ def scrape_ipomarkets_page(base_url, page=1):
         traceback.print_exc()
         return [], False
 
+
+def scrape_all_ipomarkets_pages(base_url):
+    """Scrape all pages from IPOMarkets"""
+    all_ipos = []
+    page = 1
+    
+    while page <= 10:
+        ipos, has_more = scrape_ipomarkets_page(base_url, page)
+        if not ipos:
+            break
+        all_ipos.extend(ipos)
+        if not has_more:
+            break
+        page += 1
+    
+    return all_ipos
+
+
 def calculate_subscription_analysis(ipos):
     """Calculate % of IPOs with listing gain at different subscription thresholds"""
     thresholds = [25, 20, 15, 10, 5]
     results = {}
-    
-    # DEBUG
-    print(f"DEBUG: Total IPOs for analysis: {len(ipos)}")
-    listed_count = len([ipo for ipo in ipos if ipo['status'] == 'listed'])
-    print(f"DEBUG: Listed IPOs: {listed_count}")
     
     for threshold in thresholds:
         # Filter listed IPOs with subscription data
@@ -288,14 +301,12 @@ def calculate_subscription_analysis(ipos):
                    if ipo['status'] == 'listed' 
                    and ipo['subscription']]
         
-        print(f"DEBUG: Threshold {threshold}x - Filtered: {len(filtered)}")
-        
         def parse_subscription(sub_str):
             if not sub_str:
                 return 0
             try:
-                # Handle "—" or empty strings
-                clean_sub = sub_str.replace('×', 'x').replace('—', '').strip()
+                # Clean and parse subscription
+                clean_sub = str(sub_str).replace('×', 'x').replace('—', '').strip()
                 if not clean_sub:
                     return 0
                 return float(clean_sub.replace('x', '').strip())
@@ -305,8 +316,6 @@ def calculate_subscription_analysis(ipos):
         # Filter by subscription threshold
         matched = [ipo for ipo in filtered 
                   if parse_subscription(ipo['subscription']) >= threshold]
-        
-        print(f"DEBUG: Threshold {threshold}x - Matched: {len(matched)}")
         
         if matched:
             # Count IPOs with gain (including 0%)
@@ -335,7 +344,6 @@ def calculate_subscription_analysis(ipos):
         }
     
     return results
-
 
 
 @app.route("/ipo-data")
@@ -383,11 +391,6 @@ def get_ipo_data():
         print(f'  - Open: {len([i for i in unique_ipos if i["status"]=="open"])}')
         print(f'  - Upcoming: {len([i for i in unique_ipos if i["status"]=="upcoming"])}')
         
-        # DEBUG: Print first 5 IPOs
-        print('\nDEBUG: First 5 IPOs:')
-        for i, ipo in enumerate(unique_ipos[:5]):
-            print(f'  {i}: {ipo["company"]}, status={ipo["status"]}, subscription={ipo["subscription"]}, listing_gain={ipo["listing_gain"]}')
-        
         # Calculate subscription analysis
         analysis = calculate_subscription_analysis(unique_ipos)
         
@@ -405,7 +408,6 @@ def get_ipo_data():
         import traceback
         traceback.print_exc()
         return jsonify({'ipos': [], 'analysis': {}})
-
 
 
 # ============ ANAND RATHI SCREENERS (RESTORED) ============
@@ -1310,7 +1312,6 @@ def delete_trade():
         return jsonify({"error": str(error)}), 500
 
 
-
 @app.route("/research-ideas")
 def research_ideas():
     """Scrape Screener.in delivery volume increase screen"""
@@ -1395,7 +1396,7 @@ def research_ideas():
                             cmp = cell_texts[2] if len(cell_texts) > 2 else '-'
                             all_stocks.append({
                                 'symbol': company,
-                                'company_url': company_url,  # ← NEW
+                                'company_url': company_url,
                                 'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
                                 'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
@@ -1434,6 +1435,7 @@ def research_ideas():
         import traceback
         traceback.print_exc()
         return jsonify([])
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
