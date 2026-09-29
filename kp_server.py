@@ -11,7 +11,6 @@ USERS = {
 import json
 import os
 import re
-import time  # ADDED - needed for rate limiting
 from datetime import datetime
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -133,7 +132,7 @@ def calculate_ema(close_values, period):
 # ============ IPO DATA ENDPOINT (IPOMarkets - WITH ANALYSIS) ============
 
 def scrape_ipomarkets_page(base_url, page=1):
-    """Scrape a single page from IPOMarkets.com - UPDATED to extract URL"""
+    """Scrape a single page from IPOMarkets.com"""
     try:
         if page == 1:
             url = base_url
@@ -156,28 +155,7 @@ def scrape_ipomarkets_page(base_url, page=1):
         for row in rows:
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 7:
-                # EXTRACT COMPANY NAME AND URL
-                company_cell = cells[0]
-                company_link = company_cell.find('a')
-                
-                company_name = ''
-                company_url = None
-                
-                if company_link:
-                    company_name = company_link.get_text(strip=True)
-                    href = company_link.get('href')
-                    if href:
-                        if href.startswith('/'):
-                            company_url = 'https://ipomarkets.com' + href
-                        elif href.startswith('http'):
-                            company_url = href
-                        else:
-                            company_url = 'https://ipomarkets.com/' + href
-                else:
-                    company_name = company_cell.get_text(strip=True)
-                
-                company_raw = company_name
-                
+                company_raw = cells[0].get_text(strip=True)
                 if not company_raw:
                     continue
                 
@@ -212,25 +190,23 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if gain_match:
                         listing_gain = gain_match.group(1)
                 
-                # Determine status - IMPROVED LOGIC
-                status_lower = status.lower()
-                
-                if 'listed' in status_lower:
+                # Determine status - FIXED LOGIC (PROPERLY INDENTED)
+                if 'Listed' in status:
                     final_status = 'listed'
-                elif 'allotment' in status_lower or 'allotted' in status_lower:
+                elif 'Allotment awaited' in status or 'allotted' in status.lower():
                     final_status = 'open'
-                elif 'closes' in status_lower or 'opens' in status_lower:
+                elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
+                    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
+                    final_status = 'upcoming'
+                elif 'Opens' in status:
+                    final_status = 'upcoming'
+                elif 'upcoming' in status.lower():
                     final_status = 'upcoming'
                 else:
-                    # If it has listing gain/price data, it's listed
-                    if listing_gain or (listing_price and listing_price != ''):
-                        final_status = 'listed'
-                    else:
-                        final_status = 'upcoming'
+                    final_status = 'listed'
                 
                 ipos.append({
                     'company': company,
-                    'company_url': company_url,
                     'sector': '',
                     'listing_date': status,
                     'issue_price': issue_price,
@@ -251,7 +227,7 @@ def scrape_ipomarkets_page(base_url, page=1):
             has_more = True
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        if soup.find('button', string=lambda t: t and 'next' in h.lower()):
+        if soup.find('button', string=lambda t: t and 'next' in t.lower()):
             has_more = True
         pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
         if pagination:
@@ -289,7 +265,6 @@ def scrape_all_ipomarkets_pages(base_url):
         if not has_more:
             break
         page += 1
-        time.sleep(1)  # Rate limiting
     
     return all_ipos
 
@@ -309,11 +284,7 @@ def calculate_subscription_analysis(ipos):
             if not sub_str:
                 return 0
             try:
-                # Clean and parse subscription
-                clean_sub = str(sub_str).replace('×', 'x').replace('—', '').strip()
-                if not clean_sub:
-                    return 0
-                return float(clean_sub.replace('x', '').strip())
+                return float(sub_str.replace('x', '').strip())
             except:
                 return 0
         
@@ -361,7 +332,6 @@ def get_ipo_data():
         print('Fetching 2026 Mainboard IPOs from IPOMarkets...')
         all_ipos = scrape_all_ipomarkets_pages('https://ipomarkets.com/ipo-calendar/2026')
         
-        print(f'>>> DEBUG: all_ipos = {all_ipos[:3] if all_ipos else []}')  # DEBUG LINE
         print(f'Total IPOs from IPOMarkets: {len(all_ipos)}')
         
         seen = set()
@@ -1317,6 +1287,7 @@ def delete_trade():
         return jsonify({"error": str(error)}), 500
 
 
+
 @app.route("/research-ideas")
 def research_ideas():
     """Scrape Screener.in delivery volume increase screen"""
@@ -1401,7 +1372,7 @@ def research_ideas():
                             cmp = cell_texts[2] if len(cell_texts) > 2 else '-'
                             all_stocks.append({
                                 'symbol': company,
-                                'company_url': company_url,
+                                'company_url': company_url,  # ← NEW
                                 'reason': f"Volume spike: {vol_ratio:.1f}x avg (1-day vs 1-week avg)",
                                 'note': f"CMP: ₹{cmp}, Vol: {vol_1d_raw}, Avg Vol: {avg_vol_1w_raw}"
                             })
@@ -1440,7 +1411,6 @@ def research_ideas():
         import traceback
         traceback.print_exc()
         return jsonify([])
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
