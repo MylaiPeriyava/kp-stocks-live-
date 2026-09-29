@@ -288,16 +288,34 @@ def scrape_all_ipomarkets_pages(base_url):
     all_ipos = []
     page = 1
     
-    while page <= 10:
+    print(f"\n=== STARTING MULTI-PAGE SCRAPE ===")
+    print(f"Base URL: {base_url}")
+    
+    while page <= 10:  # Max 10 pages for safety
+        print(f"\n--- Scraping page {page} ---")
         ipos, has_more = scrape_ipomarkets_page(base_url, page)
+        
+        print(f"Page {page}: Got {len(ipos)} IPOs, has_more={has_more}")
+        
         if not ipos:
+            print(f"No more IPOs found, stopping")
             break
+        
         all_ipos.extend(ipos)
+        
         if not has_more:
+            print(f"No 'next' page found, stopping")
             break
+        
         page += 1
+        time.sleep(1)  # Rate limiting
+    
+    print(f"\n=== SCRAPE COMPLETE ===")
+    print(f"Total pages: {page}")
+    print(f"Total IPOs: {len(all_ipos)}")
     
     return all_ipos
+
 
 
 def calculate_subscription_analysis(ipos):
