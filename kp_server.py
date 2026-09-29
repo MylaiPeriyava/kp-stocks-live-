@@ -284,7 +284,13 @@ def calculate_subscription_analysis(ipos):
             if not sub_str:
                 return 0
             try:
-                return float(sub_str.replace('x', '').strip())
+                # Extract number before 'x' (handles "1.58xexchange basis" format)
+                sub_str = str(sub_str).strip()
+                if 'x' in sub_str:
+                    number_part = sub_str.split('x')[0]
+                else:
+                    number_part = sub_str
+                return float(number_part.strip())
             except:
                 return 0
         
