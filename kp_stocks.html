@@ -4664,30 +4664,29 @@ function resetAll() {
             const header = rows[0];
             thead.innerHTML = "<tr>" + header.map(cell => "<th>" + escapeHtml(cell) + "</th>").join("") + "</tr>";
 
-            // ✅ Check if company column exists (column 2, index 1)
-            const hasCompanyColumn = header.length >= 2 &&
-                (header[1].toLowerCase().includes("company") ||
-                    header[1].toLowerCase().includes("name") ||
-                    header[1].toLowerCase().includes("scrip"));
+            // ✅ Detect company column
+            const companyColIndex = header.findIndex(h =>
+                h.toLowerCase().includes("company") ||
+                h.toLowerCase().includes("name") ||
+                h.toLowerCase().includes("scrip")
+            );
 
             tbody.innerHTML = rows.slice(1).map(row => {
-                if (hasCompanyColumn && row.length >= 2) {
-                    // ✅ Company column - check if it already contains HTML link
-                    const companyCell = row[1];
-
-                    // ✅ If cell already has <a href=, preserve it (don't escape)
-                    if (companyCell.includes("<a href=") || companyCell.includes("<a ")) {
-                        return "<tr>" +
-                            "<td>" + escapeHtml(row[0]) + "</td>" +  // Symbol
-                            "<td>" + companyCell + "</td>" +         // Company with link (NOT escaped)
-                            row.slice(2).map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") +
-                            "</tr>";
-                    } else {
-                        // ✅ No link - render normally
-                        return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
-                    }
+                if (companyColIndex >= 0 && row.length > companyColIndex) {
+                    // ✅ Build row, preserving HTML in company column
+                    return "<tr>" +
+                        row.map((cell, idx) => {
+                            if (idx === companyColIndex && cell.includes("<a ")) {
+                                // ✅ Company column with link - render as HTML (not escaped)
+                                return "<td>" + cell + "</td>";
+                            } else {
+                                // ✅ Other columns - escape for safety
+                                return "<td>" + escapeHtml(cell) + "</td>";
+                            }
+                        }).join("") +
+                        "</tr>";
                 } else {
-                    // ✅ No company column - render all normally
+                    // ✅ No company column - escape everything
                     return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
                 }
             }).join("");
