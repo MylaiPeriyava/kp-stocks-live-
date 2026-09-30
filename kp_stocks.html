@@ -3204,47 +3204,25 @@
             <!-- IPO Listing Data -->
             <div class="section-block">
                 <section id="ipo-section" class="section-anchor">
-                    <div class="card ipo-card">
-                        <div class="ipo-title-row">
-                            <h2>📈 IPO Listing Data - Mainboard 2026</h2>
-                            <button type="button" onclick="loadIPOData()" style="padding: 6px 12px; background: #0b5cab; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; min-width: 90px;">
-                                🔄 Refresh
-                            </button>
-                        </div>
-
-                        <div class="table-wrap" style="max-height: 620px;">
-                            <table id="ipo-table" style="width: 100%; min-width: 900px; border-collapse: collapse; background: white;">
-                                <thead style="position: sticky; top: 0; z-index: 1; background: #f5f8fc;">
-                                    <tr>
-                                        <th style="padding: 8px 10px; text-align: left; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Symbol</th>
-                                        <th style="padding: 8px 10px; text-align: left; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Listing Date</th>
-                                        <th style="padding: 8px 10px; text-align: right; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Issue Price</th>
-                                        <th style="padding: 8px 10px; text-align: right; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Listed Price</th>
-                                        <th style="padding: 8px 10px; text-align: right; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Gain %</th>
-                                        <th style="padding: 8px 10px; text-align: right; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Subscription</th>
-                                        <th style="padding: 8px 10px; text-align: right; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">GMP</th>
-                                        <th style="padding: 8px 10px; text-align: left; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ipo-tbody">
-                                    <tr>
-                                        <td colspan="8" style="padding: 16px; text-align: center; color: #52606d; font-size: 14px;">
-                                            Click "Refresh" to load IPO listing data.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <p class="small" style="margin-top: 12px; color: #5c6875;">
-                            Data shows mainboard IPOs listed in 2026. Gain % is calculated from issue price to listed price.
-                            GMP (Grey Market Premium) is indicative and may vary from actual listing.
-                        </p>
-                    </div>
-
-                    <!-- Subscription Analysis Section -->
-                    <div id="ipo-analysis" style="margin-top: 16px;">
-                        <!-- Filled dynamically by JS -->
+                    <div class="card">
+                        <h2>📈 IPO Listing Data - Mainboard 2026</h2>
+                        <button onclick="loadIPOData()">🔄 Refresh</button>
+                        <table id="ipo-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Listing Date</th>
+                                    <th>Issue Price</th>
+                                    <th>Listed Price</th>
+                                    <th>Gain %</th>
+                                    <th>Subscription</th>
+                                    <th>GMP</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ipo-tbody"></tbody>
+                        </table>
+                        <div id="ipo-analysis"></div>
                     </div>
                 </section>
             </div>
