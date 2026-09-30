@@ -4664,62 +4664,30 @@ function resetAll() {
             const header = rows[0];
             thead.innerHTML = "<tr>" + header.map(cell => "<th>" + escapeHtml(cell) + "</th>").join("") + "</tr>";
 
-            // ✅ Enhanced detection - check for company/symbol in ANY header column
-            let companyColIndex = -1;
-            let symbolColIndex = 0; // Default to first column
+            // ✅ Check if company column exists (column 2, index 1)
+            const hasCompanyColumn = header.length >= 2 &&
+                (header[1].toLowerCase().includes("company") ||
+                    header[1].toLowerCase().includes("name") ||
+                    header[1].toLowerCase().includes("scrip"));
 
-            header.forEach((col, idx) => {
-                const colLower = col.toLowerCase();
-                if (colLower.includes("company")) companyColIndex = idx;
-                if (colLower.includes("symbol") || colLower.includes("scrip")) symbolColIndex = idx;
-            });
+            tbody.innerHTML = rows.slice(1).map(row => {
+                if (hasCompanyColumn && row.length >= 2) {
+                    // ✅ Company column - check if it already contains HTML link
+                    const companyCell = row[1];
 
-            console.log("Screener columns:", header);
-            console.log("Company column index:", companyColIndex);
-            console.log("Symbol column index:", symbolColIndex);
-
-            tbody.innerHTML = rows.slice(1).map((row, rowIndex) => {
-                // ✅ If we found a company column, make it clickable
-                if (companyColIndex >= 0 && row.length > companyColIndex) {
-                    const symbol = row[symbolColIndex] || "";
-                    const companyName = row[companyColIndex] || "";
-
-                    // ✅ Extract clean symbol for Yahoo Finance
-                    let yahooSymbol = symbol.replace(/[^A-Z0-9\-]/g, "").toUpperCase();
-
-                    // ✅ Fallback: try to extract from company name
-                    if (!yahooSymbol && companyName) {
-                        const match = companyName.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/);
-                        if (match) {
-                            yahooSymbol = match[1].replace(/\s+/g, "").toUpperCase();
-                        }
+                    // ✅ If cell already has <a href=, preserve it (don't escape)
+                    if (companyCell.includes("<a href=") || companyCell.includes("<a ")) {
+                        return "<tr>" +
+                            "<td>" + escapeHtml(row[0]) + "</td>" +  // Symbol
+                            "<td>" + companyCell + "</td>" +         // Company with link (NOT escaped)
+                            row.slice(2).map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") +
+                            "</tr>";
+                    } else {
+                        // ✅ No link - render normally
+                        return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
                     }
-
-                    // ✅ Build Yahoo Finance URL
-                    const yahooUrl = yahooSymbol && yahooSymbol.length > 1
-                        ? "https://finance.yahoo.com/quote/" + encodeURIComponent(yahooSymbol + ".NS")
-                        : "#";
-
-                    console.log("Row " + rowIndex + ":", companyName, "→", yahooSymbol, yahooUrl);
-
-                    // ✅ Build row with ALL columns, making company column clickable
-                    return "<tr>" +
-                        row.map((cell, idx) => {
-                            if (idx === companyColIndex) {
-                                // ✅ Company column - make it a link
-                                return '<td>' +
-                                    '<a href="' + yahooUrl + '" target="_blank" style="color: #0b5cab; font-weight: 600; text-decoration: underline;">' +
-                                    escapeHtml(cell) +
-                                    '</a>' +
-                                    '</td>';
-                            } else {
-                                // ✅ Other columns - normal
-                                return "<td>" + escapeHtml(cell) + "</td>";
-                            }
-                        }).join("") +
-                        "</tr>";
                 } else {
-                    // ✅ No company column found - render normally
+                    // ✅ No company column - render all normally
                     return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
                 }
             }).join("");
