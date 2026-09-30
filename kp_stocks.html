@@ -4203,127 +4203,138 @@ function updateHoldingsSummary() {
 }
 
 /* ==================== STOP LOSS ALERTS ==================== */
-function updateStopLossAlerts() {
-    const box = document.getElementById("stopLossBox");
-    const safeMessage = document.getElementById("stopLossSafeMessage");
-    const tableWrap = document.getElementById("stopLossTableWrap");
-    const tbody = document.getElementById("stopLossRows");
-    const subtitle = document.getElementById("stopLossSubtitle");
+    function updateStopLossAlerts() {
+        const box = document.getElementById("stopLossBox");
+        const safeMessage = document.getElementById("stopLossSafeMessage");
+        const tableWrap = document.getElementById("stopLossTableWrap");
+        const tbody = document.getElementById("stopLossRows");
+        const subtitle = document.getElementById("stopLossSubtitle");
 
-    const stopLossThreshold = -Math.abs(settings.stopLossPct);
-    subtitle.textContent = "Holdings with simple P/L of " + stopLossThreshold.toFixed(2) + "% or below";
+        const stopLossThreshold = -Math.abs(settings.stopLossPct);
+        subtitle.textContent = "Holdings with simple P/L of " + stopLossThreshold.toFixed(2) + "% or below";
 
-    if (holdingsList.length === 0) {
-        box.style.display = "none";
-        return;
-    }
+        if (holdingsList.length === 0) {
+            box.style.display = "none";
+            return;
+        }
 
-    const alerts = holdingsList
-        .filter(h => {
-            const avg = numberOrZero(h.avgPrice);
-            const current = numberOrZero(h.livePrice);
-            if (avg <= 0 || current <= 0) return false;
-            const pnlPercent = ((current - avg) / avg) * 100;
-            return pnlPercent <= stopLossThreshold;
-        })
-        .map(h => {
-            const avg = numberOrZero(h.avgPrice);
-            const current = numberOrZero(h.livePrice);
-            const qty = numberOrZero(h.qty);
+        const alerts = holdingsList
+            .filter(h => {
+                const avg = numberOrZero(h.avgPrice);
+                const current = numberOrZero(h.livePrice);
+                if (avg <= 0 || current <= 0) return false;
+                const pnlPercent = ((current - avg) / avg) * 100;
+                return pnlPercent <= stopLossThreshold;
+            })
+            .map(h => {
+                const avg = numberOrZero(h.avgPrice);
+                const current = numberOrZero(h.livePrice);
+                const qty = numberOrZero(h.qty);
 
-            const currentPnlValue = (current - avg) * qty;
-            const currentPnlPercent = ((current - avg) / avg) * 100;
+                const currentPnlValue = (current - avg) * qty;
+                const currentPnlPercent = ((current - avg) / avg) * 100;
 
-            const additionalLot = calcBuy(qty, current, settings.buyBrokerage, "nse");
-            const existingCost = numberOrZero(h.totalInvestedWithCharges);
-            const additionalCost = additionalLot ? additionalLot.total : current * qty;
+                const additionalLot = calcBuy(qty, current, settings.buyBrokerage, "nse");
+                const existingCost = numberOrZero(h.totalInvestedWithCharges);
+                const additionalCost = additionalLot ? additionalLot.total : current * qty;
 
-            const newQty = qty + qty;
-            const newTotalInvested = existingCost + additionalCost;
-            const newAveragePrice = newTotalInvested / newQty;
+                const newQty = qty + qty;
+                const newTotalInvested = existingCost + additionalCost;
+                const newAveragePrice = newTotalInvested / newQty;
 
-            const scenarioCurrentValue = current * newQty;
-            const scenarioPnlValue = scenarioCurrentValue - newTotalInvested;
-            const scenarioPnlPercent = newTotalInvested > 0 ? (scenarioPnlValue / newTotalInvested) * 100 : 0;
+                const scenarioCurrentValue = current * newQty;
+                const scenarioPnlValue = scenarioCurrentValue - newTotalInvested;
+                const scenarioPnlPercent = newTotalInvested > 0 ? (scenarioPnlValue / newTotalInvested) * 100 : 0;
 
-            return {
-                symbol: h.symbol,
-                qty: qty,
-                avgPrice: avg,
-                currentPrice: current,
-                currentPnlValue: currentPnlValue,
-                currentPnlPercent: currentPnlPercent,
-                additionalLotCost: additionalCost,
-                additionalLotCharges: additionalLot ? additionalLot.charges : 0,
-                newQty: newQty,
-                newAveragePrice: newAveragePrice,
-                scenarioPnlValue: scenarioPnlValue,
-                scenarioPnlPercent: scenarioPnlPercent
-            };
-        })
-        .sort((a, b) => a.currentPnlPercent - b.currentPnlPercent);
+                return {
+                    symbol: h.symbol,
+                    qty: qty,
+                    avgPrice: avg,
+                    currentPrice: current,
+                    currentPnlValue: currentPnlValue,
+                    currentPnlPercent: currentPnlPercent,
+                    additionalLotCost: additionalCost,
+                    additionalLotCharges: additionalLot ? additionalLot.charges : 0,
+                    newQty: newQty,
+                    newAveragePrice: newAveragePrice,
+                    scenarioPnlValue: scenarioPnlValue,
+                    scenarioPnlPercent: scenarioPnlPercent
+                };
+            })
+            .sort((a, b) => a.currentPnlPercent - b.currentPnlPercent);
 
-    box.style.display = "block";
+        box.style.display = "block";
 
-    if (alerts.length === 0) {
-        safeMessage.style.display = "block";
-        safeMessage.textContent = "No holdings currently below " + stopLossThreshold.toFixed(2) + "%.";
-        tableWrap.style.display = "none";
-        tbody.innerHTML = "";
-        return;
-    }
+        if (alerts.length === 0) {
+            safeMessage.style.display = "block";
+            safeMessage.textContent = "No holdings currently below " + stopLossThreshold.toFixed(2) + "%.";
+            tableWrap.style.display = "none";
+            tbody.innerHTML = "";
+            return;
+        }
 
-    safeMessage.style.display = "none";
-    tableWrap.style.display = "block";
+        safeMessage.style.display = "none";
+        tableWrap.style.display = "block";
 
-    let html = "";
-    alerts.forEach(item => {
-        html +=
-            "<tr>" +
-            "<td>" + escapeHtml(item.symbol) + "</td>" +
-            "<td>" + item.qty + "</td>" +
-            "<td>" + money(item.avgPrice) + "</td>" +
-            "<td>" + money(item.currentPrice) + "</td>" +
-            '<td class="negative">' +
+        let html = "";
+        alerts.forEach(item => {
+            // ✅ Create Yahoo Finance URL
+            const yahooSymbol = item.symbol.replace("-EQ", "") + ".NS";
+            const yahooUrl = "https://finance.yahoo.com/quote/" + encodeURIComponent(yahooSymbol);
+
+            // ✅ Symbol cell with link
+            const symbolCell = '<td>' +
+                '<a href="' + yahooUrl + '" target="_blank" style="color: #7d1c17; font-weight: 700; text-decoration: underline;">' +
+                escapeHtml(item.symbol) +
+                '</a>' +
+                '</td>';
+
+            html +=
+                "<tr>" +
+                symbolCell +
+                "<td>" + item.qty + "</td>" +
+                "<td>" + money(item.avgPrice) + "</td>" +
+                "<td>" + money(item.currentPrice) + "</td>" +
+                '<td class="negative">' +
                 (item.currentPnlValue >= 0 ? "+" : "") +
                 money(item.currentPnlValue) +
-            "</td>" +
-            '<td class="stop-loss-pct">' +
+                "</td>" +
+                '<td class="stop-loss-pct">' +
                 item.currentPnlPercent.toFixed(2) +
                 "%" +
-            "</td>" +
-            "</tr>";
+                "</td>" +
+                "</tr>";
 
-        html +=
-            '<tr class="average-down-row">' +
-            "<td>" +
+            html +=
+                '<tr class="average-down-row">' +
+                "<td>" +
                 '<span class="average-down-label">SCENARIO</span>' +
                 "If adding same qty at current price" +
                 '<span class="average-down-note">' +
-                    "Buy " + item.qty +
-                    " more at " + money(item.currentPrice) +
-                    " | estimated additional charges " +
-                    money(item.additionalLotCharges) +
-                    " | additional trade cost " +
-                    money(item.additionalLotCost) +
+                "Buy " + item.qty +
+                " more at " + money(item.currentPrice) +
+                " | estimated additional charges " +
+                money(item.additionalLotCharges) +
+                " | additional trade cost " +
+                money(item.additionalLotCost) +
                 "</span>" +
-            "</td>" +
-            "<td>" + item.newQty + "</td>" +
-            "<td>" + money(item.newAveragePrice) + "</td>" +
-            "<td>" + money(item.currentPrice) + "</td>" +
-            '<td class="' + (item.scenarioPnlValue >= 0 ? "positive" : "scenario-pnl-negative") + '">' +
+                "</td>" +
+                "<td>" + item.newQty + "</td>" +
+                "<td>" + money(item.newAveragePrice) + "</td>" +
+                "<td>" + money(item.currentPrice) + "</td>" +
+                '<td class="' + (item.scenarioPnlValue >= 0 ? "positive" : "scenario-pnl-negative") + '">' +
                 (item.scenarioPnlValue >= 0 ? "+" : "") +
                 money(item.scenarioPnlValue) +
-            "</td>" +
-            '<td class="' + (item.scenarioPnlPercent >= 0 ? "positive" : "scenario-pnl-negative") + '">' +
+                "</td>" +
+                '<td class="' + (item.scenarioPnlPercent >= 0 ? "positive" : "scenario-pnl-negative") + '">' +
                 item.scenarioPnlPercent.toFixed(2) +
                 "%" +
-            "</td>" +
-            "</tr>";
-    });
+                "</td>" +
+                "</tr>";
+        });
 
-    tbody.innerHTML = html;
-}
+        tbody.innerHTML = html;
+    }
 
 /* ==================== SELECTED HOLDING P&L ==================== */
 function updatePnLWithHolding(h) {
