@@ -4641,36 +4641,78 @@ function resetAll() {
 }
 
 /* ==================== SCREENERS ==================== */
-async function loadScreenerTable(endpoint, tableId, loadingText) {
-    const table = document.getElementById(tableId);
-    const thead = table.querySelector("thead");
-    const tbody = table.querySelector("tbody");
+    async function loadScreenerTable(endpoint, tableId, loadingText) {
+        const table = document.getElementById(tableId);
+        const thead = table.querySelector("thead");
+        const tbody = table.querySelector("tbody");
 
-    thead.innerHTML = "<tr><th>" + escapeHtml(loadingText) + "</th></tr>";
-    tbody.innerHTML = "";
+        thead.innerHTML = "<tr><th>" + escapeHtml(loadingText) + "</th></tr>";
+        tbody.innerHTML = "";
 
-    try {
-        const response = await fetch(API_BASE + endpoint);
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        const data = await response.json();
-        if (data.error) throw new Error(data.error);
+        try {
+            const response = await fetch(API_BASE + endpoint);
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
 
-        const rows = data.rows;
-        if (!Array.isArray(rows) || rows.length === 0) {
-            thead.innerHTML = "<tr><th>No data available</th></tr>";
-            return;
+            const rows = data.rows;
+            if (!Array.isArray(rows) || rows.length === 0) {
+                thead.innerHTML = "<tr><th>No data available</th></tr>";
+                return;
+            }
+
+            const header = rows[0];
+            thead.innerHTML = "<tr>" + header.map(cell => "<th>" + escapeHtml(cell) + "</th>").join("") + "</tr>";
+
+            // ✅ Check if this is a screener with company names (column 2)
+            const hasCompanyColumn = header.length >= 2 &&
+                (header[1].toLowerCase().includes("company") || header[1].toLowerCase().includes("symbol"));
+
+            tbody.innerHTML = rows.slice(1).map((row, rowIndex) => {
+                // ✅ If has company column, make it a link
+                if (hasCompanyColumn && row.length >= 2) {
+                    const symbol = row[0] || "";
+                    const companyName = row[1] || "";
+
+                    // ✅ Try to extract symbol from company name or use first column
+                    let yahooSymbol = symbol.replace(/[^A-Z0-9\-]/g, "").toUpperCase();
+                    if (!yahooSymbol) {
+                        // Try to extract from company name (e.g., "Reliance Industries" → "RELIANCE")
+                        const match = companyName.match(/^([A-Z][a-z]+)(?:\s+|$)/i);
+                        if (match) {
+                            yahooSymbol = match[1].toUpperCase();
+                        }
+                    }
+
+                    // ✅ Build Yahoo Finance URL
+                    const yahooUrl = yahooSymbol
+                        ? "https://finance.yahoo.com/quote/" + encodeURIComponent(yahooSymbol + ".NS")
+                        : "#";
+
+                    // ✅ Create linked company cell
+                    const companyCell = '<td>' +
+                        '<a href="' + yahooUrl + '" target="_blank" style="color: #0b5cab; font-weight: 600; text-decoration: underline;">' +
+                        escapeHtml(companyName) +
+                        '</a>' +
+                        '</td>';
+
+                    // ✅ Build row with linked company cell
+                    return "<tr>" +
+                        "<td>" + escapeHtml(row[0]) + "</td>" +  // Symbol column (unchanged)
+                        companyCell +                             // Company column (linked)
+                        row.slice(2).map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") +
+                        "</tr>";
+                } else {
+                    // ✅ No company column - render normally
+                    return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
+                }
+            }).join("");
+
+        } catch (error) {
+            thead.innerHTML = "<tr><th>Error loading data</th></tr>";
+            tbody.innerHTML = "<tr><td>" + escapeHtml(error.message) + "</td></tr>";
         }
-
-        const header = rows[0];
-        thead.innerHTML = "<tr>" + header.map(cell => "<th>" + escapeHtml(cell) + "</th>").join("") + "</tr>";
-        tbody.innerHTML = rows.slice(1).map(row =>
-            "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>"
-        ).join("");
-    } catch (error) {
-        thead.innerHTML = "<tr><th>Error loading data</th></tr>";
-        tbody.innerHTML = "<tr><td>" + escapeHtml(error.message) + "</td></tr>";
     }
-}
 
 function load52WeekLowAR() {
     return loadScreenerTable("/52week-low-ar", "tableAR", "Loading Anand Rathi 52-week-low data...");
