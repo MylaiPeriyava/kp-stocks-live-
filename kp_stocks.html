@@ -12,7 +12,7 @@
 
     <style>
 
-        /* Holding Duration Color Coding */ 
+        /* Holding Duration Color Coding */
         .portfolio-targets-table td.holding-days-10 {
             background: #e8f5e9; /* Light green - ≤10 days */
             color: #2e7d32;
@@ -1727,7 +1727,6 @@
             <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
             <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
             <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
-            <a href="javascript:void(0)" onclick="showSection('ipo-section')">IPO</a>
             <a href="javascript:void(0)" onclick="showSection('tradesSection')">Trades</a>
         </nav>
 
@@ -3199,33 +3198,46 @@
                     </div>
                 </div>
 
+                <!-- IPO Listing Data Section -->
+                <div id="ipo-section" class="mt-4" style="display:none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadIPOData()">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm mb-0" id="ipo-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 18%;">Symbol</th>
+                                            <th style="width: 12%;">Listing Date</th>
+                                            <th style="width: 10%;" class="text-end">Issue Price</th>
+                                            <th style="width: 10%;" class="text-end">Listed Price</th>
+                                            <th style="width: 8%;" class="text-end">Gain %</th>
+                                            <th style="width: 10%;" class="text-end">Subscription</th>
+                                            <th style="width: 8%;" class="text-end">GMP</th>
+                                            <th style="width: 14%;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ipo-tbody">
+                                        <!-- IPO rows will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subscription Analysis Section -->
+                <div id="ipo-analysis" class="mt-4"></div>
+
+
             </section>
 
-            <!-- IPO Listing Data -->
-            <div class="section-block" id="ipo-section">
-                <section id="iposection" class="section-anchor">
-                    <div class="card">
-                        <h2>📈 IPO Listing Data - Mainboard 2026</h2>
-                        <button onclick="loadIPOData()">🔄 Refresh</button>
-                        <table id="ipo-table">
-                            <thead>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>Listing Date</th>
-                                    <th>Issue Price</th>
-                                    <th>Listed Price</th>
-                                    <th>Gain %</th>
-                                    <th>Subscription</th>
-                                    <th>GMP</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ipo-tbody"></tbody>
-                        </table>
-                        <div id="ipo-analysis"></div>
-                    </div>
-                </section>
-            </div>
+
 
             <section id="tradesSection" class="section-anchor" style="display:none;">
                 <h2>My Past Trades</h2>
@@ -7308,14 +7320,13 @@ async function deleteTrade(tradeId) {
     }
 }
 
-    const originalShowSection = window.showSection;
-    window.showSection = function (sectionId) {
-        originalShowSection(sectionId);
-        if (sectionId === "tradesSection") {
-            loadTrades();
-        }
-    };
-
+const originalShowSection = window.showSection;
+window.showSection = function (sectionId) {
+    originalShowSection(sectionId);
+    if (sectionId === "tradesSection") {
+        loadTrades();
+    }
+};
 
     // IPO Data Loading
     // IPO Data Loading
