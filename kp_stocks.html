@@ -11,6 +11,39 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+
+        /* Holding Duration Color Coding */
+        .portfolio-targets-table td.holding-days-10 {
+            background: #e8f5e9; /* Light green - ≤10 days */
+            color: #2e7d32;
+            font-weight: 700;
+        }
+
+        .portfolio-targets-table td.holding-days-30 {
+            background: #c8e6c9; /* Medium green - ≤30 days */
+            color: #1b5e20;
+            font-weight: 700;
+        }
+
+        .portfolio-targets-table td.holding-days-60 {
+            background: #81c784; /* Dark green - ≤60 days */
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .portfolio-targets-table td.holding-days-90 {
+            background: #ffccbc; /* Light red - ≤90 days */
+            color: #bf360c;
+            font-weight: 700;
+        }
+
+        .portfolio-targets-table td.holding-days-90plus {
+            background: #ef9a9a; /* Dark red - >90 days */
+            color: #b71c1c;
+            font-weight: 700;
+        }
+
+
         /* ----- Core variables and base styles ----- */
         :root {
             --blue: #0b5cab;
@@ -2894,44 +2927,36 @@
             <div class="target-input-row">
                 <div>
                     <label for="targetBoughtPrice">Stock Bought Price (₹)</label>
-                    <input
-                        id="targetBoughtPrice"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="Example: 220.50"
-                    >
+                    <input id="targetBoughtPrice"
+                           type="number"
+                           min="0.01"
+                           step="0.01"
+                           placeholder="Example: 220.50">
                 </div>
 
                 <div>
                     <label for="targetQty">Quantity</label>
-                    <input
-                        id="targetQty"
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Example: 100"
-                    >
+                    <input id="targetQty"
+                           type="number"
+                           min="1"
+                           step="1"
+                           placeholder="Example: 100">
                 </div>
 
                 <div>
                     <label for="targetPercent">Required Net Profit (%)</label>
-                    <input
-                        id="targetPercent"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="Example: 5"
-                    >
+                    <input id="targetPercent"
+                           type="number"
+                           min="0.01"
+                           step="0.01"
+                           placeholder="Example: 5">
                 </div>
 
                 <div>
                     <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        class="trade-calc-btn"
-                        onclick="calculateTarget()"
-                    >
+                    <button type="button"
+                            class="trade-calc-btn"
+                            onclick="calculateTarget()">
                         Calculate Target
                     </button>
                 </div>
@@ -2987,18 +3012,55 @@
                 <table class="portfolio-targets-table">
                     <thead>
                         <tr>
-                            <th>Symbol</th><th>Bought Price</th><th>Qty</th><th>CMP</th>
-                            <th>0%</th><th>+/- 1%</th><th>+/- 2%</th><th>+/- 3%</th><th>+/- 4%</th>
-                            <th>+/- 5%</th><th>+/- 6%</th><th>+/- 7%</th><th>+/- 8%</th><th>+/- 9%</th><th>+/- 10%</th>
-                            <th>Target Price</th><th>Bought Price</th><th>Symbol</th>
+                            <th>Symbol</th>
+                            <th>Bought Price</th>
+                            <th>Qty</th>
+                            <th>CMP</th>
+                            <th>0%</th>
+                            <th>+/- 1%</th>
+                            <th>+/- 2%</th>
+                            <th>+/- 3%</th>
+                            <th>+/- 4%</th>
+                            <th>+/- 5%</th>
+                            <th>+/- 6%</th>
+                            <th>+/- 7%</th>
+                            <th>+/- 8%</th>
+                            <th>+/- 9%</th>
+                            <th>+/- 10%</th>
+                            <th>Target Price</th>
+                            <th>Bought Price</th>
+                            <th>Symbol</th>
                         </tr>
                     </thead>
                     <tbody id="portfolioTargetRows">
                         <tr><td colspan="18">Holdings targets load automatically.</td></tr>
                     </tbody>
                 </table>
+            </div>
 
-
+            <!-- Holding Duration Legend -->
+            <div style="margin-top: 12px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px;">
+                <strong style="color: #374151; margin-right: 12px;">📅 Holding Period:</strong>
+                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #e8f5e9; border: 1px solid #a5d6a7; margin-right: 4px; border-radius: 3px;"></span>
+                    ≤10 days
+                </span>
+                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #c8e6c9; border: 1px solid #81c784; margin-right: 4px; border-radius: 3px;"></span>
+                    ≤30 days
+                </span>
+                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #81c784; border: 1px solid #4caf50; margin-right: 4px; border-radius: 3px;"></span>
+                    ≤60 days
+                </span>
+                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #ffccbc; border: 1px solid #ff8a65; margin-right: 4px; border-radius: 3px;"></span>
+                    ≤90 days
+                </span>
+                <span style="display: inline-flex; align-items: center;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #ef9a9a; border: 1px solid #e57373; margin-right: 4px; border-radius: 3px;"></span>
+                    >90 days
+                </span>
             </div>
 
             <div class="target-actions">
@@ -5591,59 +5653,86 @@ function ceilToNextRupee(value) {
     return Math.ceil(Number(value));
 }
 
-function computeAndRenderPortfolioTargets(requiredPercent) {
-    const tbody = document.getElementById("portfolioTargetRows");
-    const box = document.getElementById("portfolioTargetsBox");
-    if (!tbody || !box) return;
-    box.style.display = "block";
+    function computeAndRenderPortfolioTargets(requiredPercent) {
+        const tbody = document.getElementById("portfolioTargetRows");
+        const box = document.getElementById("portfolioTargetsBox");
+        if (!tbody || !box) return;
+        box.style.display = "block";
 
-    if (!holdingsList || !holdingsList.length) {
-        tbody.innerHTML = '<tr><td colspan="18">No holdings loaded yet.</td></tr>';
-        return;
-    }
-
-    let html = "";
-    holdingsList.forEach(h => {
-        const symbol = h.symbol || "—";
-        const bought = numberOrZero(h.avgPrice);
-        const qty = numberOrZero(h.qty);
-        const cmp = numberOrZero(h.livePrice);
-        if (bought <= 0 || qty <= 0) return;
-
-        const breakEven = computeTargetPriceForBoughtPrice(bought, qty, 0);
-        const isLoss = cmp > 0 && cmp < breakEven;
-        let pcts = [];
-        if (isLoss) {
-            for (let pct = 0; pct >= -10; pct--) pcts.push(pct);
-        } else {
-            for (let pct = 0; pct <= 10; pct++) pcts.push(pct);
+        if (!holdingsList || !holdingsList.length) {
+            tbody.innerHTML = '<tr><td colspan="18">No holdings loaded yet.</td></tr>';
+            return;
         }
 
-        let ladder = "";
-        pcts.forEach(pct => {
-            const price = computeTargetPriceForBoughtPrice(bought, qty, pct);
-            const reached = isLoss ? (cmp > 0 && cmp <= price) : (cmp > 0 && cmp >= price);
-            const className = reached ? (isLoss ? "target-loss" : "target-reached") : "";
-            ladder += '<td class="' + className + '">' + ceilToNextRupee(price).toLocaleString("en-IN") + '</td>';
+        let html = "";
+        holdingsList.forEach(h => {
+            const symbol = h.symbol || "—";
+            const bought = numberOrZero(h.avgPrice);
+            const qty = numberOrZero(h.qty);
+            const cmp = numberOrZero(h.livePrice);
+            if (bought <= 0 || qty <= 0) return;
+
+            // ✅ Calculate holding days
+            const holdingDays = calculateHoldingDays(h.buyDateObject);
+            const holdingClass = getHoldingDurationClass(holdingDays);
+
+            const breakEven = computeTargetPriceForBoughtPrice(bought, qty, 0);
+            const isLoss = cmp > 0 && cmp < breakEven;
+            let pcts = [];
+            if (isLoss) {
+                for (let pct = 0; pct >= -10; pct--) pcts.push(pct);
+            } else {
+                for (let pct = 0; pct <= 10; pct++) pcts.push(pct);
+            }
+
+            let ladder = "";
+            pcts.forEach(pct => {
+                const price = computeTargetPriceForBoughtPrice(bought, qty, pct);
+                const reached = isLoss ? (cmp > 0 && cmp <= price) : (cmp > 0 && cmp >= price);
+                const className = reached ? (isLoss ? "target-loss" : "target-reached") : "";
+                ladder += '<td class="' + className + '">' + ceilToNextRupee(price).toLocaleString("en-IN") + '</td>';
+            });
+
+            const finalTarget = requiredPercent > 0
+                ? computeTargetPriceForBoughtPrice(bought, qty, requiredPercent)
+                : null;
+
+            // ✅ Apply holding duration class to symbol cell
+            html += '<tr>' +
+                '<td class="' + holdingClass + '" title="Holding for ' + holdingDays + ' days">' + escapeHtml(symbol) + '</td>' +
+                '<td>' + money(bought) + '</td>' +
+                '<td>' + qty.toLocaleString("en-IN") + '</td>' +
+                '<td>' + (cmp > 0 ? money(cmp) : '—') + '</td>' +
+                ladder +
+                '<td class="portfolio-final-target">' + (finalTarget !== null ? money(finalTarget) : '—') + '</td>' +
+                '<td>' + money(bought) + '</td>' +
+                '<td>' + escapeHtml(symbol) + '</td>' +
+                '</tr>';
         });
+        tbody.innerHTML = html || '<tr><td colspan="18">No valid holdings available.</td></tr>';
+    }
 
-        const finalTarget = requiredPercent > 0
-            ? computeTargetPriceForBoughtPrice(bought, qty, requiredPercent)
-            : null;
+    // ✅ NEW HELPER: Calculate holding days from buy date
+    function calculateHoldingDays(buyDateObject) {
+        if (!buyDateObject || !(buyDateObject instanceof Date)) return 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const buyDate = new Date(buyDateObject);
+        buyDate.setHours(0, 0, 0, 0);
+        const diffTime = today.getTime() - buyDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        return Math.max(0, diffDays);
+    }
 
-        html += '<tr>' +
-            '<td>' + escapeHtml(symbol) + '</td>' +
-            '<td>' + money(bought) + '</td>' +
-            '<td>' + qty.toLocaleString("en-IN") + '</td>' +
-            '<td>' + (cmp > 0 ? money(cmp) : '—') + '</td>' +
-            ladder +
-            '<td class="portfolio-final-target">' + (finalTarget !== null ? money(finalTarget) : '—') + '</td>' +
-            '<td>' + money(bought) + '</td>' +
-            '<td>' + escapeHtml(symbol) + '</td>' +
-            '</tr>';
-    });
-    tbody.innerHTML = html || '<tr><td colspan="18">No valid holdings available.</td></tr>';
-}
+    // ✅ NEW HELPER: Get CSS class based on holding duration
+    function getHoldingDurationClass(days) {
+        if (days <= 10) return "holding-days-10";      // Light green
+        if (days <= 30) return "holding-days-30";      // Medium green
+        if (days <= 60) return "holding-days-60";      // Dark green
+        if (days <= 90) return "holding-days-90";      // Light red
+        return "holding-days-90plus";                   // Dark red
+    }
+
 
 /* ==================== PAGE LOAD & SECTION NAVIGATION ==================== */
 function showSection(sectionId) {
