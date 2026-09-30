@@ -1341,6 +1341,49 @@
                 color: #4a148c;
             }
 
+        .portfolio-targets-details {
+            overflow-x: auto;
+        }
+
+        .portfolio-targets-table {
+            min-width: 1700px !important;
+            font-size: 12px;
+        }
+
+            .portfolio-targets-table th, .portfolio-targets-table td {
+                padding: 7px 8px;
+                text-align: right;
+                white-space: nowrap;
+            }
+
+                .portfolio-targets-table th:first-child, .portfolio-targets-table td:first-child {
+                    text-align: left;
+                }
+
+            .portfolio-targets-table th {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+            }
+
+            .portfolio-targets-table td.target-reached {
+                color: #075b2a;
+                font-weight: 800;
+                background: #e9f7ed;
+            }
+
+            .portfolio-targets-table td.target-loss {
+                color: #b3261e;
+                font-weight: 800;
+                background: #fce4e2;
+            }
+
+            .portfolio-targets-table td.portfolio-final-target {
+                color: #4a148c;
+                font-weight: 800;
+                background: #f3e5f5;
+            }
+
         /* ----- IPO Section Styles ----- */
         #ipo-section {
             margin-top: 1.5rem;
