@@ -1731,6 +1731,7 @@
             <a href="javascript:void(0)" onclick="showSection('tradesSection')">Trades</a>
         </nav>
 
+
         <p class="note">
             Intended for Indian equity delivery trades. Holdings and prices are loaded from your local server.
             Rates below are editable for the current browser session. Existing holdings charges are calculated separately for every original purchase lot.
@@ -3106,116 +3107,113 @@
 
         <!-- WL Pattern (scatter chart) -->
         <div class="section-block">
-            <!-- WL Pattern Analysis -->
-            <div class="section-block">
-                <section id="wlPatternSection" class="section-anchor">
-                    <div class="card">
-                        <h2>WL Pattern Analysis</h2>
-                        <p class="section-help">
-                            Analyze when stocks typically reach their daily high and low. Select a symbol from your wishlist, choose a period, and click Analyze.
-                        </p>
+            <section id="wlPatternSection" class="section-anchor" style="display:none;">
+                <div class="card">
+                    <h2>WL Pattern Analysis</h2>
+                    <p class="section-help">
+                        Analyze when stocks typically reach their daily high and low. Select a symbol from your wishlist, choose a period, and click Analyze.
+                    </p>
 
-                        <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                                <label style="font-weight: 600;">Symbol:</label>
-                                <select id="wlPatternSymbol" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 150px;">
-                                    <option value="">Select from wishlist...</option>
-                                </select>
+                    <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <label style="font-weight: 600;">Symbol:</label>
+                            <select id="wlPatternSymbol" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 150px;">
+                                <option value="">Select from wishlist...</option>
+                            </select>
 
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <button type="button" onclick="setWlPatternDays(60)" class="wl-pattern-period-btn">2 months</button>
-                                    <button type="button" onclick="setWlPatternDays(30)" class="wl-pattern-period-btn active">1 month</button>
-                                    <button type="button" onclick="setWlPatternDays(15)" class="wl-pattern-period-btn">15 days</button>
-                                    <button type="button" onclick="setWlPatternDays(7)" class="wl-pattern-period-btn">1 week</button>
-                                </div>
-
-                                <button type="button" onclick="analyzeWlPattern()" style="padding: 10px 24px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
-                                    🔍 Analyze
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="wlPatternResults" style="display: none; margin-top: 30px;">
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-                                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
-                                    <div style="font-size: 12px; color: #7f8c8d;">Days Analyzed:</div>
-                                    <div style="font-size: 18px; font-weight: 700;" id="wlPatternDaysCount">0</div>
-                                </div>
-                                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
-                                    <div style="font-size: 12px; color: #7f8c8d;">Most Common High Time:</div>
-                                    <div style="font-size: 18px; font-weight: 700;" id="wlPatternHighTime">-</div>
-                                </div>
-                                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #e74c3c;">
-                                    <div style="font-size: 12px; color: #7f8c8d;">Most Common Low Time:</div>
-                                    <div style="font-size: 18px; font-weight: 700;" id="wlPatternLowTime">-</div>
-                                </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" onclick="setWlPatternDays(60)" class="wl-pattern-period-btn">2 months</button>
+                                <button type="button" onclick="setWlPatternDays(30)" class="wl-pattern-period-btn active">1 month</button>
+                                <button type="button" onclick="setWlPatternDays(15)" class="wl-pattern-period-btn">15 days</button>
+                                <button type="button" onclick="setWlPatternDays(7)" class="wl-pattern-period-btn">1 week</button>
                             </div>
 
-                            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
-                                <canvas id="wlPatternChart"></canvas>
-                            </div>
-
-                            <!-- BSE Sensex vs Stock -->
-                            <div class="index-vs-stock-block" style="margin-top:24px;">
-                                <h4>BSE Sensex vs Stock</h4>
-                                <div style="height:220px; margin-bottom:8px;">
-                                    <canvas id="bseIndexChart"></canvas>
-                                </div>
-                                <div style="height:220px; margin-bottom:8px;">
-                                    <canvas id="bseStockChart"></canvas>
-                                </div>
-                                <div style="height:160px; margin-bottom:8px;">
-                                    <canvas id="bseRSChart"></canvas>
-                                </div>
-                                <div style="height:220px;">
-                                    <canvas id="bseNormalizedChart"></canvas>
-                                </div>
-                            </div>
-
-                            <!-- NSE Nifty vs Stock -->
-                            <div class="index-vs-stock-block" style="margin-top:24px;">
-                                <h4>NSE Nifty vs Stock</h4>
-                                <div style="height:220px; margin-bottom:8px;">
-                                    <canvas id="nseIndexChart"></canvas>
-                                </div>
-                                <div style="height:220px; margin-bottom:8px;">
-                                    <canvas id="nseStockChart"></canvas>
-                                </div>
-                                <div style="height:160px; margin-bottom:8px;">
-                                    <canvas id="nseRSChart"></canvas>
-                                </div>
-                                <div style="height:220px;">
-                                    <canvas id="nseNormalizedChart"></canvas>
-                                </div>
-                            </div>
-
-                            <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
-                                <h3 style="margin: 0 0 15px 0; color: #f39c12; font-size: 16px;">Key Insights:</h3>
-                                <ul id="wlPatternInsightsList" style="margin: 0; padding-left: 20px;"></ul>
-                            </div>
-                        </div>
-
-                        <div id="wlPatternLoading" style="display: none; text-align: center; padding: 40px;">
-                            <div style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: wlPatternSpin 1s linear infinite; margin: 0 auto;"></div>
-                            <p style="margin-top: 15px; color: #7f8c8d;">Analyzing intraday patterns...</p>
+                            <button type="button" onclick="analyzeWlPattern()" style="padding: 10px 24px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                                🔍 Analyze
+                            </button>
                         </div>
                     </div>
-                </section>
-            </div>
+
+                    <div id="wlPatternResults" style="display: none; margin-top: 30px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+                                <div style="font-size: 12px; color: #7f8c8d;">Days Analyzed:</div>
+                                <div style="font-size: 18px; font-weight: 700;" id="wlPatternDaysCount">0</div>
+                            </div>
+                            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
+                                <div style="font-size: 12px; color: #7f8c8d;">Most Common High Time:</div>
+                                <div style="font-size: 18px; font-weight: 700;" id="wlPatternHighTime">-</div>
+                            </div>
+                            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                                <div style="font-size: 12px; color: #7f8c8d;">Most Common Low Time:</div>
+                                <div style="font-size: 18px; font-weight: 700;" id="wlPatternLowTime">-</div>
+                            </div>
+                        </div>
+
+                        <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                            <canvas id="wlPatternChart"></canvas>
+                        </div>
+                        <!-- BSE Sensex vs Stock -->
+                        <div class="index-vs-stock-block" style="margin-top:24px;">
+                            <h4>BSE Sensex vs Stock</h4>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="bseIndexChart"></canvas>
+                            </div>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="bseStockChart"></canvas>
+                            </div>
+                            <div style="height:160px; margin-bottom:8px;">
+                                <canvas id="bseRSChart"></canvas>
+                            </div>
+                            <div style="height:220px;">
+                                <canvas id="bseNormalizedChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- NSE Nifty vs Stock -->
+                        <div class="index-vs-stock-block" style="margin-top:24px;">
+                            <h4>NSE Nifty vs Stock</h4>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="nseIndexChart"></canvas>
+                            </div>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="nseStockChart"></canvas>
+                            </div>
+                            <div style="height:160px; margin-bottom:8px;">
+                                <canvas id="nseRSChart"></canvas>
+                            </div>
+                            <div style="height:220px;">
+                                <canvas id="nseNormalizedChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
+                            <h3 style="margin: 0 0 15px 0; color: #f39c12; font-size: 16px;">Key Insights:</h3>
+                            <ul id="wlPatternInsightsList" style="margin: 0; padding-left: 20px;"></ul>
+                        </div>
+                    </div>
+
+                    <div id="wlPatternLoading" style="display: none; text-align: center; padding: 40px;">
+                        <div style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: wlPatternSpin 1s linear infinite; margin: 0 auto;"></div>
+                        <p style="margin-top: 15px; color: #7f8c8d;">Analyzing intraday patterns...</p>
+                    </div>
+                </div>
+
+            </section>
 
             <!-- IPO Listing Data -->
             <div class="section-block">
                 <section id="ipoSection" class="section-anchor">
-                    <div class="card">
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin: -18px -18px 16px; color: #7b4500; background: #fff3e0; border-bottom: 1px solid #f0c27b; border-radius: 10px 10px 0 0;">
-                            <h2 style="margin: 0; color: #7b4500; font-size: 18px;">📈 IPO Listing Data - Mainboard 2026</h2>
+                    <div class="card ipo-card">
+                        <div class="ipo-title-row">
+                            <h2>📈 IPO Listing Data - Mainboard 2026</h2>
                             <button type="button" onclick="loadIPOData()" style="padding: 6px 12px; background: #0b5cab; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; min-width: 90px;">
                                 🔄 Refresh
                             </button>
                         </div>
 
                         <div class="table-wrap" style="max-height: 620px;">
-                            <table style="width: 100%; min-width: 900px; border-collapse: collapse; background: white;">
+                            <table id="ipo-table" style="width: 100%; min-width: 900px; border-collapse: collapse; background: white;">
                                 <thead style="position: sticky; top: 0; z-index: 1; background: #f5f8fc;">
                                     <tr>
                                         <th style="padding: 8px 10px; text-align: left; font-size: 13px; color: #173b63; background: #eaf2fb; font-weight: bold;">Symbol</th>
@@ -3250,9 +3248,6 @@
                     </div>
                 </section>
             </div>
-
-
-
 
             <section id="tradesSection" class="section-anchor" style="display:none;">
                 <h2>My Past Trades</h2>
