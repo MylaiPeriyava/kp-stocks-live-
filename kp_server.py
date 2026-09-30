@@ -413,6 +413,7 @@ def get_ipo_data():
 
 
 # ============ ANAND RATHI SCREENERS (RESTORED) ============
+# ============ ANAND RATHI SCREENERS (FIXED) ============
 def get_anand_rathi_table(url, table_name):
     try:
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"}, timeout=20)
@@ -426,7 +427,30 @@ def get_anand_rathi_table(url, table_name):
             cells = tr.find_all(["th", "td"])
             if not cells:
                 continue
-            rows.append([cell.get_text(" ", strip=True) for cell in cells])
+            
+            row_data = []
+            for idx, cell in enumerate(cells):
+                # ✅ Check if this is a company name cell (usually column 2, index 1)
+                # and if it contains a link
+                link_tag = cell.find("a", href=True)
+                
+                if link_tag and idx >= 1:  # Company column
+                    # ✅ Extract both text AND href
+                    company_text = link_tag.get_text(strip=True)
+                    company_href = link_tag['href']
+                    
+                    # ✅ Make href absolute if it's relative
+                    if company_href.startswith('/'):
+                        company_href = 'https://anandrathi.com' + company_href
+                    
+                    # ✅ Return as HTML link
+                    row_data.append(f'<a href="{company_href}" target="_blank">{company_text}</a>')
+                else:
+                    # ✅ Normal cell - just text
+                    row_data.append(cell.get_text(" ", strip=True))
+            
+            rows.append(row_data)
+        
         if not rows:
             return jsonify({"error": f"{table_name} table contained no rows"}), 500
         return jsonify({"source": "anandrathi", "rows": rows})
