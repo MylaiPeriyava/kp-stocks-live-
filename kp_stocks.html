@@ -5180,7 +5180,8 @@ async function loadChartData() {
         content.style.display = "none";
 
         try {
-            const url = API_BASE + "/stock-analysis?symbol=" + encodeURIComponent(lastChartSymbol);
+            //const url = API_BASE + "/stock-analysis?symbol=" + encodeURIComponent(lastChartSymbol);
+            const url = API_BASE + "/analysis?symbol=" + encodeURIComponent(symbol);
             const response = await fetch(url);
             if (!response.ok) throw new Error("HTTP " + response.status);
             const data = await response.json();
