@@ -1696,1670 +1696,1613 @@
 </head>
 
 <body>
-<div class="wrap">
+    <div class="wrap">
 
-    <div id="top"></div>
+        <div id="top"></div>
 
-    <!-- ==================== HEADER ==================== -->
-    <div class="header-row">
-        <img
-            src="https://www.ganesasarma.com/MPS1.jpg"
-            alt="KP Stocks left header image"
-            class="header-img"
-        >
+        <!-- ==================== HEADER ==================== -->
+        <div class="header-row">
+            <img src="https://www.ganesasarma.com/MPS1.jpg"
+                 alt="KP Stocks left header image"
+                 class="header-img">
 
-        <h1 class="header-title" id="pageHeaderTitle">KP's Stocks (Live)</h1>
-        
-        <img
-            src="https://www.ganesasarma.com/MPS2.jpg"
-            alt="KP Stocks right header image"
-            class="header-img"
-        >
-    </div>
+            <h1 class="header-title" id="pageHeaderTitle">KP's Stocks (Live)</h1>
 
-    <!-- ==================== TOP MENU ==================== -->
-<nav class="top-menu" aria-label="Dashboard navigation">
-    <a class="menu-top" href="#top">↑ Top</a>
-    <a href="javascript:void(0)" onclick="showSection('settingsSection')">Rates</a>
-    <a href="javascript:void(0)" onclick="showSection('holdingsSection')">Holdings</a>
-    <a href="javascript:void(0)" onclick="showSection('calculatorSection')">Calculator</a>
-    <a href="javascript:void(0)" onclick="showSection('resultsSection')">Results</a>
-    <a href="javascript:void(0)" onclick="showSection('screenersSection')">Screeners</a>
-    <a href="javascript:void(0)" onclick="showSection('wishlistSection')">Wishlist</a>
-    <a href="javascript:void(0)" onclick="showSection('tradeCalcSection')">Trade Calc</a>
-    <a href="javascript:void(0)" onclick="showSection('chartSection')">Chart + RSI</a>
-    <a href="javascript:void(0)" onclick="showSection('analysisSection')">Analyse</a>
-    <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
-    <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
-    <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
-    <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
-    <a href="javascript:void(0)" onclick="showSection('tradesSection')">Trades</a>
-</nav>
-    
-
-    <p class="note">
-        Intended for Indian equity delivery trades. Holdings and prices are loaded from your local server.
-        Rates below are editable for the current browser session. Existing holdings charges are calculated separately for every original purchase lot.
-    </p>
-
-    <!-- ==================== ALL SECTIONS ==================== -->
-
-    <!-- Rates and Defaults -->
-<div class="section-block">
-<section id="settingsSection" class="section-anchor">
-        <div class="card settings-card">
-            <div class="settings-title-row">
-                <h2>Rates & Defaults</h2>
-                <span>Change values only when your broker or statutory charges differ</span>
-            </div>
-
-            <p class="settings-help">
-                Enter percentage values in normal form. Example: enter <strong>0.00307</strong> for 0.00307%,
-                <strong>0.015</strong> for 0.015%, <strong>0.1</strong> for 0.1%, and <strong>18</strong> for GST 18%.
-                Enter Stop Loss as a positive number, such as <strong>3</strong>; it triggers at P/L of −3% or worse.
-            </p>
-
-            <div class="settings-grid">
-                <div>
-                    <label for="setBuyBrokerage">Buy Brokerage (₹ / lot)</label>
-                    <input id="setBuyBrokerage" type="number" min="0" step="0.01" value="20">
-                </div>
-
-                <div>
-                    <label for="setSellBrokerage">Sell Brokerage (₹ / order)</label>
-                    <input id="setSellBrokerage" type="number" min="0" step="0.01" value="20">
-                </div>
-
-                <div>
-                    <label for="setExchangeTx">Exchange Charge (%)</label>
-                    <input id="setExchangeTx" type="number" min="0" step="0.000001" value="0.00307">
-                </div>
-
-                <div>
-                    <label for="setClearing">Clearing Charge (%)</label>
-                    <input id="setClearing" type="number" min="0" step="0.000001" value="0.000075">
-                </div>
-
-                <div>
-                    <label for="setSebi">SEBI Fee (%)</label>
-                    <input id="setSebi" type="number" min="0" step="0.000001" value="0.0001">
-                </div>
-
-                <div>
-                    <label for="setIpf">Investor Protection Fund (%)</label>
-                    <input id="setIpf" type="number" min="0" step="0.000001" value="0.0001">
-                </div>
-
-                <div>
-                    <label for="setGst">GST (%)</label>
-                    <input id="setGst" type="number" min="0" step="0.01" value="18">
-                </div>
-
-                <div>
-                    <label for="setStampBuy">Stamp Duty on Buy (%)</label>
-                    <input id="setStampBuy" type="number" min="0" step="0.000001" value="0.015">
-                </div>
-
-                <div>
-                    <label for="setSttBuy">STT on Buy (%)</label>
-                    <input id="setSttBuy" type="number" min="0" step="0.000001" value="0.1">
-                </div>
-
-                <div>
-                    <label for="setSttSell">STT on Sell (%)</label>
-                    <input id="setSttSell" type="number" min="0" step="0.000001" value="0.1">
-                </div>
-
-                <div>
-                    <label for="setStopLoss">STOP LOSS (%)</label>
-                    <input id="setStopLoss" type="number" min="0.01" step="0.01" value="3">
-                </div>
-            </div>
-
-            <div class="settings-actions">
-                <button type="button" onclick="applySettings()">
-                    Apply Changes & Recalculate
-                </button>
-
-                <button type="button" class="settings-reset-btn" onclick="resetSettings()">
-                    Reset Defaults
-                </button>
-            </div>
-
-            <div class="settings-status" id="settingsStatus">
-                Default rates are active.
-            </div>
-        </div>
-    </section>
-    </div>
-
-    <!-- Holdings -->
-<div class="section-block active">
-    <section id="holdingsSection" class="section-anchor">
-        <div class="card">
-            <div class="row-label">Holdings (live from server)</div>
-
-            <div class="holdings-row">
-                <div>
-                    <label for="symbolSelect">Select Symbol</label>
-                    <select id="symbolSelect">
-                        <option value="">-- Choose --</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="livePrice">Live Price (₹)</label>
-                    <input id="livePrice" type="text" readonly>
-                </div>
-
-                <div>
-                    <button type="button" onclick="refreshSelectedPrice()">
-                        Refresh Selected Price
-                    </button>
-                </div>
-            </div>
-
-            <div class="holdings-info" id="holdingsInfo">
-                Loading holdings from server...
-            </div>
-
-            <div class="refresh-controls">
-                <button type="button" onclick="refreshAllPrices()">
-                    Refresh All Prices Now
-                </button>
-
-                <label class="auto-refresh-label" for="autoRefreshToggle">
-                    <input type="checkbox"
-                           id="autoRefreshToggle"
-                           checked
-                           onchange="setAutoRefresh(this.checked)">
-                    Auto refresh prices every 60 seconds
-                </label>
-            </div>
-
-            <div class="refresh-status" id="refreshStatus">
-                Initial price loading in progress...
-            </div>
-
-            <div class="holdings-summary" id="holdingsSummary" style="display:none;">
-                <div class="holdings-summary-row">
-                    <span class="hs-label">Total Investment (Price × Qty):</span>
-                    <span class="hs-value" id="hsTotalInvestment">₹0.00</span>
-                </div>
-
-                <div class="holdings-summary-row">
-                    <span class="hs-label">Estimated Total Buy Charges (per original lot):</span>
-                    <span class="hs-value" id="hsTotalCharges">₹0.00</span>
-                </div>
-
-                <div class="holdings-summary-row">
-                    <span class="hs-label">Grand Total Invested:</span>
-                    <span class="hs-value" id="hsGrandTotal">₹0.00</span>
-                </div>
-
-                <div class="holdings-summary-row">
-                    <span class="hs-label">Total Current Value (live):</span>
-                    <span class="hs-value" id="hsTotalCurrentValue">₹0.00</span>
-                </div>
-
-                <div class="holdings-summary-row">
-                    <span class="hs-label">Total Profit / Loss:</span>
-                    <span class="hs-value" id="hsTotalPnL">₹0.00</span>
-                </div>
-
-                <div class="holdings-summary-row">
-                    <span class="hs-label">Total Profit / Loss %:</span>
-                    <span class="hs-value" id="hsTotalPnLPercent">0.00%</span>
-                </div>
-            </div>
-
-            <div class="stop-loss-box" id="stopLossBox" style="display:none;">
-                <div class="stop-loss-header">
-                    <span>STOP LOSS</span>
-                    <span class="stop-loss-subtitle" id="stopLossSubtitle">
-                        Holdings with simple P/L of −3.00% or below
-                    </span>
-                </div>
-
-                <div class="stop-loss-safe" id="stopLossSafeMessage">
-                    No holdings currently below −3.00%.
-                </div>
-
-                <div class="stop-loss-table-wrap" id="stopLossTableWrap" style="display:none;">
-                    <table class="stop-loss-table">
-                        <thead>
-                            <tr>
-                                <th>Symbol / Scenario</th>
-                                <th>Qty</th>
-                                <th>Avg Buy Price</th>
-                                <th>Current Price</th>
-                                <th>Profit / Loss</th>
-                                <th>Profit / Loss %</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stopLossRows"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="pnl-box" id="pnlBox" style="display:none;">
-                <div class="pnl-row">
-                    <span class="pnl-label">Symbol:</span>
-                    <span class="pnl-value" id="pnlSymbol">-</span>
-                </div>
-
-                <div class="pnl-row">
-                    <span class="pnl-label">Holding Quantity:</span>
-                    <span class="pnl-value" id="pnlQty">-</span>
-                </div>
-
-                <div class="pnl-row">
-                    <span class="pnl-label">Holding Average Price:</span>
-                    <span class="pnl-value" id="pnlAvgHold">-</span>
-                </div>
-
-                <div class="pnl-row">
-                    <span class="pnl-label">Effective Avg Cost Including Buy Charges:</span>
-                    <span class="pnl-value" id="pnlEffectiveAvgCost">-</span>
-                </div>
-
-                <div class="pnl-row">
-                    <span class="pnl-label">Current Market Price:</span>
-                    <span class="pnl-value" id="pnlCmp">-</span>
-                </div>
-
-                <div class="pnl-row">
-                    <span class="pnl-label">Current Value:</span>
-                    <span class="pnl-value" id="pnlCurrentValue">-</span>
-                </div>
-
-                <div class="pnl-row">
-                    <span class="pnl-label">Price-only Profit / Loss:</span>
-                    <span class="pnl-value" id="pnlValue">-</span>
-                </div>
-
-                <div class="pnl-row">
-                    <span class="pnl-label">Price-only Profit / Loss %:</span>
-                    <span class="pnl-value" id="pnlPercent">-</span>
-                </div>
-            </div>
-
-            <div class="holding-period-box" id="holdingPeriodBox" style="display:none;">
-                <div class="holding-period-title">Holding Period</div>
-
-                <div class="holding-period-row">
-                    <span class="holding-period-label">Holding Since:</span>
-                    <span class="holding-period-value" id="holdingSince">-</span>
-                </div>
-
-                <div class="holding-period-row">
-                    <span class="holding-period-label">Holding Days:</span>
-                    <span class="holding-period-value" id="holdingDays">-</span>
-                </div>
-
-                <div class="holding-period-row">
-                    <span class="holding-period-label">Price-only Profit / Loss During Holding Period:</span>
-                    <span class="holding-period-value" id="holdingPeriodPnL">-</span>
-                </div>
-
-                <div class="holding-period-row">
-                    <span class="holding-period-label">Price-only Profit / Loss % During Holding Period:</span>
-                    <span class="holding-period-value" id="holdingPeriodPnLPercent">-</span>
-                </div>
-            </div>
-
-            <div class="quote-box" id="quoteBox" style="display:none;">
-                <div class="quote-row">
-                    <span class="quote-label">Google Finance symbol:</span>
-                    <span class="quote-value" id="gfSymbol">-</span>
-                </div>
-
-                <div class="quote-row">
-                    <button type="button" onclick="openGoogleFinance()">
-                        View on Google Finance
-                    </button>
-                </div>
-            </div>
+            <img src="https://www.ganesasarma.com/MPS2.jpg"
+                 alt="KP Stocks right header image"
+                 class="header-img">
         </div>
 
-        <!-- Market Indices Section -->
-        <div class="indices-section" id="indicesSection">
-            <div class="indices-title">📊 Market Indices</div>
+        <!-- ==================== TOP MENU ==================== -->
+        <nav class="top-menu" aria-label="Dashboard navigation">
+            <a class="menu-top" href="#top">↑ Top</a>
+            <a href="javascript:void(0)" onclick="showSection('settingsSection')">Rates</a>
+            <a href="javascript:void(0)" onclick="showSection('holdingsSection')">Holdings</a>
+            <a href="javascript:void(0)" onclick="showSection('calculatorSection')">Calculator</a>
+            <a href="javascript:void(0)" onclick="showSection('resultsSection')">Results</a>
+            <a href="javascript:void(0)" onclick="showSection('screenersSection')">Screeners</a>
+            <a href="javascript:void(0)" onclick="showSection('wishlistSection')">Wishlist</a>
+            <a href="javascript:void(0)" onclick="showSection('tradeCalcSection')">Trade Calc</a>
+            <a href="javascript:void(0)" onclick="showSection('chartSection')">Chart + RSI</a>
+            <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
+            <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
+            <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
+            <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
+            <a href="javascript:void(0)" onclick="showSection('tradesSection')">Trades</a>
+        </nav>
 
-            <div class="indices-grid">
-                <!-- NIFTY 50 -->
-                <div class="index-card" id="index-nifty50">
-                    <div class="index-name">NIFTY 50</div>
-                    <div class="index-value" id="nifty50-value">-</div>
-                    <div class="index-change" id="nifty50-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
+        <p class="note">
+            Intended for Indian equity delivery trades. Holdings and prices are loaded from your local server.
+            Rates below are editable for the current browser session. Existing holdings charges are calculated separately for every original purchase lot.
+        </p>
 
-                <!-- SENSEX -->
-                <div class="index-card" id="index-sensex">
-                    <div class="index-name">SENSEX</div>
-                    <div class="index-value" id="sensex-value">-</div>
-                    <div class="index-change" id="sensex-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
-
-                <!-- NIFTY BANK -->
-                <div class="index-card" id="index-niftybank">
-                    <div class="index-name">NIFTY BANK</div>
-                    <div class="index-value" id="niftybank-value">-</div>
-                    <div class="index-change" id="niftybank-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
-
-                <!-- NIFTY IT -->
-                <div class="index-card" id="index-niftyit">
-                    <div class="index-name">NIFTY IT</div>
-                    <div class="index-value" id="niftyit-value">-</div>
-                    <div class="index-change" id="niftyit-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
-
-                <!-- NIFTY FMCG -->
-                <div class="index-card" id="index-niftyfmcg">
-                    <div class="index-name">NIFTY FMCG</div>
-                    <div class="index-value" id="niftyfmcg-value">-</div>
-                    <div class="index-change" id="niftyfmcg-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
-
-                <!-- NIFTY PHARMA -->
-                <div class="index-card" id="index-niftypharma">
-                    <div class="index-name">NIFTY PHARMA</div>
-                    <div class="index-value" id="niftypharma-value">-</div>
-                    <div class="index-change" id="niftypharma-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
-
-                <!-- NIFTY AUTO -->
-                <div class="index-card" id="index-niftyauto">
-                    <div class="index-name">NIFTY AUTO</div>
-                    <div class="index-value" id="niftyauto-value">-</div>
-                    <div class="index-change" id="niftyauto-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
-
-                <!-- NIFTY METAL -->
-                <div class="index-card" id="index-niftymetal">
-                    <div class="index-name">NIFTY METAL</div>
-                    <div class="index-value" id="niftymetal-value">-</div>
-                    <div class="index-change" id="niftymetal-change">
-                        <span class="change-points">-</span>
-                        <span class="change-percent">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="indices-refresh-status" id="indicesRefreshStatus">
-                Loading indices...
-            </div>
-        </div>
-
-    </section>
-    </div>
-
-    <!-- Position Calculator -->
-    <div class="section-block">
-    <section id="calculatorSection" class="section-anchor">
-        <div class="card">
-            <div class="row-label">Stock 1 (Initial position)</div>
-
-            <div class="inputs">
-                <div>
-                    <label for="symbol1">Symbol</label>
-                    <select id="symbol1">
-                        <option value="">-- Choose --</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="qty1">Quantity</label>
-                    <input id="qty1" type="number" min="0" step="1" value="0">
-                </div>
-
-                <div>
-                    <label for="price1">Buy Price per Share (₹)</label>
-                    <input id="price1" type="number" min="0.01" step="0.01" value="0">
-                </div>
-
-                <div>
-                    <label for="brokerageBuy1">Buy Brokerage (₹)</label>
-                    <input id="brokerageBuy1" type="number" min="0" step="0.01" value="20">
-                </div>
-
-                <div>
-                    <label for="brokerageSell1">Sell Brokerage (₹)</label>
-                    <input id="brokerageSell1" type="number" min="0" step="0.01" value="20">
-                </div>
-
-                <div>
-                    <button type="button" onclick="initStock1()">
-                        Set as Initial Position
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="row-label">Add stocks (Stock 2, 3, …)</div>
-
-            <div class="inputs">
-                <div>
-                    <label for="symbol2">Symbol</label>
-                    <select id="symbol2">
-                        <option value="">-- Choose --</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="qty2">Quantity</label>
-                    <input id="qty2" type="number" min="0" step="1" value="0">
-                </div>
-
-                <div>
-                    <label for="price2">Buy Price per Share (₹)</label>
-                    <input id="price2" type="number" min="0.01" step="0.01" value="0">
-                </div>
-
-                <div>
-                    <label for="brokerageBuy2">Buy Brokerage (₹)</label>
-                    <input id="brokerageBuy2" type="number" min="0" step="0.01" value="20">
-                </div>
-
-                <div>
-                    <label for="brokerageSell2">Sell Brokerage (₹)</label>
-                    <input id="brokerageSell2" type="number" min="0" step="0.01" value="20">
-                </div>
-
-                <div>
-                    <button type="button" class="add-btn" onclick="addStock()">
-                        Add to Position
-                    </button>
-                </div>
-            </div>
-
-            <p class="small">
-                Initial Position uses the price-only weighted-average holding price. Its buy charges are calculated using the brokerage field shown above.
-                Add to Position starts with quantity 0 and the latest available live price.
-            </p>
-        </div>
-
-        <div class="card">
-            <div class="position-info" id="positionInfo">
-                No position yet. Set Stock 1 or add stocks to begin.
-            </div>
-
-            <div class="btn-row">
-                <button type="button" class="reset-btn" onclick="resetAll()">Reset All</button>
-                <button type="button" onclick="recalcTable()">Refresh Table</button>
-            </div>
-        </div>
-    </section>
-    </div>
-
-    <!-- Results -->
-    <div class="section-block">
-    <section id="resultsSection" class="section-anchor">
-        <div class="card">
-            <h2>Key Results (Combined Position)</h2>
-
-            <div class="summary">
-                <div class="box">
-                    <div class="title">Total Quantity</div>
-                    <div class="value" id="totalQty">0</div>
-                </div>
-
-                <div class="box">
-                    <div class="title">Total Invested</div>
-                    <div class="value" id="totalInvested">₹0.00</div>
-                </div>
-
-                <div class="box">
-                    <div class="title">Effective Avg Buy Price</div>
-                    <div class="value" id="avgBuyPrice">₹0.00</div>
-                </div>
-
-                <div class="box">
-                    <div class="title">Break-even Sell Price / Share</div>
-                    <div class="value positive" id="breakEvenPrice">₹0.00</div>
-                </div>
-
-                <div class="box">
-                    <div class="title">Break-even Gross Sell Value</div>
-                    <div class="value positive" id="breakEvenValue">₹0.00</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Buy Charges (Last Added Lot)</h2>
-
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Charge</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="buyChargeRows">
-                        <tr>
-                            <td>No lot data yet</td>
-                            <td></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Break-even, Loss and Gain Table</h2>
-
-            <p class="note">
-                Each row changes sell price by ₹1. The range starts 25% below and ends 25% above the effective average buy price.
-            </p>
-
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Sell Price / Share</th>
-                            <th>Gross Sell Value</th>
-                            <th>Sell Charges</th>
-                            <th>Net Amount Received</th>
-                            <th>Profit / Loss</th>
-                            <th>Profit / Loss %</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultRows">
-                        <tr>
-                            <td colspan="6">No position yet. Set Stock 1 or add stocks to begin.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Rates Currently Used</h2>
-            <p class="small" id="ratesUsedText">Loading current rates...</p>
-        </div>
-    </section>
-    </div>
-
-    <!-- Screeners -->
-    <div class="section-block">
-    <section id="screenersSection" class="section-anchor">
-        <div class="card">
-            <div class="row-label">Market Screeners (live)</div>
-
-            <p class="small">
-                Anand Rathi market lists are fetched through the local server.
-                Use an individual Refresh button for one table or Refresh All Screeners for all five tables.
-            </p>
-
-            <div class="screener-controls">
-                <button type="button" onclick="refreshAllScreeners()">
-                    Refresh All Screeners
-                </button>
-
-                <span class="screener-refresh-status" id="screenerRefreshStatus">
-                    Screeners load when the page opens.
-                </span>
-            </div>
-
-            <div class="screeners-grid">
-                <div class="screener-card">
-                    <div class="screener-title-row">
-                        <span class="screener-title">Anand Rathi – 52 Weeks Low</span>
-                        <button type="button" class="screener-refresh-btn" onclick="load52WeekLowAR()">Refresh</button>
-                    </div>
-                    <div class="screener-table-wrap">
-                        <table class="screener-table" id="tableAR">
-                            <thead><tr><th>Loading...</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="screener-card">
-                    <div class="screener-title-row">
-                        <span class="screener-title">Anand Rathi – Top Losers Today</span>
-                        <button type="button" class="screener-refresh-btn" onclick="loadTopLosersAR()">Refresh</button>
-                    </div>
-                    <div class="screener-table-wrap">
-                        <table class="screener-table loser-table" id="tableTopLosers">
-                            <thead><tr><th>Loading...</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="screener-card">
-                    <div class="screener-title-row">
-                        <span class="screener-title">Anand Rathi – 52 Weeks High</span>
-                        <button type="button" class="screener-refresh-btn" onclick="load52WeekHighAR()">Refresh</button>
-                    </div>
-                    <div class="screener-table-wrap">
-                        <table class="screener-table gainer-table" id="table52WeekHigh">
-                            <thead><tr><th>Loading...</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="screener-card">
-                    <div class="screener-title-row">
-                        <span class="screener-title">Anand Rathi – Top Gainers Today</span>
-                        <button type="button" class="screener-refresh-btn" onclick="loadTopGainersAR()">Refresh</button>
-                    </div>
-                    <div class="screener-table-wrap">
-                        <table class="screener-table gainer-table" id="tableTopGainers">
-                            <thead><tr><th>Loading...</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="screener-card">
-                    <div class="screener-title-row">
-                        <span class="screener-title">Anand Rathi – Volume Gainers</span>
-                        <button type="button" class="screener-refresh-btn" onclick="loadVolumeGainersAR()">Refresh</button>
-                    </div>
-                    <div class="screener-table-wrap">
-                        <table class="screener-table" id="tableVolumeGainers">
-                            <thead><tr><th>Loading...</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Research Ideas (LLM-generated) -->
-            <div style="margin-top: 22px; border-top: 1px solid #e5e7eb; padding-top: 18px;">
-                <div class="screener-title-row" style="margin-bottom: 10px;">
-                    <span class="screener-title">Research Ideas – Unusual NSE Movers (for delivery research)</span>
-                    <button type="button" class="screener-refresh-btn" onclick="loadResearchIdeas()">Refresh</button>
-                </div>
-
-                <p class="small" style="margin-bottom: 10px;">
-                    Generated by scanning today's NSE market for unusual movers. For research only, not a recommendation.
-                </p>
-
-                <div class="screener-refresh-status" id="researchStatus" style="margin-bottom: 10px;">
-                    Click "Refresh" to generate today's ideas.
-                </div>
-
-                <div id="researchIdeasList" style="font-size: 14px; line-height: 1.5; color: #1f2937;">
-                    <!-- Filled by JS -->
-                </div>
-            </div>
-
-        </div>
-
-
-    </section>
-    </div>
-
-    <!-- Wishlist -->
-    <div class="section-block">
-    <section id="wishlistSection" class="section-anchor">
-        <div class="card wishlist-card">
-            <div class="wishlist-title-row">
-                <h2>Wishlist (Live)</h2>
-                <span>Symbols and groups from wishlist.txt</span>
-            </div>
-
-            <p class="small">
-                Add one NSE symbol per line in <strong>wishlist.txt</strong>.
-                Lines beginning with <strong>#</strong> appear as coloured group headings.
-                A yellow row with a <strong>52W LOW</strong> badge means the current Day Low is equal to the reported 52-week low.
-            </p>
-
-            <div class="wishlist-controls">
-                <button type="button" class="add-btn" onclick="refreshWishlist()">
-                    Refresh Wishlist Now
-                </button>
-
-                <span class="wishlist-refresh-status" id="wishlistRefreshStatus">
-                    Wishlist loading...
-                </span>
-            </div>
-
-            <div class="wishlist-table-wrap">
-                <table class="wishlist-table" id="wishlistTable">
-                    <thead>
-                        <tr>
-                            <th>Company</th>
-                            <th>Listing Date</th>
-                            <th>Issue Price</th>
-                            <th>Listing Price</th>
-                            <th>Listing Gain %</th>
-                            <th>Subscription</th>
-                            <th>GMP</th>
-                            <th>AI Pred</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="wishlistRows">
-                        <tr>
-                            <td colspan="10" class="wishlist-empty">Loading wishlist...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-    </div>
-
-    <!-- WL Status (Pattern table) -->
-    <div class="section-block">
-    <section id="patternSection" class="section-anchor" style="display:none;">
-        <div class="card">
-            <h2>WL Status</h2>
-            <p class="section-help">
-                Quick status view of daily high/low for wishlist symbols.
-            </p>
-
-            <div class="pattern-controls">
-                <div class="pattern-row">
-                    <label for="patternSymbol">Symbol:</label>
-                    <select id="patternSymbol">
-                        <option value="">Select from wishlist...</option>
-                    </select>
-
-                    <div class="pattern-period-buttons">
-                        <button type="button" class="pattern-period-btn" data-days="90">3 months</button>
-                        <button type="button" class="pattern-period-btn" data-days="60">2 months</button>
-                        <button type="button" class="pattern-period-btn active" data-days="30">1 month</button>
-                        <button type="button" class="pattern-period-btn" data-days="15">15 days</button>
-                        <button type="button" class="pattern-period-btn" data-days="7">1 week</button>
+        <!-- ==================== ALL SECTIONS ==================== -->
+        <!-- Rates and Defaults -->
+        <div class="section-block">
+            <section id="settingsSection" class="section-anchor">
+                <div class="card settings-card">
+                    <div class="settings-title-row">
+                        <h2>Rates & Defaults</h2>
+                        <span>Change values only when your broker or statutory charges differ</span>
                     </div>
 
-                    <button type="button" class="pattern-analyze-btn" onclick="analyzePattern()">
-                        🔍 Analyze
-                    </button>
-                </div>
-            </div>
-
-            <div class="pattern-results" id="patternResults" style="display:none;">
-                <div class="pattern-stats">
-                    <div class="pattern-stat">
-                        <span class="pattern-stat-label">Days Analyzed:</span>
-                        <span class="pattern-stat-value" id="patternDaysCount">0</span>
-                    </div>
-                    <div class="pattern-stat">
-                        <span class="pattern-stat-label">Most Common High Time:</span>
-                        <span class="pattern-stat-value" id="patternHighTime">-</span>
-                    </div>
-                    <div class="pattern-stat">
-                        <span class="pattern-stat-label">Most Common Low Time:</span>
-                        <span class="pattern-stat-value" id="patternLowTime">-</span>
-                    </div>
-                </div>
-
-                <div class="pattern-chart-container">
-                    <canvas id="patternChart"></canvas>
-                </div>
-
-                <div class="pattern-insights">
-                    <h3>Key Insights:</h3>
-                    <ul id="patternInsightsList"></ul>
-                </div>
-            </div>
-
-            <div class="pattern-loading" id="patternLoading" style="display:none;">
-                <div class="spinner"></div>
-                <p>Analyzing intraday patterns...</p>
-            </div>
-        </div>
-    </section>
-    </div>
-
-    <!-- Trade Calculator -->
-    <div class="section-block">
-    <section id="tradeCalcSection" class="section-anchor">
-        <div class="card trade-calculator-card">
-            <div class="trade-calculator-title">
-                <h2>Buy / Sell Trade Calculator</h2>
-                <span>Uses the current Rates & Defaults settings</span>
-            </div>
-
-            <div class="trade-input-row">
-                <div>
-                    <label for="tradeSharePrice">Share Value / Price (₹)</label>
-                    <input
-                        id="tradeSharePrice"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="Example: 225.50"
-                        onkeydown="if(event.key === 'Enter') calculateTrade()"
-                    >
-                </div>
-
-                <div>
-                    <label for="tradeQty">Quantity</label>
-                    <input
-                        id="tradeQty"
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Example: 10"
-                        onkeydown="if(event.key === 'Enter') calculateTrade()"
-                    >
-                </div>
-
-                <div>
-                    <label>Trade Type</label>
-                    <div class="trade-type-options">
-                        <label>
-                            <input type="radio" name="tradeType" value="buy" checked>
-                            Buy
-                        </label>
-
-                        <label>
-                            <input type="radio" name="tradeType" value="sell">
-                            Sell
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="tradeBrokerage">Brokerage (₹)</label>
-                    <input
-                        id="tradeBrokerage"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value="20"
-                        onkeydown="if(event.key === 'Enter') calculateTrade()"
-                    >
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        class="trade-calc-btn"
-                        onclick="calculateTrade()"
-                    >
-                        Calculate
-                    </button>
-                </div>
-            </div>
-
-            <div class="trade-results">
-                <div class="trade-result-box">
-                    <div class="trade-result-label">Total Value</div>
-                    <div class="trade-result-value" id="tradeTotalValue">₹0.00</div>
-                </div>
-
-                <div class="trade-result-box">
-                    <div class="trade-result-label">Brokerage</div>
-                    <div class="trade-result-value" id="tradeBrokerageResult">₹0.00</div>
-                </div>
-
-                <div class="trade-result-box">
-                    <div class="trade-result-label">Other Charges</div>
-                    <div class="trade-result-value" id="tradeOtherCharges">₹0.00</div>
-                </div>
-
-                <div class="trade-result-box">
-                    <div class="trade-result-label">Total Charges</div>
-                    <div class="trade-result-value" id="tradeTotalCharges">₹0.00</div>
-                </div>
-
-                <div class="trade-result-box trade-total-buy" id="tradeValueBox">
-                    <div class="trade-result-label" id="tradeValueLabel">Total Trade Value</div>
-                    <div class="trade-result-value" id="tradeFinalValue">₹0.00</div>
-                </div>
-
-                <div class="trade-result-box">
-                    <div class="trade-result-label" id="tradePerShareLabel">Effective Per Share Value</div>
-                    <div class="trade-result-value" id="tradePerShareValue">₹0.00</div>
-                </div>
-            </div>
-
-            <div class="trade-charge-details">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Charge</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tradeChargeRows">
-                        <tr>
-                            <td>Enter Share Value and Quantity, then click Calculate.</td>
-                            <td>—</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <p class="small">
-                Buy result = Total Value + Total Charges. Sell result = Total Value − Total Charges.
-                Effective Per Share Value is Total Trade Value divided by Quantity.
-                Broker-specific minimum charges, order-level conditions, statutory changes and rounding can make actual charges differ.
-            </p>
-        </div>
-    </section>
-    </div>
-
-    <!-- Chart + RSI -->
-    <div class="section-block">
-    <section id="chartSection" class="section-anchor">
-        <div class="card chart-card">
-            <div class="chart-title-row">
-                <h2>Chart + RSI</h2>
-                <span>Candlestick chart with RSI based on Yahoo Finance historical data</span>
-            </div>
-
-            <div class="chart-controls">
-                <div>
-                    <label for="chartWishlistSymbol">Wishlist Symbol</label>
-                    <select id="chartWishlistSymbol" onchange="useWishlistSymbolForChart()">
-                        <option value="">-- Select from Wishlist --</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="chartManualSymbol">Or Enter NSE Symbol</label>
-                    <input
-                        id="chartManualSymbol"
-                        type="text"
-                        placeholder="Example: RELIANCE or RELIANCE-EQ"
-                        onkeydown="if(event.key === 'Enter') loadChartData()"
-                    >
-                </div>
-
-                <div>
-                    <label for="chartInterval">Candle Interval</label>
-                    <select id="chartInterval" onchange="onChartIntervalChange()">
-                        <option value="30m">30 Minutes</option>
-                        <option value="60m">1 Hour</option>
-                        <option value="1d" selected>1 Day</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="chartPeriod">Chart Period</label>
-                    <select id="chartPeriod">
-                        <!-- Filled dynamically by JS based on interval -->
-                    </select>
-                </div>
-
-                <div>
-                    <label for="chartRsiPeriod">RSI Period</label>
-                    <input
-                        id="chartRsiPeriod"
-                        type="number"
-                        min="2"
-                        max="50"
-                        step="1"
-                        value="14"
-                        onkeydown="if(event.key === 'Enter') loadChartData()"
-                    >
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        class="chart-load-btn"
-                        onclick="loadChartData()"
-                    >
-                        Load / Refresh Chart
-                    </button>
-                </div>
-            </div>
-
-            <div class="chart-symbol-note">
-                Select a symbol from Wishlist or type any NSE symbol. Examples accepted:
-                <strong>RELIANCE</strong>, <strong>RELIANCE-EQ</strong>, or <strong>RELIANCE.NS</strong>.
-                30-minute and 1-hour candles are available for 5 Days and 1 Month; 1-day candles for up to 1 Year.
-            </div>
-
-            <div class="chart-status" id="chartStatus">
-                Select or enter a symbol, then click Load / Refresh Chart.
-            </div>
-
-            <div class="chart-summary" id="chartSummary" style="display:none;">
-                <div class="chart-summary-box">
-                    <div class="chart-summary-label">Chart Symbol</div>
-                    <div class="chart-summary-value" id="chartSymbolDisplay">—</div>
-                </div>
-
-                <div class="chart-summary-box">
-                    <div class="chart-summary-label">Latest Close</div>
-                    <div class="chart-summary-value" id="chartLatestClose">—</div>
-                </div>
-
-                <div class="chart-summary-box">
-                    <div class="chart-summary-label">Latest RSI</div>
-                    <div class="chart-summary-value" id="chartLatestRsi">—</div>
-                </div>
-
-                <div class="chart-summary-box">
-                    <div class="chart-summary-label">Candles Loaded</div>
-                    <div class="chart-summary-value" id="chartCandleCount">—</div>
-                </div>
-            </div>
-
-            <div class="chart-panel">
-                <div class="chart-panel-title">Candlestick Price Chart</div>
-                <div id="candleChartContainer" class="chart-container">
-                    <div class="chart-empty">No chart loaded yet.</div>
-                </div>
-            </div>
-
-            <div class="chart-panel">
-                <div class="chart-panel-title">RSI</div>
-                <div id="rsiChartContainer" class="rsi-chart-container">
-                    <div class="chart-empty">RSI will appear after chart data is loaded.</div>
-                </div>
-            </div>
-
-            <div class="analysis-controls" style="margin-top: 16px;">
-                <button
-                    type="button"
-                    class="chart-load-btn"
-                    onclick="loadStockAnalysis()"
-                >
-                    Analyse
-                </button>
-                <span class="analysis-status" id="analysisStatus">
-                    Click "Analyse" after loading a chart to see company overview, fundamentals and trends.
-                </span>
-            </div>
-
-            <p class="small">
-                RSI is calculated from closing prices of the selected interval. RSI below 30 can indicate an oversold condition and RSI above 70 can indicate an overbought condition,
-                but neither is a buy or sell recommendation by itself.
-            </p>
-        </div>
-    </section>
-    </div>
-
-    <!-- Analysis section -->
-    <div class="section-block">
-    <section id="analysisSection" class="section-anchor">
-        <div class="card analysis-card">
-            <div class="analysis-title-row">
-                <h2>Stock Analysis</h2>
-                <span>Company overview, fundamentals and trends</span>
-            </div>
-
-            <div class="analysis-controls">
-                <button
-                    type="button"
-                    class="chart-load-btn"
-                    onclick="loadStockAnalysis()"
-                >
-                    Refresh Analysis
-                </button>
-                <span class="analysis-status" id="analysisSectionStatus">
-                    Analysis loads for the same symbol as the current chart.
-                </span>
-            </div>
-
-            <div class="analysis-content" id="analysisContent" style="display:none;">
-                <!-- Filled dynamically by JS -->
-            </div>
-
-            <p class="small">
-                This analysis is generated automatically from public data and simple rules. It is for information only and not a recommendation to buy or sell.
-            </p>
-        </div>
-    </section>
-    </div>
-
-    <!-- Manage Holdings -->
-    <div class="section-block">
-    <section id="manageSection" class="section-anchor">
-        <div class="card manage-card">
-            <div class="manage-title-row">
-                <h2>Manage Holdings</h2>
-                <span>Add or remove lots from Holdings_<USER>.json</span>
-            </div>
-
-            <p class="manage-help">
-                The dropdown shows each lot as "Symbol – Buy Date – Qty – Avg Price".
-                Use <strong>Remove Selected</strong> to delete a lot.
-                Use <strong>Add Stock</strong> to append a new lot. The file is always saved sorted by buy date.
-            </p>
-
-            <div class="manage-grid">
-                <div>
-                    <label for="manageLotSelect">Select Lot to Remove</label>
-                    <select id="manageLotSelect">
-                        <option value="">-- Choose --</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        class="reset-btn"
-                        onclick="removeSelectedLot()"
-                    >
-                        Remove Selected
-                    </button>
-                </div>
-            </div>
-
-            <div class="manage-grid" style="margin-top: 16px;">
-                <div>
-                    <label for="addSymbol">Symbol</label>
-                    <input id="addSymbol" type="text" placeholder="Example: LICI-EQ">
-                </div>
-
-                <div>
-                    <label for="addBuyDate">Buy Date (DD/MM/YYYY)</label>
-                    <input id="addBuyDate" type="text" placeholder="Example: 04/05/2022">
-                </div>
-
-                <div>
-                    <label for="addQty">Quantity</label>
-                    <input id="addQty" type="number" min="1" step="1" placeholder="Example: 50">
-                </div>
-
-                <div>
-                    <label for="addAvgPrice">Average Price (₹)</label>
-                    <input id="addAvgPrice" type="number" min="0.01" step="0.01" placeholder="Example: 450.00">
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        class="add-btn"
-                        onclick="addNewLot()"
-                    >
-                        Add Stock
-                    </button>
-                </div>
-            </div>
-
-            <div class="manage-actions">
-                <span class="manage-status" id="manageStatus">
-                    Manage holdings section ready.
-                </span>
-            </div>
-        </div>
-    </section>
-    </div>
-
-    <!-- Target Calculator -->
-    <div class="section-block">
-    <section id="targetSection" class="section-anchor">
-        <div class="card target-card">
-            <div class="target-title-row">
-                <h2>Target Calculator</h2>
-                <span>Find the sell price needed to achieve your desired net profit %</span>
-            </div>
-
-            <p class="small">
-                Enter the price at which you bought, the quantity, and the net profit % you want after all buy and sell charges.
-                The calculator uses the same Rates & Defaults as the rest of the app.
-            </p>
-
-            <div class="target-input-row">
-                <div>
-                    <label for="targetBoughtPrice">Stock Bought Price (₹)</label>
-                    <input id="targetBoughtPrice"
-                           type="number"
-                           min="0.01"
-                           step="0.01"
-                           placeholder="Example: 220.50">
-                </div>
-
-                <div>
-                    <label for="targetQty">Quantity</label>
-                    <input id="targetQty"
-                           type="number"
-                           min="1"
-                           step="1"
-                           placeholder="Example: 100">
-                </div>
-
-                <div>
-                    <label for="targetPercent">Required Net Profit (%)</label>
-                    <input id="targetPercent"
-                           type="number"
-                           min="0.01"
-                           step="0.01"
-                           placeholder="Example: 5">
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button type="button"
-                            class="trade-calc-btn"
-                            onclick="calculateTarget()">
-                        Calculate Target
-                    </button>
-                </div>
-            </div>
-
-            <div class="target-results" id="targetResults" style="display:none;">
-                <div class="target-result-box target-highlight">
-                    <div class="target-result-label">Target Sell Price / Share</div>
-                    <div class="target-result-value" id="targetPricePerShare">₹0.00</div>
-                </div>
-
-                <div class="target-result-box">
-                    <div class="target-result-label">Gross Sell Value</div>
-                    <div class="target-result-value" id="targetGrossSellValue">₹0.00</div>
-                </div>
-
-                <div class="target-result-box">
-                    <div class="target-result-label">Total Buy Charges</div>
-                    <div class="target-result-value" id="targetTotalBuyCharges">₹0.00</div>
-                </div>
-
-                <div class="target-result-box">
-                    <div class="target-result-label">Total Sell Charges</div>
-                    <div class="target-result-value" id="targetTotalSellCharges">₹0.00</div>
-                </div>
-
-                <div class="target-result-box">
-                    <div class="target-result-label">Net Profit</div>
-                    <div class="target-result-value" id="targetNetProfit">₹0.00</div>
-                </div>
-
-                <div class="target-result-box">
-                    <div class="target-result-label">Net Profit %</div>
-                    <div class="target-result-value" id="targetNetProfitPercent">0.00%</div>
-                </div>
-            </div>
-
-            <div class="target-charge-details" id="targetChargeDetails" style="display:none;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Charge</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="targetChargeRows">
-                        <!-- Filled by JS -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="target-charge-details portfolio-targets-details" id="portfolioTargetsBox" style="display:block; margin-top: 16px;">
-                <table class="portfolio-targets-table">
-                    <thead>
-                        <tr>
-                            <th>Symbol</th>
-                            <th>Bought Price</th>
-                            <th>Qty</th>
-                            <th>CMP</th>
-                            <th>0%</th>
-                            <th>+/- 1%</th>
-                            <th>+/- 2%</th>
-                            <th>+/- 3%</th>
-                            <th>+/- 4%</th>
-                            <th>+/- 5%</th>
-                            <th>+/- 6%</th>
-                            <th>+/- 7%</th>
-                            <th>+/- 8%</th>
-                            <th>+/- 9%</th>
-                            <th>+/- 10%</th>
-                            <th>Target Price</th>
-                            <th>Bought Price</th>
-                            <th>Symbol</th>
-                        </tr>
-                    </thead>
-                    <tbody id="portfolioTargetRows">
-                        <tr><td colspan="18">Holdings targets load automatically.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Holding Duration Legend -->
-            <div style="margin-top: 12px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px;">
-                <strong style="color: #374151; margin-right: 12px;">📅 Holding Period:</strong>
-                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
-                    <span style="display: inline-block; width: 20px; height: 20px; background: #e8f5e9; border: 1px solid #a5d6a7; margin-right: 4px; border-radius: 3px;"></span>
-                    ≤10 days
-                </span>
-                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
-                    <span style="display: inline-block; width: 20px; height: 20px; background: #c8e6c9; border: 1px solid #81c784; margin-right: 4px; border-radius: 3px;"></span>
-                    ≤30 days
-                </span>
-                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
-                    <span style="display: inline-block; width: 20px; height: 20px; background: #81c784; border: 1px solid #4caf50; margin-right: 4px; border-radius: 3px;"></span>
-                    ≤60 days
-                </span>
-                <span style="display: inline-flex; align-items: center; margin-right: 12px;">
-                    <span style="display: inline-block; width: 20px; height: 20px; background: #ffccbc; border: 1px solid #ff8a65; margin-right: 4px; border-radius: 3px;"></span>
-                    ≤90 days
-                </span>
-                <span style="display: inline-flex; align-items: center;">
-                    <span style="display: inline-block; width: 20px; height: 20px; background: #ef9a9a; border: 1px solid #e57373; margin-right: 4px; border-radius: 3px;"></span>
-                    >90 days
-                </span>
-            </div>
-
-            <div class="target-actions">
-                <span class="target-status" id="targetStatus">
-                    Enter bought price, quantity and required profit %, then click Calculate Target.
-                </span>
-            </div>
-
-            <p class="small">
-                Target price is solved so that:
-                Net Profit % = (Net Profit / Total Cost Including Buy Charges) × 100,
-                where Net Profit = Net Sell Proceeds − (Buy Value + Buy Charges).
-                Brokerage, STT, exchange, clearing, SEBI, IPF, GST and stamp duty are all included as per your settings.
-            </p>
-        </div>
-    </section>
-    </div>
-
-<!-- END OF PART 1 OF 2 FOR HTML - CONTINUED IN PART 2 -->
-
-
-
-
-    <!-- Manage Wishlist -->
-    <div class="section-block">
-    <section id="wishlistManageSection" class="section-anchor">
-        <div class="card manage-card">
-            <div class="manage-title-row">
-                <h2>Manage Wishlist</h2>
-                <span>Add or remove symbols from your wishlist</span>
-            </div>
-
-            <p class="manage-help">
-                Add NSE symbols to your personal wishlist. These symbols will appear in the Wishlist table and can be used for charts and analysis.
-                Use <strong>Remove</strong> to delete a symbol. Symbols are saved to Firebase.
-            </p>
-
-            <div class="manage-grid">
-                <div>
-                    <label for="wishlistSymbol">Symbol</label>
-                    <input id="wishlistSymbol" type="text" placeholder="Example: RELIANCE or TCS-EQ">
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        class="add-btn"
-                        onclick="addWishlistSymbol()"
-                    >
-                        Add to Wishlist
-                    </button>
-                </div>
-            </div>
-
-            <div style="margin-top: 16px;">
-                <label for="wishlistRemoveSelect">Remove Symbol</label>
-                <select id="wishlistRemoveSelect">
-                    <option value="">-- Choose --</option>
-                </select>
-            </div>
-
-            <div class="manage-grid" style="margin-top: 14px;">
-                <div>
-                    <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        class="reset-btn"
-                        onclick="removeWishlistSymbol()"
-                    >
-                        Remove Selected
-                    </button>
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button
-                        type="button"
-                        onclick="refreshWishlistManage()"
-                    >
-                        Refresh List
-                    </button>
-                </div>
-            </div>
-
-            <div class="manage-actions">
-                <span class="manage-status" id="wishlistManageStatus">
-                    Wishlist management ready.
-                </span>
-            </div>
-
-            <div style="margin-top: 16px;">
-                <label>Current Wishlist Symbols:</label>
-                <div id="wishlistSymbolsList" style="margin-top: 8px; color: #4b5563; font-size: 14px;">
-                    Loading...
-                </div>
-            </div>
-        </div>
-    </section>
-    </div>
-
-    <!-- WL Pattern (scatter chart) -->
-    <div class="section-block">
-        <section id="wlPatternSection" class="section-anchor" style="display:none;">
-            <div class="card">
-                <h2>WL Pattern Analysis</h2>
-                <p class="section-help">
-                    Analyze when stocks typically reach their daily high and low. Select a symbol from your wishlist, choose a period, and click Analyze.
-                </p>
-
-                <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                        <label style="font-weight: 600;">Symbol:</label>
-                        <select id="wlPatternSymbol" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 150px;">
-                            <option value="">Select from wishlist...</option>
-                        </select>
-
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button type="button" onclick="setWlPatternDays(60)" class="wl-pattern-period-btn">2 months</button>
-                            <button type="button" onclick="setWlPatternDays(30)" class="wl-pattern-period-btn active">1 month</button>
-                            <button type="button" onclick="setWlPatternDays(15)" class="wl-pattern-period-btn">15 days</button>
-                            <button type="button" onclick="setWlPatternDays(7)" class="wl-pattern-period-btn">1 week</button>
+                    <p class="settings-help">
+                        Enter percentage values in normal form. Example: enter <strong>0.00307</strong> for 0.00307%,
+                        <strong>0.015</strong> for 0.015%, <strong>0.1</strong> for 0.1%, and <strong>18</strong> for GST 18%.
+                        Enter Stop Loss as a positive number, such as <strong>3</strong>; it triggers at P/L of −3% or worse.
+                    </p>
+
+                    <div class="settings-grid">
+                        <div>
+                            <label for="setBuyBrokerage">Buy Brokerage (₹ / lot)</label>
+                            <input id="setBuyBrokerage" type="number" min="0" step="0.01" value="20">
                         </div>
 
-                        <button type="button" onclick="analyzeWlPattern()" style="padding: 10px 24px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
-                            🔍 Analyze
+                        <div>
+                            <label for="setSellBrokerage">Sell Brokerage (₹ / order)</label>
+                            <input id="setSellBrokerage" type="number" min="0" step="0.01" value="20">
+                        </div>
+
+                        <div>
+                            <label for="setExchangeTx">Exchange Charge (%)</label>
+                            <input id="setExchangeTx" type="number" min="0" step="0.000001" value="0.00307">
+                        </div>
+
+                        <div>
+                            <label for="setClearing">Clearing Charge (%)</label>
+                            <input id="setClearing" type="number" min="0" step="0.000001" value="0.000075">
+                        </div>
+
+                        <div>
+                            <label for="setSebi">SEBI Fee (%)</label>
+                            <input id="setSebi" type="number" min="0" step="0.000001" value="0.0001">
+                        </div>
+
+                        <div>
+                            <label for="setIpf">Investor Protection Fund (%)</label>
+                            <input id="setIpf" type="number" min="0" step="0.000001" value="0.0001">
+                        </div>
+
+                        <div>
+                            <label for="setGst">GST (%)</label>
+                            <input id="setGst" type="number" min="0" step="0.01" value="18">
+                        </div>
+
+                        <div>
+                            <label for="setStampBuy">Stamp Duty on Buy (%)</label>
+                            <input id="setStampBuy" type="number" min="0" step="0.000001" value="0.015">
+                        </div>
+
+                        <div>
+                            <label for="setSttBuy">STT on Buy (%)</label>
+                            <input id="setSttBuy" type="number" min="0" step="0.000001" value="0.1">
+                        </div>
+
+                        <div>
+                            <label for="setSttSell">STT on Sell (%)</label>
+                            <input id="setSttSell" type="number" min="0" step="0.000001" value="0.1">
+                        </div>
+
+                        <div>
+                            <label for="setStopLoss">STOP LOSS (%)</label>
+                            <input id="setStopLoss" type="number" min="0.01" step="0.01" value="3">
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button type="button" onclick="applySettings()">
+                            Apply Changes & Recalculate
+                        </button>
+
+                        <button type="button" class="settings-reset-btn" onclick="resetSettings()">
+                            Reset Defaults
                         </button>
                     </div>
-                </div>
 
-                <div id="wlPatternResults" style="display: none; margin-top: 30px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-                        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
-                            <div style="font-size: 12px; color: #7f8c8d;">Days Analyzed:</div>
-                            <div style="font-size: 18px; font-weight: 700;" id="wlPatternDaysCount">0</div>
-                        </div>
-                        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
-                            <div style="font-size: 12px; color: #7f8c8d;">Most Common High Time:</div>
-                            <div style="font-size: 18px; font-weight: 700;" id="wlPatternHighTime">-</div>
-                        </div>
-                        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #e74c3c;">
-                            <div style="font-size: 12px; color: #7f8c8d;">Most Common Low Time:</div>
-                            <div style="font-size: 18px; font-weight: 700;" id="wlPatternLowTime">-</div>
-                        </div>
-                    </div>
-
-                    <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
-                        <canvas id="wlPatternChart"></canvas>
-                    </div>
-                    <!-- BSE Sensex vs Stock -->
-                    <div class="index-vs-stock-block" style="margin-top:24px;">
-                        <h4>BSE Sensex vs Stock</h4>
-                        <div style="height:220px; margin-bottom:8px;">
-                            <canvas id="bseIndexChart"></canvas>
-                        </div>
-                        <div style="height:220px; margin-bottom:8px;">
-                            <canvas id="bseStockChart"></canvas>
-                        </div>
-                        <div style="height:160px; margin-bottom:8px;">
-                            <canvas id="bseRSChart"></canvas>
-                        </div>
-                        <div style="height:220px;">
-                            <canvas id="bseNormalizedChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- NSE Nifty vs Stock -->
-                    <div class="index-vs-stock-block" style="margin-top:24px;">
-                        <h4>NSE Nifty vs Stock</h4>
-                        <div style="height:220px; margin-bottom:8px;">
-                            <canvas id="nseIndexChart"></canvas>
-                        </div>
-                        <div style="height:220px; margin-bottom:8px;">
-                            <canvas id="nseStockChart"></canvas>
-                        </div>
-                        <div style="height:160px; margin-bottom:8px;">
-                            <canvas id="nseRSChart"></canvas>
-                        </div>
-                        <div style="height:220px;">
-                            <canvas id="nseNormalizedChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
-                        <h3 style="margin: 0 0 15px 0; color: #f39c12; font-size: 16px;">Key Insights:</h3>
-                        <ul id="wlPatternInsightsList" style="margin: 0; padding-left: 20px;"></ul>
+                    <div class="settings-status" id="settingsStatus">
+                        Default rates are active.
                     </div>
                 </div>
+            </section>
+        </div>
 
-                <div id="wlPatternLoading" style="display: none; text-align: center; padding: 40px;">
-                    <div style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: wlPatternSpin 1s linear infinite; margin: 0 auto;"></div>
-                    <p style="margin-top: 15px; color: #7f8c8d;">Analyzing intraday patterns...</p>
-                </div>
-            </div>
-
-            <!-- IPO Listing Data Section -->
-            <div id="ipo-section" class="mt-4" style="display:none;">
+        <!-- Holdings -->
+        <div class="section-block active">
+            <section id="holdingsSection" class="section-anchor">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
-                        <button class="btn btn-sm btn-outline-primary" onclick="loadIPOData()">
-                            🔄 Refresh
-                        </button>
+                    <div class="row-label">Holdings (live from server)</div>
+
+                    <div class="holdings-row">
+                        <div>
+                            <label for="symbolSelect">Select Symbol</label>
+                            <select id="symbolSelect">
+                                <option value="">-- Choose --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="livePrice">Live Price (₹)</label>
+                            <input id="livePrice" type="text" readonly>
+                        </div>
+
+                        <div>
+                            <button type="button" onclick="refreshSelectedPrice()">
+                                Refresh Selected Price
+                            </button>
+                        </div>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-sm mb-0" id="ipo-table">
-                                <thead class="table-light">
+
+                    <div class="holdings-info" id="holdingsInfo">
+                        Loading holdings from server...
+                    </div>
+
+                    <div class="refresh-controls">
+                        <button type="button" onclick="refreshAllPrices()">
+                            Refresh All Prices Now
+                        </button>
+
+                        <label class="auto-refresh-label" for="autoRefreshToggle">
+                            <input type="checkbox"
+                                   id="autoRefreshToggle"
+                                   checked
+                                   onchange="setAutoRefresh(this.checked)">
+                            Auto refresh prices every 60 seconds
+                        </label>
+                    </div>
+
+                    <div class="refresh-status" id="refreshStatus">
+                        Initial price loading in progress...
+                    </div>
+
+                    <div class="holdings-summary" id="holdingsSummary" style="display:none;">
+                        <div class="holdings-summary-row">
+                            <span class="hs-label">Total Investment (Price × Qty):</span>
+                            <span class="hs-value" id="hsTotalInvestment">₹0.00</span>
+                        </div>
+
+                        <div class="holdings-summary-row">
+                            <span class="hs-label">Estimated Total Buy Charges (per original lot):</span>
+                            <span class="hs-value" id="hsTotalCharges">₹0.00</span>
+                        </div>
+
+                        <div class="holdings-summary-row">
+                            <span class="hs-label">Grand Total Invested:</span>
+                            <span class="hs-value" id="hsGrandTotal">₹0.00</span>
+                        </div>
+
+                        <div class="holdings-summary-row">
+                            <span class="hs-label">Total Current Value (live):</span>
+                            <span class="hs-value" id="hsTotalCurrentValue">₹0.00</span>
+                        </div>
+
+                        <div class="holdings-summary-row">
+                            <span class="hs-label">Total Profit / Loss:</span>
+                            <span class="hs-value" id="hsTotalPnL">₹0.00</span>
+                        </div>
+
+                        <div class="holdings-summary-row">
+                            <span class="hs-label">Total Profit / Loss %:</span>
+                            <span class="hs-value" id="hsTotalPnLPercent">0.00%</span>
+                        </div>
+                    </div>
+
+                    <div class="stop-loss-box" id="stopLossBox" style="display:none;">
+                        <div class="stop-loss-header">
+                            <span>STOP LOSS</span>
+                            <span class="stop-loss-subtitle" id="stopLossSubtitle">
+                                Holdings with simple P/L of −3.00% or below
+                            </span>
+                        </div>
+
+                        <div class="stop-loss-safe" id="stopLossSafeMessage">
+                            No holdings currently below −3.00%.
+                        </div>
+
+                        <div class="stop-loss-table-wrap" id="stopLossTableWrap" style="display:none;">
+                            <table class="stop-loss-table">
+                                <thead>
                                     <tr>
-                                        <th style="width: 18%;">Symbol</th>
-                                        <th style="width: 12%;">Listing Date</th>
-                                        <th style="width: 10%;" class="text-end">Issue Price</th>
-                                        <th style="width: 10%;" class="text-end">Listed Price</th>
-                                        <th style="width: 8%;" class="text-end">Gain %</th>
-                                        <th style="width: 10%;" class="text-end">Subscription</th>
-                                        <th style="width: 8%;" class="text-end">GMP</th>
-                                        <th style="width: 14%;">Status</th>
+                                        <th>Symbol / Scenario</th>
+                                        <th>Qty</th>
+                                        <th>Avg Buy Price</th>
+                                        <th>Current Price</th>
+                                        <th>Profit / Loss</th>
+                                        <th>Profit / Loss %</th>
                                     </tr>
                                 </thead>
-                                <tbody id="ipo-tbody">
-                                    <!-- IPO rows will be inserted here -->
-                                </tbody>
+                                <tbody id="stopLossRows"></tbody>
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Subscription Analysis Section -->
-            <div id="ipo-analysis" class="mt-4"></div>
+                    <div class="pnl-box" id="pnlBox" style="display:none;">
+                        <div class="pnl-row">
+                            <span class="pnl-label">Symbol:</span>
+                            <span class="pnl-value" id="pnlSymbol">-</span>
+                        </div>
 
+                        <div class="pnl-row">
+                            <span class="pnl-label">Holding Quantity:</span>
+                            <span class="pnl-value" id="pnlQty">-</span>
+                        </div>
 
-        </section>
+                        <div class="pnl-row">
+                            <span class="pnl-label">Holding Average Price:</span>
+                            <span class="pnl-value" id="pnlAvgHold">-</span>
+                        </div>
 
+                        <div class="pnl-row">
+                            <span class="pnl-label">Effective Avg Cost Including Buy Charges:</span>
+                            <span class="pnl-value" id="pnlEffectiveAvgCost">-</span>
+                        </div>
 
+                        <div class="pnl-row">
+                            <span class="pnl-label">Current Market Price:</span>
+                            <span class="pnl-value" id="pnlCmp">-</span>
+                        </div>
 
-        <section id="tradesSection" class="section-anchor" style="display:none;">
-            <h2>My Past Trades</h2>
+                        <div class="pnl-row">
+                            <span class="pnl-label">Current Value:</span>
+                            <span class="pnl-value" id="pnlCurrentValue">-</span>
+                        </div>
 
-            <!-- Add Trade Form -->
-            <div class="card">
-                <h3>Add New Trade</h3>
-                <form id="add-trade-form">
-                    <div class="form-row">
-                        <label>
-                            Buy Date
-                            <input type="date" id="buy-date" required />
-                        </label>
+                        <div class="pnl-row">
+                            <span class="pnl-label">Price-only Profit / Loss:</span>
+                            <span class="pnl-value" id="pnlValue">-</span>
+                        </div>
 
-                        <label>
-                            Sell Date
-                            <input type="date" id="sell-date" required />
-                        </label>
-
-                        <label>
-                            Symbol
-                            <input type="text" id="symbol" placeholder="e.g. FIRSTCRY-EQ" required />
-                        </label>
-
-                        <label>
-                            Total Spent (₹)
-                            <input type="number" step="0.01" id="total-spent" required />
-                        </label>
-
-                        <label>
-                            Total Returned (₹)
-                            <input type="number" step="0.01" id="total-returned" required />
-                        </label>
+                        <div class="pnl-row">
+                            <span class="pnl-label">Price-only Profit / Loss %:</span>
+                            <span class="pnl-value" id="pnlPercent">-</span>
+                        </div>
                     </div>
 
-                    <button type="submit">Add Trade</button>
-                </form>
-            </div>
+                    <div class="holding-period-box" id="holdingPeriodBox" style="display:none;">
+                        <div class="holding-period-title">Holding Period</div>
 
-            <!-- Trades List -->
-            <div class="card">
-                <h3>Your Trades</h3>
-                <table id="trades-table">
-                    <thead>
-                        <tr>
-                            <th>Buy Date</th>
-                            <th>Sell Date</th>
-                            <th>Symbol</th>
-                            <th>Total Spent (₹)</th>
-                            <th>Total Returned (₹)</th>
-                            <th>P/L (₹)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="trades-body">
-                        <!-- Rows will be inserted here by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                        <div class="holding-period-row">
+                            <span class="holding-period-label">Holding Since:</span>
+                            <span class="holding-period-value" id="holdingSince">-</span>
+                        </div>
+
+                        <div class="holding-period-row">
+                            <span class="holding-period-label">Holding Days:</span>
+                            <span class="holding-period-value" id="holdingDays">-</span>
+                        </div>
+
+                        <div class="holding-period-row">
+                            <span class="holding-period-label">Price-only Profit / Loss During Holding Period:</span>
+                            <span class="holding-period-value" id="holdingPeriodPnL">-</span>
+                        </div>
+
+                        <div class="holding-period-row">
+                            <span class="holding-period-label">Price-only Profit / Loss % During Holding Period:</span>
+                            <span class="holding-period-value" id="holdingPeriodPnLPercent">-</span>
+                        </div>
+                    </div>
+
+                    <div class="quote-box" id="quoteBox" style="display:none;">
+                        <div class="quote-row">
+                            <span class="quote-label">Google Finance symbol:</span>
+                            <span class="quote-value" id="gfSymbol">-</span>
+                        </div>
+
+                        <div class="quote-row">
+                            <button type="button" onclick="openGoogleFinance()">
+                                View on Google Finance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Indices Section -->
+                <div class="indices-section" id="indicesSection">
+                    <div class="indices-title">📊 Market Indices</div>
+
+                    <div class="indices-grid">
+                        <!-- NIFTY 50 -->
+                        <div class="index-card" id="index-nifty50">
+                            <div class="index-name">NIFTY 50</div>
+                            <div class="index-value" id="nifty50-value">-</div>
+                            <div class="index-change" id="nifty50-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+
+                        <!-- SENSEX -->
+                        <div class="index-card" id="index-sensex">
+                            <div class="index-name">SENSEX</div>
+                            <div class="index-value" id="sensex-value">-</div>
+                            <div class="index-change" id="sensex-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+
+                        <!-- NIFTY BANK -->
+                        <div class="index-card" id="index-niftybank">
+                            <div class="index-name">NIFTY BANK</div>
+                            <div class="index-value" id="niftybank-value">-</div>
+                            <div class="index-change" id="niftybank-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+
+                        <!-- NIFTY IT -->
+                        <div class="index-card" id="index-niftyit">
+                            <div class="index-name">NIFTY IT</div>
+                            <div class="index-value" id="niftyit-value">-</div>
+                            <div class="index-change" id="niftyit-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+
+                        <!-- NIFTY FMCG -->
+                        <div class="index-card" id="index-niftyfmcg">
+                            <div class="index-name">NIFTY FMCG</div>
+                            <div class="index-value" id="niftyfmcg-value">-</div>
+                            <div class="index-change" id="niftyfmcg-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+
+                        <!-- NIFTY PHARMA -->
+                        <div class="index-card" id="index-niftypharma">
+                            <div class="index-name">NIFTY PHARMA</div>
+                            <div class="index-value" id="niftypharma-value">-</div>
+                            <div class="index-change" id="niftypharma-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+
+                        <!-- NIFTY AUTO -->
+                        <div class="index-card" id="index-niftyauto">
+                            <div class="index-name">NIFTY AUTO</div>
+                            <div class="index-value" id="niftyauto-value">-</div>
+                            <div class="index-change" id="niftyauto-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+
+                        <!-- NIFTY METAL -->
+                        <div class="index-card" id="index-niftymetal">
+                            <div class="index-name">NIFTY METAL</div>
+                            <div class="index-value" id="niftymetal-value">-</div>
+                            <div class="index-change" id="niftymetal-change">
+                                <span class="change-points">-</span>
+                                <span class="change-percent">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="indices-refresh-status" id="indicesRefreshStatus">
+                        Loading indices...
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- Position Calculator -->
+        <div class="section-block">
+            <section id="calculatorSection" class="section-anchor">
+                <div class="card">
+                    <div class="row-label">Stock 1 (Initial position)</div>
+
+                    <div class="inputs">
+                        <div>
+                            <label for="symbol1">Symbol</label>
+                            <select id="symbol1">
+                                <option value="">-- Choose --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="qty1">Quantity</label>
+                            <input id="qty1" type="number" min="0" step="1" value="0">
+                        </div>
+
+                        <div>
+                            <label for="price1">Buy Price per Share (₹)</label>
+                            <input id="price1" type="number" min="0.01" step="0.01" value="0">
+                        </div>
+
+                        <div>
+                            <label for="brokerageBuy1">Buy Brokerage (₹)</label>
+                            <input id="brokerageBuy1" type="number" min="0" step="0.01" value="20">
+                        </div>
+
+                        <div>
+                            <label for="brokerageSell1">Sell Brokerage (₹)</label>
+                            <input id="brokerageSell1" type="number" min="0" step="0.01" value="20">
+                        </div>
+
+                        <div>
+                            <button type="button" onclick="initStock1()">
+                                Set as Initial Position
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="row-label">Add stocks (Stock 2, 3, …)</div>
+
+                    <div class="inputs">
+                        <div>
+                            <label for="symbol2">Symbol</label>
+                            <select id="symbol2">
+                                <option value="">-- Choose --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="qty2">Quantity</label>
+                            <input id="qty2" type="number" min="0" step="1" value="0">
+                        </div>
+
+                        <div>
+                            <label for="price2">Buy Price per Share (₹)</label>
+                            <input id="price2" type="number" min="0.01" step="0.01" value="0">
+                        </div>
+
+                        <div>
+                            <label for="brokerageBuy2">Buy Brokerage (₹)</label>
+                            <input id="brokerageBuy2" type="number" min="0" step="0.01" value="20">
+                        </div>
+
+                        <div>
+                            <label for="brokerageSell2">Sell Brokerage (₹)</label>
+                            <input id="brokerageSell2" type="number" min="0" step="0.01" value="20">
+                        </div>
+
+                        <div>
+                            <button type="button" class="add-btn" onclick="addStock()">
+                                Add to Position
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="small">
+                        Initial Position uses the price-only weighted-average holding price. Its buy charges are calculated using the brokerage field shown above.
+                        Add to Position starts with quantity 0 and the latest available live price.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div class="position-info" id="positionInfo">
+                        No position yet. Set Stock 1 or add stocks to begin.
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="button" class="reset-btn" onclick="resetAll()">Reset All</button>
+                        <button type="button" onclick="recalcTable()">Refresh Table</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Results -->
+        <div class="section-block">
+            <section id="resultsSection" class="section-anchor">
+                <div class="card">
+                    <h2>Key Results (Combined Position)</h2>
+
+                    <div class="summary">
+                        <div class="box">
+                            <div class="title">Total Quantity</div>
+                            <div class="value" id="totalQty">0</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="title">Total Invested</div>
+                            <div class="value" id="totalInvested">₹0.00</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="title">Effective Avg Buy Price</div>
+                            <div class="value" id="avgBuyPrice">₹0.00</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="title">Break-even Sell Price / Share</div>
+                            <div class="value positive" id="breakEvenPrice">₹0.00</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="title">Break-even Gross Sell Value</div>
+                            <div class="value positive" id="breakEvenValue">₹0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Buy Charges (Last Added Lot)</h2>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Charge</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="buyChargeRows">
+                                <tr>
+                                    <td>No lot data yet</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Break-even, Loss and Gain Table</h2>
+
+                    <p class="note">
+                        Each row changes sell price by ₹1. The range starts 25% below and ends 25% above the effective average buy price.
+                    </p>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Sell Price / Share</th>
+                                    <th>Gross Sell Value</th>
+                                    <th>Sell Charges</th>
+                                    <th>Net Amount Received</th>
+                                    <th>Profit / Loss</th>
+                                    <th>Profit / Loss %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultRows">
+                                <tr>
+                                    <td colspan="6">No position yet. Set Stock 1 or add stocks to begin.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Rates Currently Used</h2>
+                    <p class="small" id="ratesUsedText">Loading current rates...</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Screeners -->
+        <div class="section-block">
+            <section id="screenersSection" class="section-anchor">
+                <div class="card">
+                    <div class="row-label">Market Screeners (live)</div>
+
+                    <p class="small">
+                        Anand Rathi market lists are fetched through the local server.
+                        Use an individual Refresh button for one table or Refresh All Screeners for all five tables.
+                    </p>
+
+                    <div class="screener-controls">
+                        <button type="button" onclick="refreshAllScreeners()">
+                            Refresh All Screeners
+                        </button>
+
+                        <span class="screener-refresh-status" id="screenerRefreshStatus">
+                            Screeners load when the page opens.
+                        </span>
+                    </div>
+
+                    <div class="screeners-grid">
+                        <div class="screener-card">
+                            <div class="screener-title-row">
+                                <span class="screener-title">Anand Rathi – 52 Weeks Low</span>
+                                <button type="button" class="screener-refresh-btn" onclick="load52WeekLowAR()">Refresh</button>
+                            </div>
+                            <div class="screener-table-wrap">
+                                <table class="screener-table" id="tableAR">
+                                    <thead><tr><th>Loading...</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="screener-card">
+                            <div class="screener-title-row">
+                                <span class="screener-title">Anand Rathi – Top Losers Today</span>
+                                <button type="button" class="screener-refresh-btn" onclick="loadTopLosersAR()">Refresh</button>
+                            </div>
+                            <div class="screener-table-wrap">
+                                <table class="screener-table loser-table" id="tableTopLosers">
+                                    <thead><tr><th>Loading...</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="screener-card">
+                            <div class="screener-title-row">
+                                <span class="screener-title">Anand Rathi – 52 Weeks High</span>
+                                <button type="button" class="screener-refresh-btn" onclick="load52WeekHighAR()">Refresh</button>
+                            </div>
+                            <div class="screener-table-wrap">
+                                <table class="screener-table gainer-table" id="table52WeekHigh">
+                                    <thead><tr><th>Loading...</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="screener-card">
+                            <div class="screener-title-row">
+                                <span class="screener-title">Anand Rathi – Top Gainers Today</span>
+                                <button type="button" class="screener-refresh-btn" onclick="loadTopGainersAR()">Refresh</button>
+                            </div>
+                            <div class="screener-table-wrap">
+                                <table class="screener-table gainer-table" id="tableTopGainers">
+                                    <thead><tr><th>Loading...</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="screener-card">
+                            <div class="screener-title-row">
+                                <span class="screener-title">Anand Rathi – Volume Gainers</span>
+                                <button type="button" class="screener-refresh-btn" onclick="loadVolumeGainersAR()">Refresh</button>
+                            </div>
+                            <div class="screener-table-wrap">
+                                <table class="screener-table" id="tableVolumeGainers">
+                                    <thead><tr><th>Loading...</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Research Ideas (LLM-generated) -->
+                    <div style="margin-top: 22px; border-top: 1px solid #e5e7eb; padding-top: 18px;">
+                        <div class="screener-title-row" style="margin-bottom: 10px;">
+                            <span class="screener-title">Research Ideas – Unusual NSE Movers (for delivery research)</span>
+                            <button type="button" class="screener-refresh-btn" onclick="loadResearchIdeas()">Refresh</button>
+                        </div>
+
+                        <p class="small" style="margin-bottom: 10px;">
+                            Generated by scanning today's NSE market for unusual movers. For research only, not a recommendation.
+                        </p>
+
+                        <div class="screener-refresh-status" id="researchStatus" style="margin-bottom: 10px;">
+                            Click "Refresh" to generate today's ideas.
+                        </div>
+
+                        <div id="researchIdeasList" style="font-size: 14px; line-height: 1.5; color: #1f2937;">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+
+            </section>
+        </div>
+
+        <!-- Wishlist -->
+        <div class="section-block">
+            <section id="wishlistSection" class="section-anchor">
+                <div class="card wishlist-card">
+                    <div class="wishlist-title-row">
+                        <h2>Wishlist (Live)</h2>
+                        <span>Symbols and groups from wishlist.txt</span>
+                    </div>
+
+                    <p class="small">
+                        Add one NSE symbol per line in <strong>wishlist.txt</strong>.
+                        Lines beginning with <strong>#</strong> appear as coloured group headings.
+                        A yellow row with a <strong>52W LOW</strong> badge means the current Day Low is equal to the reported 52-week low.
+                    </p>
+
+                    <div class="wishlist-controls">
+                        <button type="button" class="add-btn" onclick="refreshWishlist()">
+                            Refresh Wishlist Now
+                        </button>
+
+                        <span class="wishlist-refresh-status" id="wishlistRefreshStatus">
+                            Wishlist loading...
+                        </span>
+                    </div>
+
+                    <div class="wishlist-table-wrap">
+                        <table class="wishlist-table" id="wishlistTable">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Listing Date</th>
+                                    <th>Issue Price</th>
+                                    <th>Listing Price</th>
+                                    <th>Listing Gain %</th>
+                                    <th>Subscription</th>
+                                    <th>GMP</th>
+                                    <th>AI Pred</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wishlistRows">
+                                <tr>
+                                    <td colspan="10" class="wishlist-empty">Loading wishlist...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- WL Status (Pattern table) -->
+        <div class="section-block">
+            <section id="patternSection" class="section-anchor" style="display:none;">
+                <div class="card">
+                    <h2>WL Status</h2>
+                    <p class="section-help">
+                        Quick status view of daily high/low for wishlist symbols.
+                    </p>
+
+                    <div class="pattern-controls">
+                        <div class="pattern-row">
+                            <label for="patternSymbol">Symbol:</label>
+                            <select id="patternSymbol">
+                                <option value="">Select from wishlist...</option>
+                            </select>
+
+                            <div class="pattern-period-buttons">
+                                <button type="button" class="pattern-period-btn" data-days="90">3 months</button>
+                                <button type="button" class="pattern-period-btn" data-days="60">2 months</button>
+                                <button type="button" class="pattern-period-btn active" data-days="30">1 month</button>
+                                <button type="button" class="pattern-period-btn" data-days="15">15 days</button>
+                                <button type="button" class="pattern-period-btn" data-days="7">1 week</button>
+                            </div>
+
+                            <button type="button" class="pattern-analyze-btn" onclick="analyzePattern()">
+                                🔍 Analyze
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pattern-results" id="patternResults" style="display:none;">
+                        <div class="pattern-stats">
+                            <div class="pattern-stat">
+                                <span class="pattern-stat-label">Days Analyzed:</span>
+                                <span class="pattern-stat-value" id="patternDaysCount">0</span>
+                            </div>
+                            <div class="pattern-stat">
+                                <span class="pattern-stat-label">Most Common High Time:</span>
+                                <span class="pattern-stat-value" id="patternHighTime">-</span>
+                            </div>
+                            <div class="pattern-stat">
+                                <span class="pattern-stat-label">Most Common Low Time:</span>
+                                <span class="pattern-stat-value" id="patternLowTime">-</span>
+                            </div>
+                        </div>
+
+                        <div class="pattern-chart-container">
+                            <canvas id="patternChart"></canvas>
+                        </div>
+
+                        <div class="pattern-insights">
+                            <h3>Key Insights:</h3>
+                            <ul id="patternInsightsList"></ul>
+                        </div>
+                    </div>
+
+                    <div class="pattern-loading" id="patternLoading" style="display:none;">
+                        <div class="spinner"></div>
+                        <p>Analyzing intraday patterns...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Trade Calculator -->
+        <div class="section-block">
+            <section id="tradeCalcSection" class="section-anchor">
+                <div class="card trade-calculator-card">
+                    <div class="trade-calculator-title">
+                        <h2>Buy / Sell Trade Calculator</h2>
+                        <span>Uses the current Rates & Defaults settings</span>
+                    </div>
+
+                    <div class="trade-input-row">
+                        <div>
+                            <label for="tradeSharePrice">Share Value / Price (₹)</label>
+                            <input id="tradeSharePrice"
+                                   type="number"
+                                   min="0.01"
+                                   step="0.01"
+                                   placeholder="Example: 225.50"
+                                   onkeydown="if(event.key === 'Enter') calculateTrade()">
+                        </div>
+
+                        <div>
+                            <label for="tradeQty">Quantity</label>
+                            <input id="tradeQty"
+                                   type="number"
+                                   min="1"
+                                   step="1"
+                                   placeholder="Example: 10"
+                                   onkeydown="if(event.key === 'Enter') calculateTrade()">
+                        </div>
+
+                        <div>
+                            <label>Trade Type</label>
+                            <div class="trade-type-options">
+                                <label>
+                                    <input type="radio" name="tradeType" value="buy" checked>
+                                    Buy
+                                </label>
+
+                                <label>
+                                    <input type="radio" name="tradeType" value="sell">
+                                    Sell
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="tradeBrokerage">Brokerage (₹)</label>
+                            <input id="tradeBrokerage"
+                                   type="number"
+                                   min="0"
+                                   step="0.01"
+                                   value="20"
+                                   onkeydown="if(event.key === 'Enter') calculateTrade()">
+                        </div>
+
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    class="trade-calc-btn"
+                                    onclick="calculateTrade()">
+                                Calculate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="trade-results">
+                        <div class="trade-result-box">
+                            <div class="trade-result-label">Total Value</div>
+                            <div class="trade-result-value" id="tradeTotalValue">₹0.00</div>
+                        </div>
+
+                        <div class="trade-result-box">
+                            <div class="trade-result-label">Brokerage</div>
+                            <div class="trade-result-value" id="tradeBrokerageResult">₹0.00</div>
+                        </div>
+
+                        <div class="trade-result-box">
+                            <div class="trade-result-label">Other Charges</div>
+                            <div class="trade-result-value" id="tradeOtherCharges">₹0.00</div>
+                        </div>
+
+                        <div class="trade-result-box">
+                            <div class="trade-result-label">Total Charges</div>
+                            <div class="trade-result-value" id="tradeTotalCharges">₹0.00</div>
+                        </div>
+
+                        <div class="trade-result-box trade-total-buy" id="tradeValueBox">
+                            <div class="trade-result-label" id="tradeValueLabel">Total Trade Value</div>
+                            <div class="trade-result-value" id="tradeFinalValue">₹0.00</div>
+                        </div>
+
+                        <div class="trade-result-box">
+                            <div class="trade-result-label" id="tradePerShareLabel">Effective Per Share Value</div>
+                            <div class="trade-result-value" id="tradePerShareValue">₹0.00</div>
+                        </div>
+                    </div>
+
+                    <div class="trade-charge-details">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Charge</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradeChargeRows">
+                                <tr>
+                                    <td>Enter Share Value and Quantity, then click Calculate.</td>
+                                    <td>—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="small">
+                        Buy result = Total Value + Total Charges. Sell result = Total Value − Total Charges.
+                        Effective Per Share Value is Total Trade Value divided by Quantity.
+                        Broker-specific minimum charges, order-level conditions, statutory changes and rounding can make actual charges differ.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Chart + RSI -->
+        <!-- Chart + RSI (with integrated Analysis) -->
+        <div class="section-block">
+            <section id="chartSection" class="section-anchor">
+                <div class="card chart-card">
+                    <div class="chart-title-row">
+                        <h2>Chart + RSI</h2>
+                        <span>Candlestick chart with RSI and company analysis</span>
+                    </div>
+
+                    <div class="chart-controls">
+                        <div>
+                            <label for="chartWishlistSymbol">Wishlist Symbol</label>
+                            <select id="chartWishlistSymbol" onchange="useWishlistSymbolForChart()">
+                                <option value="">-- Select from Wishlist --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="chartManualSymbol">Or Enter NSE Symbol</label>
+                            <input id="chartManualSymbol"
+                                   type="text"
+                                   placeholder="Example: RELIANCE or RELIANCE-EQ"
+                                   onkeydown="if(event.key === 'Enter') loadChartData()">
+                        </div>
+
+                        <div>
+                            <label for="chartInterval">Candle Interval</label>
+                            <select id="chartInterval" onchange="onChartIntervalChange()">
+                                <option value="30m">30 Minutes</option>
+                                <option value="60m">1 Hour</option>
+                                <option value="1d" selected>1 Day</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="chartPeriod">Chart Period</label>
+                            <select id="chartPeriod">
+                                <!-- Filled dynamically by JS based on interval -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="chartRsiPeriod">RSI Period</label>
+                            <input id="chartRsiPeriod"
+                                   type="number"
+                                   min="2"
+                                   max="50"
+                                   step="1"
+                                   value="14"
+                                   onkeydown="if(event.key === 'Enter') loadChartData()">
+                        </div>
+
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    class="chart-load-btn"
+                                    onclick="loadChartData()">
+                                Load Chart
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chart-symbol-note">
+                        Select a symbol from Wishlist or type any NSE symbol. Examples accepted:
+                        <strong>RELIANCE</strong>, <strong>RELIANCE-EQ</strong>, or <strong>RELIANCE.NS</strong>.
+                        30-minute and 1-hour candles are available for 5 Days and 1 Month; 1-day candles for up to 1 Year.
+                    </div>
+
+                    <div class="chart-status" id="chartStatus">
+                        Select or enter a symbol, then click Load Chart.
+                    </div>
+
+                    <div class="chart-summary" id="chartSummary" style="display:none;">
+                        <div class="chart-summary-box">
+                            <div class="chart-summary-label">Chart Symbol</div>
+                            <div class="chart-summary-value" id="chartSymbolDisplay">—</div>
+                        </div>
+
+                        <div class="chart-summary-box">
+                            <div class="chart-summary-label">Latest Close</div>
+                            <div class="chart-summary-value" id="chartLatestClose">—</div>
+                        </div>
+
+                        <div class="chart-summary-box">
+                            <div class="chart-summary-label">Latest RSI</div>
+                            <div class="chart-summary-value" id="chartLatestRsi">—</div>
+                        </div>
+
+                        <div class="chart-summary-box">
+                            <div class="chart-summary-label">Candles Loaded</div>
+                            <div class="chart-summary-value" id="chartCandleCount">—</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-panel">
+                        <div class="chart-panel-title">Candlestick Price Chart</div>
+                        <div id="candleChartContainer" class="chart-container">
+                            <div class="chart-empty">No chart loaded yet.</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-panel">
+                        <div class="chart-panel-title">RSI</div>
+                        <div id="rsiChartContainer" class="rsi-chart-container">
+                            <div class="chart-empty">RSI will appear after chart data is loaded.</div>
+                        </div>
+                    </div>
+
+                    <!-- ✅ INTEGRATED ANALYSIS SECTION -->
+                    <div class="analysis-panel" style="margin-top: 16px; border-top: 2px solid #e9e3f5; padding-top: 16px;">
+                        <div class="analysis-controls" style="margin-bottom: 12px;">
+                            <button type="button"
+                                    class="chart-load-btn"
+                                    onclick="loadStockAnalysis()"
+                                    style="background: #4c1d95;">
+                                📊 Analyse Stock
+                            </button>
+                            <span class="analysis-status" id="analysisStatus">
+                                Click "Analyse Stock" after loading a chart to see company overview, fundamentals and trends.
+                            </span>
+                        </div>
+
+                        <div class="analysis-content" id="analysisContent" style="display:none;">
+                            <!-- Filled dynamically by JS -->
+                        </div>
+
+                        <p class="small" style="margin-top: 10px; color: #6b7280;">
+                            This analysis is generated automatically from public data and simple rules. It is for information only and not a recommendation to buy or sell.
+                        </p>
+                    </div>
+
+                    <p class="small" style="margin-top: 12px;">
+                        RSI is calculated from closing prices of the selected interval. RSI below 30 can indicate an oversold condition and RSI above 70 can indicate an overbought condition,
+                        but neither is a buy or sell recommendation by itself.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Manage Holdings -->
+        <div class="section-block">
+            <section id="manageSection" class="section-anchor">
+                <div class="card manage-card">
+                    <div class="manage-title-row">
+                        <h2>Manage Holdings</h2>
+                        <span>Add or remove lots from Holdings_<USER>.json</span>
+                    </div>
+
+                    <p class="manage-help">
+                        The dropdown shows each lot as "Symbol – Buy Date – Qty – Avg Price".
+                        Use <strong>Remove Selected</strong> to delete a lot.
+                        Use <strong>Add Stock</strong> to append a new lot. The file is always saved sorted by buy date.
+                    </p>
+
+                    <div class="manage-grid">
+                        <div>
+                            <label for="manageLotSelect">Select Lot to Remove</label>
+                            <select id="manageLotSelect">
+                                <option value="">-- Choose --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    class="reset-btn"
+                                    onclick="removeSelectedLot()">
+                                Remove Selected
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="manage-grid" style="margin-top: 16px;">
+                        <div>
+                            <label for="addSymbol">Symbol</label>
+                            <input id="addSymbol" type="text" placeholder="Example: LICI-EQ">
+                        </div>
+
+                        <div>
+                            <label for="addBuyDate">Buy Date (DD/MM/YYYY)</label>
+                            <input id="addBuyDate" type="text" placeholder="Example: 04/05/2022">
+                        </div>
+
+                        <div>
+                            <label for="addQty">Quantity</label>
+                            <input id="addQty" type="number" min="1" step="1" placeholder="Example: 50">
+                        </div>
+
+                        <div>
+                            <label for="addAvgPrice">Average Price (₹)</label>
+                            <input id="addAvgPrice" type="number" min="0.01" step="0.01" placeholder="Example: 450.00">
+                        </div>
+
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    class="add-btn"
+                                    onclick="addNewLot()">
+                                Add Stock
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="manage-actions">
+                        <span class="manage-status" id="manageStatus">
+                            Manage holdings section ready.
+                        </span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Target Calculator -->
+        <div class="section-block">
+            <section id="targetSection" class="section-anchor">
+                <div class="card target-card">
+                    <div class="target-title-row">
+                        <h2>Target Calculator</h2>
+                        <span>Find the sell price needed to achieve your desired net profit %</span>
+                    </div>
+
+                    <p class="small">
+                        Enter the price at which you bought, the quantity, and the net profit % you want after all buy and sell charges.
+                        The calculator uses the same Rates & Defaults as the rest of the app.
+                    </p>
+
+                    <div class="target-input-row">
+                        <div>
+                            <label for="targetBoughtPrice">Stock Bought Price (₹)</label>
+                            <input id="targetBoughtPrice"
+                                   type="number"
+                                   min="0.01"
+                                   step="0.01"
+                                   placeholder="Example: 220.50">
+                        </div>
+
+                        <div>
+                            <label for="targetQty">Quantity</label>
+                            <input id="targetQty"
+                                   type="number"
+                                   min="1"
+                                   step="1"
+                                   placeholder="Example: 100">
+                        </div>
+
+                        <div>
+                            <label for="targetPercent">Required Net Profit (%)</label>
+                            <input id="targetPercent"
+                                   type="number"
+                                   min="0.01"
+                                   step="0.01"
+                                   placeholder="Example: 5">
+                        </div>
+
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    class="trade-calc-btn"
+                                    onclick="calculateTarget()">
+                                Calculate Target
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="target-results" id="targetResults" style="display:none;">
+                        <div class="target-result-box target-highlight">
+                            <div class="target-result-label">Target Sell Price / Share</div>
+                            <div class="target-result-value" id="targetPricePerShare">₹0.00</div>
+                        </div>
+
+                        <div class="target-result-box">
+                            <div class="target-result-label">Gross Sell Value</div>
+                            <div class="target-result-value" id="targetGrossSellValue">₹0.00</div>
+                        </div>
+
+                        <div class="target-result-box">
+                            <div class="target-result-label">Total Buy Charges</div>
+                            <div class="target-result-value" id="targetTotalBuyCharges">₹0.00</div>
+                        </div>
+
+                        <div class="target-result-box">
+                            <div class="target-result-label">Total Sell Charges</div>
+                            <div class="target-result-value" id="targetTotalSellCharges">₹0.00</div>
+                        </div>
+
+                        <div class="target-result-box">
+                            <div class="target-result-label">Net Profit</div>
+                            <div class="target-result-value" id="targetNetProfit">₹0.00</div>
+                        </div>
+
+                        <div class="target-result-box">
+                            <div class="target-result-label">Net Profit %</div>
+                            <div class="target-result-value" id="targetNetProfitPercent">0.00%</div>
+                        </div>
+                    </div>
+
+                    <div class="target-charge-details" id="targetChargeDetails" style="display:none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Charge</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="targetChargeRows">
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="target-charge-details portfolio-targets-details" id="portfolioTargetsBox" style="display:block; margin-top: 16px;">
+                        <table class="portfolio-targets-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Bought Price</th>
+                                    <th>Qty</th>
+                                    <th>CMP</th>
+                                    <th>0%</th>
+                                    <th>+/- 1%</th>
+                                    <th>+/- 2%</th>
+                                    <th>+/- 3%</th>
+                                    <th>+/- 4%</th>
+                                    <th>+/- 5%</th>
+                                    <th>+/- 6%</th>
+                                    <th>+/- 7%</th>
+                                    <th>+/- 8%</th>
+                                    <th>+/- 9%</th>
+                                    <th>+/- 10%</th>
+                                    <th>Target Price</th>
+                                    <th>Bought Price</th>
+                                    <th>Symbol</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolioTargetRows">
+                                <tr><td colspan="18">Holdings targets load automatically.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Holding Duration Legend -->
+                    <div style="margin-top: 12px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px;">
+                        <strong style="color: #374151; margin-right: 12px;">📅 Holding Period:</strong>
+                        <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                            <span style="display: inline-block; width: 20px; height: 20px; background: #e8f5e9; border: 1px solid #a5d6a7; margin-right: 4px; border-radius: 3px;"></span>
+                            ≤10 days
+                        </span>
+                        <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                            <span style="display: inline-block; width: 20px; height: 20px; background: #c8e6c9; border: 1px solid #81c784; margin-right: 4px; border-radius: 3px;"></span>
+                            ≤30 days
+                        </span>
+                        <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                            <span style="display: inline-block; width: 20px; height: 20px; background: #81c784; border: 1px solid #4caf50; margin-right: 4px; border-radius: 3px;"></span>
+                            ≤60 days
+                        </span>
+                        <span style="display: inline-flex; align-items: center; margin-right: 12px;">
+                            <span style="display: inline-block; width: 20px; height: 20px; background: #ffccbc; border: 1px solid #ff8a65; margin-right: 4px; border-radius: 3px;"></span>
+                            ≤90 days
+                        </span>
+                        <span style="display: inline-flex; align-items: center;">
+                            <span style="display: inline-block; width: 20px; height: 20px; background: #ef9a9a; border: 1px solid #e57373; margin-right: 4px; border-radius: 3px;"></span>
+                            >90 days
+                        </span>
+                    </div>
+
+                    <div class="target-actions">
+                        <span class="target-status" id="targetStatus">
+                            Enter bought price, quantity and required profit %, then click Calculate Target.
+                        </span>
+                    </div>
+
+                    <p class="small">
+                        Target price is solved so that:
+                        Net Profit % = (Net Profit / Total Cost Including Buy Charges) × 100,
+                        where Net Profit = Net Sell Proceeds − (Buy Value + Buy Charges).
+                        Brokerage, STT, exchange, clearing, SEBI, IPF, GST and stamp duty are all included as per your settings.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <!-- END OF PART 1 OF 2 FOR HTML - CONTINUED IN PART 2 -->
+        <!-- Manage Wishlist -->
+        <div class="section-block">
+            <section id="wishlistManageSection" class="section-anchor">
+                <div class="card manage-card">
+                    <div class="manage-title-row">
+                        <h2>Manage Wishlist</h2>
+                        <span>Add or remove symbols from your wishlist</span>
+                    </div>
+
+                    <p class="manage-help">
+                        Add NSE symbols to your personal wishlist. These symbols will appear in the Wishlist table and can be used for charts and analysis.
+                        Use <strong>Remove</strong> to delete a symbol. Symbols are saved to Firebase.
+                    </p>
+
+                    <div class="manage-grid">
+                        <div>
+                            <label for="wishlistSymbol">Symbol</label>
+                            <input id="wishlistSymbol" type="text" placeholder="Example: RELIANCE or TCS-EQ">
+                        </div>
+
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    class="add-btn"
+                                    onclick="addWishlistSymbol()">
+                                Add to Wishlist
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                        <label for="wishlistRemoveSelect">Remove Symbol</label>
+                        <select id="wishlistRemoveSelect">
+                            <option value="">-- Choose --</option>
+                        </select>
+                    </div>
+
+                    <div class="manage-grid" style="margin-top: 14px;">
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    class="reset-btn"
+                                    onclick="removeWishlistSymbol()">
+                                Remove Selected
+                            </button>
+                        </div>
+
+                        <div>
+                            <label>&nbsp;</label>
+                            <button type="button"
+                                    onclick="refreshWishlistManage()">
+                                Refresh List
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="manage-actions">
+                        <span class="manage-status" id="wishlistManageStatus">
+                            Wishlist management ready.
+                        </span>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                        <label>Current Wishlist Symbols:</label>
+                        <div id="wishlistSymbolsList" style="margin-top: 8px; color: #4b5563; font-size: 14px;">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- WL Pattern (scatter chart) -->
+        <div class="section-block">
+            <section id="wlPatternSection" class="section-anchor" style="display:none;">
+                <div class="card">
+                    <h2>WL Pattern Analysis</h2>
+                    <p class="section-help">
+                        Analyze when stocks typically reach their daily high and low. Select a symbol from your wishlist, choose a period, and click Analyze.
+                    </p>
+
+                    <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <label style="font-weight: 600;">Symbol:</label>
+                            <select id="wlPatternSymbol" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 150px;">
+                                <option value="">Select from wishlist...</option>
+                            </select>
+
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" onclick="setWlPatternDays(60)" class="wl-pattern-period-btn">2 months</button>
+                                <button type="button" onclick="setWlPatternDays(30)" class="wl-pattern-period-btn active">1 month</button>
+                                <button type="button" onclick="setWlPatternDays(15)" class="wl-pattern-period-btn">15 days</button>
+                                <button type="button" onclick="setWlPatternDays(7)" class="wl-pattern-period-btn">1 week</button>
+                            </div>
+
+                            <button type="button" onclick="analyzeWlPattern()" style="padding: 10px 24px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                                🔍 Analyze
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="wlPatternResults" style="display: none; margin-top: 30px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+                                <div style="font-size: 12px; color: #7f8c8d;">Days Analyzed:</div>
+                                <div style="font-size: 18px; font-weight: 700;" id="wlPatternDaysCount">0</div>
+                            </div>
+                            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
+                                <div style="font-size: 12px; color: #7f8c8d;">Most Common High Time:</div>
+                                <div style="font-size: 18px; font-weight: 700;" id="wlPatternHighTime">-</div>
+                            </div>
+                            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                                <div style="font-size: 12px; color: #7f8c8d;">Most Common Low Time:</div>
+                                <div style="font-size: 18px; font-weight: 700;" id="wlPatternLowTime">-</div>
+                            </div>
+                        </div>
+
+                        <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                            <canvas id="wlPatternChart"></canvas>
+                        </div>
+                        <!-- BSE Sensex vs Stock -->
+                        <div class="index-vs-stock-block" style="margin-top:24px;">
+                            <h4>BSE Sensex vs Stock</h4>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="bseIndexChart"></canvas>
+                            </div>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="bseStockChart"></canvas>
+                            </div>
+                            <div style="height:160px; margin-bottom:8px;">
+                                <canvas id="bseRSChart"></canvas>
+                            </div>
+                            <div style="height:220px;">
+                                <canvas id="bseNormalizedChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- NSE Nifty vs Stock -->
+                        <div class="index-vs-stock-block" style="margin-top:24px;">
+                            <h4>NSE Nifty vs Stock</h4>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="nseIndexChart"></canvas>
+                            </div>
+                            <div style="height:220px; margin-bottom:8px;">
+                                <canvas id="nseStockChart"></canvas>
+                            </div>
+                            <div style="height:160px; margin-bottom:8px;">
+                                <canvas id="nseRSChart"></canvas>
+                            </div>
+                            <div style="height:220px;">
+                                <canvas id="nseNormalizedChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div style="background: #fffbea; border: 1px solid #f1c40f; border-radius: 8px; padding: 20px;">
+                            <h3 style="margin: 0 0 15px 0; color: #f39c12; font-size: 16px;">Key Insights:</h3>
+                            <ul id="wlPatternInsightsList" style="margin: 0; padding-left: 20px;"></ul>
+                        </div>
+                    </div>
+
+                    <div id="wlPatternLoading" style="display: none; text-align: center; padding: 40px;">
+                        <div style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: wlPatternSpin 1s linear infinite; margin: 0 auto;"></div>
+                        <p style="margin-top: 15px; color: #7f8c8d;">Analyzing intraday patterns...</p>
+                    </div>
+                </div>
+
+                <!-- IPO Listing Data Section -->
+                <div id="ipo-section" class="mt-4" style="display:none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadIPOData()">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm mb-0" id="ipo-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 18%;">Symbol</th>
+                                            <th style="width: 12%;">Listing Date</th>
+                                            <th style="width: 10%;" class="text-end">Issue Price</th>
+                                            <th style="width: 10%;" class="text-end">Listed Price</th>
+                                            <th style="width: 8%;" class="text-end">Gain %</th>
+                                            <th style="width: 10%;" class="text-end">Subscription</th>
+                                            <th style="width: 8%;" class="text-end">GMP</th>
+                                            <th style="width: 14%;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ipo-tbody">
+                                        <!-- IPO rows will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subscription Analysis Section -->
+                <div id="ipo-analysis" class="mt-4"></div>
+
+
+            </section>
+
+
+
+            <section id="tradesSection" class="section-anchor" style="display:none;">
+                <h2>My Past Trades</h2>
+
+                <!-- Add Trade Form -->
+                <div class="card">
+                    <h3>Add New Trade</h3>
+                    <form id="add-trade-form">
+                        <div class="form-row">
+                            <label>
+                                Buy Date
+                                <input type="date" id="buy-date" required />
+                            </label>
+
+                            <label>
+                                Sell Date
+                                <input type="date" id="sell-date" required />
+                            </label>
+
+                            <label>
+                                Symbol
+                                <input type="text" id="symbol" placeholder="e.g. FIRSTCRY-EQ" required />
+                            </label>
+
+                            <label>
+                                Total Spent (₹)
+                                <input type="number" step="0.01" id="total-spent" required />
+                            </label>
+
+                            <label>
+                                Total Returned (₹)
+                                <input type="number" step="0.01" id="total-returned" required />
+                            </label>
+                        </div>
+
+                        <button type="submit">Add Trade</button>
+                    </form>
+                </div>
+
+                <!-- Trades List -->
+                <div class="card">
+                    <h3>Your Trades</h3>
+                    <table id="trades-table">
+                        <thead>
+                            <tr>
+                                <th>Buy Date</th>
+                                <th>Sell Date</th>
+                                <th>Symbol</th>
+                                <th>Total Spent (₹)</th>
+                                <th>Total Returned (₹)</th>
+                                <th>P/L (₹)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trades-body">
+                            <!-- Rows will be inserted here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
 
     </div>
-
-</div>
 <!-- end of .wrap -->
 
 <!-- ========================================================= -->
@@ -5223,54 +5166,60 @@ async function loadChartData() {
 }
 
 /* ==================== STOCK ANALYSIS ==================== */
-async function loadStockAnalysis() {
-    const status = document.getElementById("analysisStatus");
-    const sectionStatus = document.getElementById("analysisSectionStatus");
-    const contentDiv = document.getElementById("analysisContent");
+    async function loadStockAnalysis() {
+        const status = document.getElementById("analysisStatus");
+        const content = document.getElementById("analysisContent");
 
-    const symbol = lastChartSymbol || getChartRequestedSymbol();
-
-    if (!symbol) {
-        status.textContent = "Please load a chart first, or enter a symbol and load the chart.";
-        status.className = "analysis-status negative";
-        return;
-    }
-
-    status.textContent = "Loading analysis for " + symbol + "...";
-    status.className = "analysis-status";
-    sectionStatus.textContent = "Analysis loading for " + symbol + "...";
-
-    contentDiv.style.display = "none";
-    contentDiv.innerHTML = "";
-
-    try {
-        const url = API_BASE + "/analysis?symbol=" + encodeURIComponent(symbol);
-        const response = await fetch(url);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || ("HTTP " + response.status));
+        if (!lastChartSymbol) {
+            status.textContent = "Please load a chart first, then click Analyse Stock.";
+            content.style.display = "none";
+            return;
         }
 
-        const data = await response.json();
-        if (data.error) throw new Error(data.error);
+        status.textContent = "Loading analysis for " + lastChartSymbol + "...";
+        content.style.display = "none";
 
-        renderAnalysisContent(data);
+        try {
+            const url = API_BASE + "/stock-analysis?symbol=" + encodeURIComponent(lastChartSymbol);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const data = await response.json();
 
-        status.textContent =
-            "Analysis loaded for " + (data.symbol || symbol) +
-            " at " + formatTime(new Date()) + ".";
-        status.className = "analysis-status positive";
-        sectionStatus.textContent = "Analysis shown for " + (data.symbol || symbol) + ".";
-        contentDiv.style.display = "block";
-    } catch (error) {
-        contentDiv.style.display = "block";
-        contentDiv.innerHTML =
-            '<div class="muted">Analysis unavailable: ' + escapeHtml(error.message) + "</div>";
-        status.textContent = "Analysis load failed: " + error.message;
-        status.className = "analysis-status negative";
-        sectionStatus.textContent = "Analysis failed for " + symbol + ".";
+            let html = "";
+
+            if (data.overview) {
+                html += "<h3>Company Overview</h3><p>" + escapeHtml(data.overview) + "</p>";
+            }
+
+            if (data.fundamentals && data.fundamentals.length > 0) {
+                html += "<h3>Fundamentals</h3><ul>";
+                data.fundamentals.forEach(f => {
+                    html += "<li><strong>" + escapeHtml(f.label) + ":</strong> " + escapeHtml(f.value) + "</li>";
+                });
+                html += "</ul>";
+            }
+
+            if (data.trends && data.trends.length > 0) {
+                html += "<h3>Trends</h3><ul>";
+                data.trends.forEach(t => {
+                    html += "<li>" + escapeHtml(t) + "</li>";
+                });
+                html += "</ul>";
+            }
+
+            if (!html) {
+                html = "<p class='muted'>No analysis available for this symbol.</p>";
+            }
+
+            content.innerHTML = html;
+            content.style.display = "block";
+            status.textContent = "Analysis loaded for " + lastChartSymbol + " at " + formatTime(new Date()) + ".";
+        } catch (error) {
+            status.textContent = "Analysis failed: " + error.message;
+            content.style.display = "none";
+        }
     }
-}
+
 
 function renderAnalysisContent(data) {
     const contentDiv = document.getElementById("analysisContent");
