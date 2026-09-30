@@ -1719,7 +1719,6 @@
             <a href="javascript:void(0)" onclick="showSection('settingsSection')">Rates</a>
             <a href="javascript:void(0)" onclick="showSection('holdingsSection')">Holdings</a>
             <a href="javascript:void(0)" onclick="showSection('calculatorSection')">Calculator</a>
-            <a href="javascript:void(0)" onclick="showSection('resultsSection')">Results</a>
             <a href="javascript:void(0)" onclick="showSection('screenersSection')">Screeners</a>
             <a href="javascript:void(0)" onclick="showSection('wishlistSection')">Wishlist</a>
             <a href="javascript:void(0)" onclick="showSection('tradeCalcSection')">Trade Calc</a>
@@ -1730,6 +1729,7 @@
             <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
             <a href="javascript:void(0)" onclick="showSection('tradesSection')">Trades</a>
         </nav>
+
 
         <p class="note">
             Intended for Indian equity delivery trades. Holdings and prices are loaded from your local server.
@@ -2110,6 +2110,7 @@
         </div>
 
         <!-- Position Calculator -->
+        <!-- Position Calculator (with integrated Results) -->
         <div class="section-block">
             <section id="calculatorSection" class="section-anchor">
                 <div class="card">
@@ -2205,95 +2206,93 @@
                         <button type="button" onclick="recalcTable()">Refresh Table</button>
                     </div>
                 </div>
-            </section>
-        </div>
 
-        <!-- Results -->
-        <div class="section-block">
-            <section id="resultsSection" class="section-anchor">
-                <div class="card">
-                    <h2>Key Results (Combined Position)</h2>
+                <!-- ✅ INTEGRATED RESULTS SECTION -->
+                <div class="results-panel" style="margin-top: 16px; border-top: 2px solid #e9e3f5; padding-top: 16px;">
+                    <div class="card" style="margin-top: 0;">
+                        <h2>Key Results (Combined Position)</h2>
 
-                    <div class="summary">
-                        <div class="box">
-                            <div class="title">Total Quantity</div>
-                            <div class="value" id="totalQty">0</div>
-                        </div>
+                        <div class="summary">
+                            <div class="box">
+                                <div class="title">Total Quantity</div>
+                                <div class="value" id="totalQty">0</div>
+                            </div>
 
-                        <div class="box">
-                            <div class="title">Total Invested</div>
-                            <div class="value" id="totalInvested">₹0.00</div>
-                        </div>
+                            <div class="box">
+                                <div class="title">Total Invested</div>
+                                <div class="value" id="totalInvested">₹0.00</div>
+                            </div>
 
-                        <div class="box">
-                            <div class="title">Effective Avg Buy Price</div>
-                            <div class="value" id="avgBuyPrice">₹0.00</div>
-                        </div>
+                            <div class="box">
+                                <div class="title">Effective Avg Buy Price</div>
+                                <div class="value" id="avgBuyPrice">₹0.00</div>
+                            </div>
 
-                        <div class="box">
-                            <div class="title">Break-even Sell Price / Share</div>
-                            <div class="value positive" id="breakEvenPrice">₹0.00</div>
-                        </div>
+                            <div class="box">
+                                <div class="title">Break-even Sell Price / Share</div>
+                                <div class="value positive" id="breakEvenPrice">₹0.00</div>
+                            </div>
 
-                        <div class="box">
-                            <div class="title">Break-even Gross Sell Value</div>
-                            <div class="value positive" id="breakEvenValue">₹0.00</div>
+                            <div class="box">
+                                <div class="title">Break-even Gross Sell Value</div>
+                                <div class="value positive" id="breakEvenValue">₹0.00</div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="card">
-                    <h2>Buy Charges (Last Added Lot)</h2>
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>Buy Charges (Last Added Lot)</h2>
 
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Charge</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="buyChargeRows">
-                                <tr>
-                                    <td>No lot data yet</td>
-                                    <td></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Charge</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="buyChargeRows">
+                                    <tr>
+                                        <td>No lot data yet</td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
 
-                <div class="card">
-                    <h2>Break-even, Loss and Gain Table</h2>
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>Break-even, Loss and Gain Table</h2>
 
-                    <p class="note">
-                        Each row changes sell price by ₹1. The range starts 25% below and ends 25% above the effective average buy price.
-                    </p>
+                        <p class="note">
+                            Each row changes sell price by ₹1. The range starts 25% below and ends 25% above the effective average buy price.
+                        </p>
 
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Sell Price / Share</th>
-                                    <th>Gross Sell Value</th>
-                                    <th>Sell Charges</th>
-                                    <th>Net Amount Received</th>
-                                    <th>Profit / Loss</th>
-                                    <th>Profit / Loss %</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resultRows">
-                                <tr>
-                                    <td colspan="6">No position yet. Set Stock 1 or add stocks to begin.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Sell Price / Share</th>
+                                        <th>Gross Sell Value</th>
+                                        <th>Sell Charges</th>
+                                        <th>Net Amount Received</th>
+                                        <th>Profit / Loss</th>
+                                        <th>Profit / Loss %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultRows">
+                                    <tr>
+                                        <td colspan="6">No position yet. Set Stock 1 or add stocks to begin.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
 
-                <div class="card">
-                    <h2>Rates Currently Used</h2>
-                    <p class="small" id="ratesUsedText">Loading current rates...</p>
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>Rates Currently Used</h2>
+                        <p class="small" id="ratesUsedText">Loading current rates...</p>
+                    </div>
                 </div>
             </section>
         </div>
