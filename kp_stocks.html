@@ -7330,13 +7330,17 @@ async function deleteTrade(tradeId) {
     }
 }
 
-const originalShowSection = window.showSection;
-window.showSection = function (sectionId) {
-    originalShowSection(sectionId);
-    if (sectionId === "tradesSection") {
-        loadTrades();
-    }
-};
+    const originalShowSection = window.showSection;
+    window.showSection = function (sectionId) {
+        originalShowSection(sectionId);
+        if (sectionId === "tradesSection") {
+            loadTrades();
+        }
+        if (sectionId === "ipo-section") {
+            loadIPOData();
+        }
+    };
+
 
     // IPO Data Loading
     // IPO Data Loading
