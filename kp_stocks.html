@@ -7492,7 +7492,7 @@ window.showSection = function (sectionId) {
     }
 
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
         // Hide all sections, show only holdings
         document.querySelectorAll('.section-block').forEach(el => el.classList.remove('active'));
         const holdingsBlock = document.getElementById('holdingsSection')?.closest('.section-block');
@@ -7501,11 +7501,12 @@ window.showSection = function (sectionId) {
         }
 
         // Load initial data
-        loadHoldings();
+        await loadHoldings();
+        await refreshAllPrices(true);  // ✅ Load prices immediately
         refreshWishlist(true);
         loadIPOData();
 
-        // ✅ ADD THIS LINE - Load indices on page load:
+        // Load indices on page load
         refreshIndices();
 
         // Initialize chart and start auto-refresh
@@ -7528,8 +7529,8 @@ window.showSection = function (sectionId) {
                 }
             });
         }
-
     });
+
 
 </script>
 </body>
