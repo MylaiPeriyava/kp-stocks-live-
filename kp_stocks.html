@@ -5180,31 +5180,44 @@ async function loadChartData() {
         content.style.display = "none";
 
         try {
-            //const url = API_BASE + "/stock-analysis?symbol=" + encodeURIComponent(lastChartSymbol);
-            const url = API_BASE + "/analysis?symbol=" + encodeURIComponent(symbol);
+            const url = API_BASE + "/analysis?symbol=" + encodeURIComponent(lastChartSymbol);
             const response = await fetch(url);
             if (!response.ok) throw new Error("HTTP " + response.status);
             const data = await response.json();
 
             let html = "";
 
-            if (data.overview) {
-                html += "<h3>Company Overview</h3><p>" + escapeHtml(data.overview) + "</p>";
+            // Company Overview
+            if (data.name || data.sector || data.industry) {
+                html += "<h3>Company Overview</h3>";
+                html += "<p><strong>Symbol:</strong> " + escapeHtml(data.symbol || "") + "</p>";
+                if (data.name) html += "<p><strong>Name:</strong> " + escapeHtml(data.name) + "</p>";
+                if (data.sector) html += "<p><strong>Sector:</strong> " + escapeHtml(data.sector) + "</p>";
+                if (data.industry) html += "<p><strong>Industry:</strong> " + escapeHtml(data.industry) + "</p>";
             }
 
-            if (data.fundamentals && data.fundamentals.length > 0) {
+            // Fundamentals
+            if (data.marketCap || data.pe || data.eps) {
                 html += "<h3>Fundamentals</h3><ul>";
-                data.fundamentals.forEach(f => {
-                    html += "<li><strong>" + escapeHtml(f.label) + ":</strong> " + escapeHtml(f.value) + "</li>";
-                });
+                if (data.marketCap) html += "<li><strong>Market Cap:</strong> " + formatMarketCap(data.marketCap) + "</li>";
+                if (data.pe) html += "<li><strong>P/E Ratio:</strong> " + Number(data.pe).toFixed(2) + "</li>";
+                if (data.eps) html += "<li><strong>EPS (TTM):</strong> " + Number(data.eps).toFixed(2) + "</li>";
+                if (data.week52High) html += "<li><strong>52-Week High:</strong> " + Number(data.week52High).toFixed(2) + "</li>";
+                if (data.week52Low) html += "<li><strong>52-Week Low:</strong> " + Number(data.week52Low).toFixed(2) + "</li>";
+                if (data.latestClose) html += "<li><strong>Latest Close:</strong> " + Number(data.latestClose).toFixed(2) + "</li>";
                 html += "</ul>";
             }
 
-            if (data.trends && data.trends.length > 0) {
+            // Description
+            if (data.description) {
+                html += "<h3>Business Summary</h3><p>" + escapeHtml(data.description) + "</p>";
+            }
+
+            // Trends
+            if (data.shortTermTrend || data.longTermTrend) {
                 html += "<h3>Trends</h3><ul>";
-                data.trends.forEach(t => {
-                    html += "<li>" + escapeHtml(t) + "</li>";
-                });
+                if (data.shortTermTrend) html += "<li><strong>Short-term:</strong> " + escapeHtml(data.shortTermTrend) + "</li>";
+                if (data.longTermTrend) html += "<li><strong>Long-term:</strong> " + escapeHtml(data.longTermTrend) + "</li>";
                 html += "</ul>";
             }
 
@@ -5216,11 +5229,11 @@ async function loadChartData() {
             content.style.display = "block";
             status.textContent = "Analysis loaded for " + lastChartSymbol + " at " + formatTime(new Date()) + ".";
         } catch (error) {
+            console.error("Analysis error:", error);
             status.textContent = "Analysis failed: " + error.message;
             content.style.display = "none";
         }
     }
-
 
 function renderAnalysisContent(data) {
     const contentDiv = document.getElementById("analysisContent");
