@@ -414,6 +414,7 @@ def get_ipo_data():
 
 # ============ ANAND RATHI SCREENERS (RESTORED) ============
 # ============ ANAND RATHI SCREENERS (FIXED) ============
+# ============ ANAND RATHI SCREENERS (FIXED TO EXTRACT LINKS) ============
 def get_anand_rathi_table(url, table_name):
     try:
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"}, timeout=20)
@@ -430,23 +431,22 @@ def get_anand_rathi_table(url, table_name):
             
             row_data = []
             for idx, cell in enumerate(cells):
-                # ✅ Check if this is a company name cell (usually column 2, index 1)
-                # and if it contains a link
+                # ✅ Check if cell contains a link (for company names)
                 link_tag = cell.find("a", href=True)
                 
-                if link_tag and idx >= 1:  # Company column
-                    # ✅ Extract both text AND href
-                    company_text = link_tag.get_text(strip=True)
-                    company_href = link_tag['href']
+                if link_tag:
+                    # ✅ Extract link text and href
+                    link_text = link_tag.get_text(strip=True)
+                    link_href = link_tag['href']
                     
-                    # ✅ Make href absolute if it's relative
-                    if company_href.startswith('/'):
-                        company_href = 'https://anandrathi.com' + company_href
+                    # ✅ Make href absolute if relative
+                    if link_href.startswith('/'):
+                        link_href = 'https://anandrathi.com' + link_href
                     
                     # ✅ Return as HTML link
-                    row_data.append(f'<a href="{company_href}" target="_blank">{company_text}</a>')
+                    row_data.append(f'<a href="{link_href}" target="_blank">{link_text}</a>')
                 else:
-                    # ✅ Normal cell - just text
+                    # ✅ No link - just get text
                     row_data.append(cell.get_text(" ", strip=True))
             
             rows.append(row_data)
@@ -455,6 +455,7 @@ def get_anand_rathi_table(url, table_name):
             return jsonify({"error": f"{table_name} table contained no rows"}), 500
         return jsonify({"source": "anandrathi", "rows": rows})
     except Exception as error:
+        print(f"Error scraping {table_name}: {error}")
         return jsonify({"error": str(error)}), 500
 
 
