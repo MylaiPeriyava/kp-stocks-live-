@@ -4664,31 +4664,35 @@ function resetAll() {
             const header = rows[0];
             thead.innerHTML = "<tr>" + header.map(cell => "<th>" + escapeHtml(cell) + "</th>").join("") + "</tr>";
 
-            // ✅ Detect company column
-            const companyColIndex = header.findIndex(h =>
-                h.toLowerCase().includes("company") ||
-                h.toLowerCase().includes("name") ||
-                h.toLowerCase().includes("scrip")
-            );
+            // ✅ Find company column (usually column 1, index 0 or 1)
+            let companyColIndex = -1;
+            header.forEach((h, idx) => {
+                if (h.toLowerCase().includes("company") || h.toLowerCase().includes("name")) {
+                    companyColIndex = idx;
+                }
+            });
 
             tbody.innerHTML = rows.slice(1).map(row => {
                 if (companyColIndex >= 0 && row.length > companyColIndex) {
-                    // ✅ Build row, preserving HTML in company column
-                    return "<tr>" +
-                        row.map((cell, idx) => {
-                            if (idx === companyColIndex && cell.includes("<a ")) {
-                                // ✅ Company column with link - render as HTML (not escaped)
-                                return "<td>" + cell + "</td>";
-                            } else {
-                                // ✅ Other columns - escape for safety
+                    const companyCell = row[companyColIndex];
+
+                    // ✅ Check if cell contains HTML link
+                    if (companyCell.includes("<a ")) {
+                        // ✅ Has link - render as HTML (NOT escaped)
+                        return "<tr>" +
+                            row.map((cell, idx) => {
+                                if (idx === companyColIndex) {
+                                    return "<td>" + cell + "</td>";
+                                }
                                 return "<td>" + escapeHtml(cell) + "</td>";
-                            }
-                        }).join("") +
-                        "</tr>";
-                } else {
-                    // ✅ No company column - escape everything
-                    return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
+                            }).join("") +
+                            "</tr>";
+                    } else {
+                        // ✅ No link - render all as text
+                        return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
+                    }
                 }
+                return "<tr>" + row.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>";
             }).join("");
 
         } catch (error) {
@@ -4696,7 +4700,6 @@ function resetAll() {
             tbody.innerHTML = "<tr><td>" + escapeHtml(error.message) + "</td></tr>";
         }
     }
-
 function load52WeekLowAR() {
     return loadScreenerTable("/52week-low-ar", "tableAR", "Loading Anand Rathi 52-week-low data...");
 }
