@@ -5672,7 +5672,7 @@ function ceilToNextRupee(value) {
             const cmp = numberOrZero(h.livePrice);
             if (bought <= 0 || qty <= 0) return;
 
-            // ✅ Calculate holding days
+            // Calculate holding days
             const holdingDays = calculateHoldingDays(h.buyDateObject);
             const holdingClass = getHoldingDurationClass(holdingDays);
 
@@ -5697,9 +5697,19 @@ function ceilToNextRupee(value) {
                 ? computeTargetPriceForBoughtPrice(bought, qty, requiredPercent)
                 : null;
 
-            // ✅ Apply holding duration class to symbol cell
+            // ✅ Create Yahoo Finance URL (remove -EQ suffix if present)
+            const yahooSymbol = symbol.replace("-EQ", "") + ".NS";
+            const yahooUrl = "https://finance.yahoo.com/quote/" + encodeURIComponent(yahooSymbol);
+
+            // ✅ Symbol cell with link and holding duration color
+            const symbolCell = '<td class="' + holdingClass + '" title="Holding for ' + holdingDays + ' days">' +
+                '<a href="' + yahooUrl + '" target="_blank" style="color: inherit; text-decoration: none; font-weight: 700;">' +
+                escapeHtml(symbol) +
+                '</a>' +
+                '</td>';
+
             html += '<tr>' +
-                '<td class="' + holdingClass + '" title="Holding for ' + holdingDays + ' days">' + escapeHtml(symbol) + '</td>' +
+                symbolCell +
                 '<td>' + money(bought) + '</td>' +
                 '<td>' + qty.toLocaleString("en-IN") + '</td>' +
                 '<td>' + (cmp > 0 ? money(cmp) : '—') + '</td>' +
