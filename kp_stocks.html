@@ -3202,8 +3202,8 @@
             </section>
 
             <!-- IPO Listing Data -->
-            <div class="section-block">
-                <section id="ipo-section" class="section-anchor">
+            <div class="section-block" id="ipo-section">
+                <section id="iposection" class="section-anchor">
                     <div class="card">
                         <h2>📈 IPO Listing Data - Mainboard 2026</h2>
                         <button onclick="loadIPOData()">🔄 Refresh</button>
@@ -7313,9 +7313,6 @@ async function deleteTrade(tradeId) {
         originalShowSection(sectionId);
         if (sectionId === "tradesSection") {
             loadTrades();
-        }
-        if (sectionId === "ipo-section") {
-            loadIPOData();
         }
     };
 
