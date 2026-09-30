@@ -4008,6 +4008,10 @@ async function refreshAllPrices(isInitialLoad = false) {
             formatTime(new Date()) +
             ". Auto refresh is " +
             (autoOn ? "ON (every 60 seconds)." : "OFF.");
+
+        // ✅ ADD THIS LINE - Refresh indices with prices:
+        await refreshIndices();
+
     } catch (error) {
         status.textContent = "Price refresh failed: " + error.message;
     } finally {
@@ -7500,6 +7504,9 @@ window.showSection = function (sectionId) {
         loadHoldings();
         refreshWishlist(true);
         loadIPOData();
+
+        // ✅ ADD THIS LINE - Load indices on page load:
+        refreshIndices();
 
         // Initialize chart and start auto-refresh
         onChartIntervalChange();
