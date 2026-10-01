@@ -4,8 +4,8 @@
 
 # ============ USER CONFIG ============
 USERS = {
-    "KP": "vsk",
-    "PK": "suk",
+    "KP": {"password": "vsk", "pan": "ABCDE1234F"},
+    "PK": {"password": "suk", "pan": None},  # No PAN yet
 }
 
 import json
@@ -734,7 +734,22 @@ def validate_user():
     user = (request.args.get("user") or "").strip().upper()
     pwd = request.args.get("pwd") or ""
 
-    if user not in USERS or USERS[user] != pwd:
+    # ✅ UPDATED: Handle dict format for USERS
+    if user not in USERS:
+        return jsonify({"exists": False, "error": "Invalid user name or password."}), 404
+    
+    user_data = USERS[user]
+    
+    # Handle both old format (string) and new format (dict)
+    if isinstance(user_data, dict):
+        stored_password = user_data.get("password")
+        stored_pan = user_data.get("pan")
+    else:
+        # Old format: USERS = {"KP": "vsk"}
+        stored_password = user_data
+        stored_pan = None
+    
+    if pwd != stored_password:
         return jsonify({"exists": False, "error": "Invalid user name or password."}), 404
 
     holdings_doc = db.collection('holdings').document(user).get()
@@ -758,7 +773,11 @@ def validate_user():
             print(f"Error auto-creating documents for {user}: {e}")
             return jsonify({"exists": False, "error": "Failed to initialize user data"}), 500
 
-    return jsonify({"exists": True}), 200
+    # ✅ Return PAN in response
+    return jsonify({
+        "exists": True,
+        "pan": stored_pan
+    }), 200
 
 
 # ============ MANAGE HOLDINGS ============
