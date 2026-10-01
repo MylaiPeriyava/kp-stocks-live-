@@ -240,7 +240,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                     'ai_prediction': '',
                     'issue_size': '',
                     'status': final_status,
-                    'ipo_type': 'Mainboard'
+                    'ipo_type': 'Mainboard',
                     'registrar': ''  # Will be populated later
                 })
         
