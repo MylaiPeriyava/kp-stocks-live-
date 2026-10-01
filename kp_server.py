@@ -249,7 +249,7 @@ def scrape_ipomarkets_page(base_url, page=1):
             has_more = True
         if soup.find('a', href=lambda h: h and '/page/' in h and 'next' in h.lower()):
             has_more = True
-        if soup.find('button', string=lambda t: t and 'next' in h.lower()):
+        if soup.find('button', string=lambda t: t and 'next' in t.lower()):
             has_more = True
         pagination = soup.find('div', class_=lambda c: c and 'pagination' in c.lower())
         if pagination:
