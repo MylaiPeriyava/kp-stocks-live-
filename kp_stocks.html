@@ -7651,20 +7651,49 @@
                 }
             }
 
+
+            function waitForLogin(maxWaitSeconds = 120) {
+                return new Promise((resolve, reject) => {
+                    const startTime = Date.now();
+
+                    const checkInterval = setInterval(() => {
+                        const stored = sessionStorage.getItem('kp_stocks_user');
+
+                        if (stored !== null && stored !== '') {
+                            clearInterval(checkInterval);
+                            resolve(stored);
+                        } else if (Date.now() - startTime > maxWaitSeconds * 1000) {
+                            clearInterval(checkInterval);
+                            reject(new Error('Login timeout - please refresh the page'));
+                        }
+                    }, 500);
+                });
+            }
+
             document.addEventListener('DOMContentLoaded', async function () {
                 // ✅ BLOCK PAGE - prevent interaction during load
                 document.body.classList.add('page-blocked');
 
-                // ✅ SHOW LOADING OVERLAY IMMEDIATELY
+                // ✅ STEP 0: WAIT FOR LOGIN (poll sessionStorage)
+                let stored = sessionStorage.getItem('kp_stocks_user');
+
+                if (!stored || stored === '') {
+                    // Not logged in yet - wait for server to complete login
+                    try {
+                        stored = await waitForLogin(120);
+                    } catch (error) {
+                        alert(error.message);
+                        document.body.classList.remove('page-blocked');
+                        return;
+                    }
+                }
+
+                CURRENT_USER = stored;
+
+                // ✅ NOW SHOW LOADING OVERLAY (AFTER LOGIN COMPLETE!)
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) {
                     overlay.style.display = 'flex';
-                }
-
-                // ✅ STEP 0: Get user from sessionStorage (server already handled login)
-                const stored = sessionStorage.getItem('kp_stocks_user');
-                if (stored) {
-                    CURRENT_USER = stored;
                 }
 
                 // ✅ STEP 1: Load rates from server (ONCE)
