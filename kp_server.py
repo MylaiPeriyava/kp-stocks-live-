@@ -194,41 +194,23 @@ def scrape_ipomarkets_page(base_url, page=1):
                     if prices:
                         issue_price = prices[-1].replace(',', '')
                 
-                # DEBUG - print what we're getting
-                print(f'Company: {company}')
-                print(f'listing_info raw: "{listing_info}"')
-                print(f'listing_info repr: {repr(listing_info)}')
-                
                 listing_price = ''
                 listing_gain = ''
-                if listing_info and listing_info != '—' and listing_info.strip():
-                    print(f'Trying to extract from: {listing_info}')
-                    
-                    price_match = re.search(r'₹\s*([\d,]+\.?\d*)', listing_info)
+                if listing_info and listing_info != '—':
+                    price_match = re.search(r'₹([\d,]+\.?\d*)', listing_info)
                     if price_match:
                         listing_price = price_match.group(1).replace(',', '')
-                        print(f'✓ Found listing_price: {listing_price}')
-                    else:
-                        print(f'✗ No price match in: {listing_info}')
                     
-                    gain_match = re.search(r'\(\s*([+\-]?[\d.]+)\s*%\s*\)', listing_info)
+                    gain_match = re.search(r'\(([+\-]?[\d.]+)%\)', listing_info)
                     if gain_match:
                         listing_gain = gain_match.group(1)
-                        print(f'✓ Found listing_gain: {listing_gain}')
-                    else:
-                        print(f'✗ No gain match in: {listing_info}')
-                else:
-                    print(f'Skipping - listing_info is empty or dash')
                 
-                print('---')
-                
-                # Determine status - FIXED LOGIC (PROPERLY INDENTED)
+                # Determine status
                 if 'Listed' in status:
                     final_status = 'listed'
                 elif 'Allotment awaited' in status or 'allotted' in status.lower():
                     final_status = 'open'
                 elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
-                    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
                     final_status = 'upcoming'
                 elif 'Opens' in status:
                     final_status = 'upcoming'
@@ -237,10 +219,9 @@ def scrape_ipomarkets_page(base_url, page=1):
                 else:
                     final_status = 'listed'
                 
-                # Clean subscription: remove "exchange basis" and ensure single 'x'
+                # Clean subscription
                 sub_clean = subscription.replace('×', 'x')
                 if 'x' in sub_clean:
-                    # Take only the part before 'x', then add single 'x'
                     sub_clean = sub_clean.split('x')[0] + 'x'
                 
                 ipos.append({
