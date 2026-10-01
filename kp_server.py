@@ -188,6 +188,11 @@ def scrape_ipomarkets_page(base_url, page=1):
                 dates = cells[5].get_text(strip=True)
                 listing_info = cells[6].get_text(strip=True)
                 
+                # DEBUG - print what we're getting
+                print(f'Company: {company}')
+                print(f'subscription raw: "{subscription}"')
+                print(f'listing_info: "{listing_info}"')
+                
                 issue_price = ''
                 if price_band and '₹' in price_band:
                     prices = re.findall(r'₹([\d,]+\.?\d*)', price_band)
@@ -197,13 +202,25 @@ def scrape_ipomarkets_page(base_url, page=1):
                 listing_price = ''
                 listing_gain = ''
                 if listing_info and listing_info != '—':
+                    print(f'Trying to extract from: {listing_info}')
+                    
                     price_match = re.search(r'₹([\d,]+\.?\d*)', listing_info)
                     if price_match:
                         listing_price = price_match.group(1).replace(',', '')
+                        print(f'✓ Found listing_price: {listing_price}')
+                    else:
+                        print(f'✗ No price match in: {listing_info}')
                     
                     gain_match = re.search(r'\(([+\-]?[\d.]+)%\)', listing_info)
                     if gain_match:
                         listing_gain = gain_match.group(1)
+                        print(f'✓ Found listing_gain: {listing_gain}')
+                    else:
+                        print(f'✗ No gain match in: {listing_info}')
+                else:
+                    print(f'Skipping - listing_info is empty or dash')
+                
+                print('---')
                 
                 # Determine status - FIXED LOGIC (PROPERLY INDENTED)
                 if 'Listed' in status:
