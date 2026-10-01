@@ -3222,14 +3222,15 @@
                                 <table class="table table-hover table-sm mb-0" id="ipo-table">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width: 18%;">Symbol</th>
-                                            <th style="width: 12%;">Listing Date</th>
-                                            <th style="width: 10%;" class="text-end">Issue Price</th>
-                                            <th style="width: 10%;" class="text-end">Listed Price</th>
-                                            <th style="width: 8%;" class="text-end">Gain %</th>
-                                            <th style="width: 10%;" class="text-end">Subscription</th>
-                                            <th style="width: 8%;" class="text-end">GMP</th>
-                                            <th style="width: 14%;">Status</th>
+                                            <th style="width: 16%;">Symbol</th>
+                                            <th style="width: 11%;">Listing Date</th>
+                                            <th style="width: 9%;" class="text-end">Issue Price</th>
+                                            <th style="width: 9%;" class="text-end">Listed Price</th>
+                                            <th style="width: 7%;" class="text-end">Gain %</th>
+                                            <th style="width: 9%;" class="text-end">Subscription</th>
+                                            <th style="width: 7%;" class="text-end">GMP</th>
+                                            <th style="width: 11%;">Status</th>
+                                            <th style="width: 11%;" class="text-center">Check Status</th>
                                         </tr>
                                     </thead>
                                     <tbody id="ipo-tbody">
@@ -7518,20 +7519,20 @@ window.showSection = function (sectionId) {
                         <button class="btn btn-sm btn-primary" 
                                 onclick="window.open('${statusUrl}', '_blank')"
                                 title="Check allotment status for PAN: ${window.CURRENT_USER_PAN}"
-                                style="font-size: 12px; padding: 4px 8px;">
-                            🔍 Check Status
+                                style="font-size: 11px; padding: 3px 6px;">
+                            🔍 Check
                         </button>
                     `;
                     } else {
                         checkStatusBtn = `
-                        <span class="text-muted" style="font-size: 12px;" 
+                        <span class="text-muted" style="font-size: 11px;" 
                               title="PAN not configured for this user">
                             ⚠️ No PAN
                         </span>
                     `;
                     }
                 } else {
-                    checkStatusBtn = '<span class="text-muted" style="font-size: 12px;">-</span>';
+                    checkStatusBtn = '<span class="text-muted" style="font-size: 11px;">-</span>';
                 }
 
                 tr.innerHTML = `
@@ -7545,6 +7546,7 @@ window.showSection = function (sectionId) {
                 <td class="text-end">${subscription}</td>
                 <td class="text-end">${gmp}</td>
                 <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${checkStatusBtn}</td>
             `;
 
                 tbody.appendChild(tr);
@@ -7561,7 +7563,6 @@ window.showSection = function (sectionId) {
             document.getElementById('ipo-section').style.display = 'none';
         }
     }
-
 
 
 
