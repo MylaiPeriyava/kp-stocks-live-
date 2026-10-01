@@ -5777,6 +5777,10 @@ function showSection(sectionId) {
 
     
 (async function initPage() {
+    // ✅ Load PAN from sessionStorage on page load
+    window.CURRENT_USER_PAN = sessionStorage.getItem('kp_stocks_pan') || null;
+    console.log('PAN from sessionStorage:', window.CURRENT_USER_PAN);
+
     const stored = sessionStorage.getItem('kp_stocks_user');
     if (stored) {
         CURRENT_USER = stored;
@@ -5928,12 +5932,12 @@ function showSection(sectionId) {
                 }
                 return;
             }
-            // ✅ STORE PAN FROM RESPONSE
-            window.CURRENT_USER_PAN = vd.pan || null;
-            console.log('PAN loaded:', window.CURRENT_USER_PAN);
 
-            // ✅ STORE PAN FROM RESPONSE
-            window.CURRENT_USER_PAN = vd.pan || null;
+            // ✅ STORE PAN FROM FIRST VALIDATE CALL
+            if (vd.pan) {
+                sessionStorage.setItem('kp_stocks_pan', vd.pan);
+                console.log('✅ PAN saved:', vd.pan);
+            }
 
         } catch (e) {
             showAuth(['Validation failed: ' + e.message]);
