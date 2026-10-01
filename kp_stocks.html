@@ -11,22 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-    /* Block all interaction until login complete */
-    body.page-blocked {
-        pointer-events: none;
-        user-select: none;
-    }
 
-        /* ✅ Less aggressive - allows some interaction */
-        body.page-blocked {
-            pointer-events: none;
-            user-select: none;
-        }
-
-            body.page-blocked > *:not(#loginPrompt):not(.login-overlay) {
-                pointer-events: none;
-                cursor: wait;
-            }
 
     /* Loading Overlay */
     #loadingOverlay {
@@ -1740,17 +1725,31 @@
 
     <body class="page-blocked">
         <!-- Loading Overlay (hidden initially, shown after login) -->
-        <div id="loadingOverlay" style="display: none;">
+        <div id="loadingOverlay" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.4s ease-out;
+    pointer-events: auto;
+">
             <div style="text-align: center; padding: 40px;">
                 <div style="
-                width: 60px;
-                height: 60px;
-                border: 6px solid #e5e7eb;
-                border-top: 6px solid #0b5cab;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin: 0 auto 20px;
-            "></div>
+            width: 60px;
+            height: 60px;
+            border: 6px solid #e5e7eb;
+            border-top: 6px solid #0b5cab;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        "></div>
                 <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 24px;">
                     Loading Your Portfolio
                 </h2>
@@ -7677,25 +7676,21 @@
             }
 
             document.addEventListener('DOMContentLoaded', async function () {
-                // ✅ STEP 0: WAIT FOR LOGIN (DON'T BLOCK YET!)
+                // ✅ STEP 0: WAIT FOR LOGIN (page is NOT blocked - user can type!)
                 let stored = sessionStorage.getItem('kp_stocks_user');
 
                 if (!stored || stored === '') {
-                    // Not logged in yet - wait for server to complete login
                     try {
                         stored = await waitForLogin(120);
                     } catch (error) {
                         alert(error.message);
-                        return; // Don't block - let user refresh
+                        return;
                     }
                 }
 
                 CURRENT_USER = stored;
 
-                // ✅ LOGIN COMPLETE - NOW BLOCK PAGE
-                document.body.classList.add('page-blocked');
-
-                // ✅ SHOW LOADING OVERLAY
+                // ✅ SHOW OVERLAY (it blocks clicks naturally by covering screen)
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) {
                     overlay.style.display = 'flex';
@@ -7766,13 +7761,11 @@
                     });
                 }
 
-                // ✅ FINAL STEP: Hide loading overlay + UNBLOCK PAGE
+                // ✅ FINAL STEP: Hide overlay (page becomes interactive)
                 hideLoadingOverlay();
-                document.body.classList.remove('page-blocked');
 
                 console.log('✅ App initialized - All setup complete!');
             });
-
             // Helper function
             function hideLoadingOverlay() {
                 const overlay = document.getElementById('loadingOverlay');
