@@ -241,6 +241,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                     'issue_size': '',
                     'status': final_status,
                     'ipo_type': 'Mainboard'
+                    'registrar': ''  # Will be populated later
                 })
         
         has_more = False
