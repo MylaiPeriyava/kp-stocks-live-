@@ -154,7 +154,7 @@ def scrape_ipomarkets_page(base_url, page=1):
         
         for row in rows:
             cells = row.find_all(['td', 'th'])
-            if len(cells) >= 7:
+            if len(cells) >= 8:  # ✅ UPDATED: Now need 8 columns (added Trend column)
                 # Get the company cell
                 company_cell = cells[0]
                 
@@ -181,17 +181,14 @@ def scrape_ipomarkets_page(base_url, page=1):
                 else:
                     company = company_raw
                 
+                # ✅ UPDATED COLUMN INDICES (added Trend column at index 4)
                 status = cells[1].get_text(strip=True)
                 price_band = cells[2].get_text(strip=True)
                 gmp = cells[3].get_text(strip=True)
-                subscription = cells[4].get_text(strip=True)
-                dates = cells[5].get_text(strip=True)
-                listing_info = cells[6].get_text(strip=True)
-                
-                # DEBUG - print what we're getting
-                print(f'Company: {company}')
-                print(f'subscription raw: "{subscription}"')
-                print(f'listing_info: "{listing_info}"')
+                trend = cells[4].get_text(strip=True)        # ✅ NEW - Trend column (skip)
+                subscription = cells[5].get_text(strip=True)  # ✅ UPDATED: was cells[4]
+                dates = cells[6].get_text(strip=True)         # ✅ UPDATED: was cells[5]
+                listing_info = cells[7].get_text(strip=True)  # ✅ UPDATED: was cells[6]
                 
                 issue_price = ''
                 if price_band and '₹' in price_band:
@@ -202,33 +199,20 @@ def scrape_ipomarkets_page(base_url, page=1):
                 listing_price = ''
                 listing_gain = ''
                 if listing_info and listing_info != '—':
-                    print(f'Trying to extract from: {listing_info}')
-                    
                     price_match = re.search(r'₹([\d,]+\.?\d*)', listing_info)
                     if price_match:
                         listing_price = price_match.group(1).replace(',', '')
-                        print(f'✓ Found listing_price: {listing_price}')
-                    else:
-                        print(f'✗ No price match in: {listing_info}')
                     
                     gain_match = re.search(r'\(([+\-]?[\d.]+)%\)', listing_info)
                     if gain_match:
                         listing_gain = gain_match.group(1)
-                        print(f'✓ Found listing_gain: {listing_gain}')
-                    else:
-                        print(f'✗ No gain match in: {listing_info}')
-                else:
-                    print(f'Skipping - listing_info is empty or dash')
                 
-                print('---')
-                
-                # Determine status - FIXED LOGIC (PROPERLY INDENTED)
+                # Determine status
                 if 'Listed' in status:
                     final_status = 'listed'
                 elif 'Allotment awaited' in status or 'allotted' in status.lower():
                     final_status = 'open'
                 elif 'Closes today' in status or 'Closes tomorrow' in status or 'Closes in' in status:
-                    # IPOs closing today/tomorrow/in X days are UPCOMING (for highlighting)
                     final_status = 'upcoming'
                 elif 'Opens' in status:
                     final_status = 'upcoming'
@@ -237,10 +221,9 @@ def scrape_ipomarkets_page(base_url, page=1):
                 else:
                     final_status = 'listed'
                 
-                # Clean subscription: remove "exchange basis" and ensure single 'x'
+                # Clean subscription
                 sub_clean = subscription.replace('×', 'x')
                 if 'x' in sub_clean:
-                    # Take only the part before 'x', then add single 'x'
                     sub_clean = sub_clean.split('x')[0] + 'x'
                 
                 ipos.append({
@@ -289,6 +272,7 @@ def scrape_ipomarkets_page(base_url, page=1):
         import traceback
         traceback.print_exc()
         return [], False
+
 
 def scrape_all_ipomarkets_pages(base_url):
     """Scrape all pages from IPOMarkets"""
