@@ -7671,10 +7671,7 @@
             }
 
             document.addEventListener('DOMContentLoaded', async function () {
-                // ✅ BLOCK PAGE - prevent interaction during load
-                document.body.classList.add('page-blocked');
-
-                // ✅ STEP 0: WAIT FOR LOGIN (poll sessionStorage)
+                // ✅ STEP 0: WAIT FOR LOGIN (DON'T BLOCK YET!)
                 let stored = sessionStorage.getItem('kp_stocks_user');
 
                 if (!stored || stored === '') {
@@ -7683,14 +7680,16 @@
                         stored = await waitForLogin(120);
                     } catch (error) {
                         alert(error.message);
-                        document.body.classList.remove('page-blocked');
-                        return;
+                        return; // Don't block - let user refresh
                     }
                 }
 
                 CURRENT_USER = stored;
 
-                // ✅ NOW SHOW LOADING OVERLAY (AFTER LOGIN COMPLETE!)
+                // ✅ LOGIN COMPLETE - NOW BLOCK PAGE
+                document.body.classList.add('page-blocked');
+
+                // ✅ SHOW LOADING OVERLAY
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) {
                     overlay.style.display = 'flex';
