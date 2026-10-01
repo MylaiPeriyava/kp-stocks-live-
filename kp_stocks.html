@@ -4012,6 +4012,10 @@ async function refreshAllPrices(isInitialLoad = false) {
     try {
         await loadAllLivePrices();
         await refreshWishlist(true);
+        await refreshIndices();
+        await loadIPOData();
+
+
 
         const autoOn = document.getElementById("autoRefreshToggle").checked;
         status.textContent =
@@ -7610,11 +7614,11 @@ window.showSection = function (sectionId) {
         // Load initial data
         await loadHoldings();
         await refreshAllPrices(true);  // ✅ Load prices immediately
-        refreshWishlist(true);
-        loadIPOData();
+        //refreshWishlist(true);
+        //loadIPOData();
 
         // Load indices on page load
-        refreshIndices();
+        //refreshIndices();
 
         // Initialize chart and start auto-refresh
         onChartIntervalChange();
