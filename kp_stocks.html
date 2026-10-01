@@ -16,12 +16,18 @@
         pointer-events: none;
         user-select: none;
     }
-    
-    body.page-blocked * {
-        pointer-events: none !important;
-        cursor: wait !important;
-    }
-    
+
+        /* ✅ Less aggressive - allows some interaction */
+        body.page-blocked {
+            pointer-events: none;
+            user-select: none;
+        }
+
+            body.page-blocked > *:not(#loginPrompt):not(.login-overlay) {
+                pointer-events: none;
+                cursor: wait;
+            }
+
     /* Loading Overlay */
     #loadingOverlay {
         position: fixed;
