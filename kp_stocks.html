@@ -11,6 +11,41 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+    /* Block all interaction until login complete */
+    body.page-blocked {
+        pointer-events: none;
+        user-select: none;
+    }
+    
+    body.page-blocked * {
+        pointer-events: none !important;
+        cursor: wait !important;
+    }
+    
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.4s ease-out;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+
+    <style>
 
         /* Holding Duration Color Coding */
         .portfolio-targets-table td.holding-days-10 {
@@ -1697,27 +1732,10 @@
 
 <body>
 
-    <body>
-        <!-- Loading Overlay -->
-        <div id="loadingOverlay" style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        transition: opacity 0.4s ease-out;
-    ">
-            <div style="
-            text-align: center;
-            padding: 40px;
-        ">
-                <!-- Spinner -->
+    <body class="page-blocked">
+        <!-- Loading Overlay (hidden initially, shown after login) -->
+        <div id="loadingOverlay" style="display: none;">
+            <div style="text-align: center; padding: 40px;">
                 <div style="
                 width: 60px;
                 height: 60px;
@@ -1727,28 +1745,15 @@
                 animation: spin 1s linear infinite;
                 margin: 0 auto 20px;
             "></div>
-
-                <!-- Message -->
-                <h2 style="
-                margin: 0 0 10px 0;
-                color: #1f2937;
-                font-size: 24px;
-            ">
+                <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 24px;">
                     Loading Your Portfolio
                 </h2>
-
-                <p style="
-                margin: 0;
-                color: #6b7280;
-                font-size: 16px;
-            ">Fetching holdings, prices, and market data...</p>
-
-                <!-- Progress hint -->
-                <p style="
-                margin: 15px 0 0 0;
-                color: #9ca3af;
-                font-size: 13px;
-            ">This may take a few seconds</p>
+                <p style="margin: 0; color: #6b7280; font-size: 16px;">
+                    Fetching holdings, prices, and market data...
+                </p>
+                <p style="margin: 15px 0 0 0; color: #9ca3af; font-size: 13px;">
+                    This may take a few seconds
+                </p>
             </div>
         </div>
 
@@ -5857,43 +5862,43 @@
                 const overlay = document.createElement('div');
                 overlay.id = 'authOverlay';
                 overlay.innerHTML = `
-          <div class="auth-box">
-            <h2>Welcome to KP's Stocks</h2>
-            <p>
-              Enter your user name and password.
-              Files: <strong>Holdings_USER.json</strong>, <strong>Rates_USER.txt</strong>, <strong>wishlist_USER.txt</strong>.
-            </p>
+                  <div class="auth-box">
+                    <h2>Welcome to KP's Stocks</h2>
+                    <p>
+                      Enter your user name and password.
+                      Files: <strong>Holdings_USER.json</strong>, <strong>Rates_USER.txt</strong>, <strong>wishlist_USER.txt</strong>.
+                    </p>
 
-            <div class="auth-input-row">
-                <label for="authUserName">User Name</label>
-                <input
-                id="authUserName"
-                type="text"
-                placeholder="e.g. KP"
-                onkeydown="if(event.key==='Enter') validateUserAndLoad()"
-              >
-            </div>
+                    <div class="auth-input-row">
+                        <label for="authUserName">User Name</label>
+                        <input
+                        id="authUserName"
+                        type="text"
+                        placeholder="e.g. KP"
+                        onkeydown="if(event.key==='Enter') validateUserAndLoad()"
+                      >
+                    </div>
 
-            <div class="auth-input-row">
-                <label for="authUserPwd">Password</label>
-                <input
-                id="authUserPwd"
-                type="password"
-                placeholder="Your password"
-                onkeydown="if(event.key==='Enter') validateUserAndLoad()"
-              >
-            </div>
+                    <div class="auth-input-row">
+                        <label for="authUserPwd">Password</label>
+                        <input
+                        id="authUserPwd"
+                        type="password"
+                        placeholder="Your password"
+                        onkeydown="if(event.key==='Enter') validateUserAndLoad()"
+                      >
+                    </div>
 
-            <div id="authError" class="auth-error">
-                <strong>Invalid user name or password</strong>
-                <p style="margin:0 0 8px;">Files not found:</p>
-                <ul id="authErrorFiles"></ul>
-            </div>
+                    <div id="authError" class="auth-error">
+                        <strong>Invalid user name or password</strong>
+                        <p style="margin:0 0 8px;">Files not found:</p>
+                        <ul id="authErrorFiles"></ul>
+                    </div>
 
-            <button type="button" class="auth-submit-btn" onclick="validateUserAndLoad()">
-              Continue
-            </button>
-          </div>
+                    <button type="button" class="auth-submit-btn" onclick="validateUserAndLoad()">
+                      Continue
+                    </button>
+                  </div>
 `;
                 document.body.insertBefore(overlay, document.body.firstChild);
 
@@ -7110,32 +7115,32 @@
 
                     // Header
                     table.innerHTML = `
-                    <thead>
-                        <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                            <th style="padding: 10px 8px; text-align: left;">#</th>
-                            <th style="padding: 10px 8px; text-align: left;">Company</th>
-                            <th style="padding: 10px 8px; text-align: left;">Reason</th>
-                            <th style="padding: 10px 8px; text-align: left;">Details</th>
-                            <th style="padding: 10px 8px; text-align: center;">View</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${stocks.map((stock, index) => `
-                            <tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 10px 8px;">${index + 1}</td>
-                                <td style="padding: 10px 8px; font-weight: 500;">${stock.symbol}</td>
-                                <td style="padding: 10px 8px; color: #059669;">${stock.reason}</td>
-                                <td style="padding: 10px 8px; font-size: 12px; color: #6b7280;">${stock.note}</td>
-                                <td style="padding: 10px 8px; text-align: center;">
-                                    ${stock.company_url ?
+                            <thead>
+                                <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                    <th style="padding: 10px 8px; text-align: left;">#</th>
+                                    <th style="padding: 10px 8px; text-align: left;">Company</th>
+                                    <th style="padding: 10px 8px; text-align: left;">Reason</th>
+                                    <th style="padding: 10px 8px; text-align: left;">Details</th>
+                                    <th style="padding: 10px 8px; text-align: center;">View</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${stocks.map((stock, index) => `
+                                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                                        <td style="padding: 10px 8px;">${index + 1}</td>
+                                        <td style="padding: 10px 8px; font-weight: 500;">${stock.symbol}</td>
+                                        <td style="padding: 10px 8px; color: #059669;">${stock.reason}</td>
+                                        <td style="padding: 10px 8px; font-size: 12px; color: #6b7280;">${stock.note}</td>
+                                        <td style="padding: 10px 8px; text-align: center;">
+                                            ${stock.company_url ?
                             `<a href="${stock.company_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">📈 View Details</a>` :
                             '<span style="color: #9ca3af;">N/A</span>'
                         }
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                `;
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        `;
 
                     listEl.appendChild(table);
 
@@ -7219,10 +7224,10 @@
                         monthHeaderRow.style.backgroundColor = '#f5f8fc';
                         monthHeaderRow.style.fontWeight = 'bold';
                         monthHeaderRow.innerHTML = `
-                        <td colspan="7" style="padding: 6px; color: #173b63; border-bottom: 1px solid #d7e3f0;">
-                            ${monthLabel}
-                        </td>
-                    `;
+                                <td colspan="7" style="padding: 6px; color: #173b63; border-bottom: 1px solid #d7e3f0;">
+                                    ${monthLabel}
+                                </td>
+                            `;
                         tbody.appendChild(monthHeaderRow);
 
                         // Individual trades for this month
@@ -7230,18 +7235,18 @@
                             const plPercent = t.invested > 0 ? (t.pl / t.invested) * 100 : 0;
                             const tr = document.createElement("tr");
                             tr.innerHTML = `
-                            <td>${t.buyDate || ""}</td>
-                            <td>${t.sellDate || ""}</td>
-                            <td>${t.symbol || ""}</td>
-                            <td>${t.invested.toFixed(2)}</td>
-                            <td>${t.returned.toFixed(2)}</td>
-                            <td style="color:${t.pl >= 0 ? 'green' : 'red'}">
-                                ${t.pl >= 0 ? '+' : ''}${t.pl.toFixed(2)} (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
-                            </td>
-                            <td>
-                                <button data-trade-id="${t.id}" class="delete-trade-btn" style="padding: 4px 8px; font-size: 12px;">Delete</button>
-                            </td>
-                        `;
+                                    <td>${t.buyDate || ""}</td>
+                                    <td>${t.sellDate || ""}</td>
+                                    <td>${t.symbol || ""}</td>
+                                    <td>${t.invested.toFixed(2)}</td>
+                                    <td>${t.returned.toFixed(2)}</td>
+                                    <td style="color:${t.pl >= 0 ? 'green' : 'red'}">
+                                        ${t.pl >= 0 ? '+' : ''}${t.pl.toFixed(2)} (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
+                                    </td>
+                                    <td>
+                                        <button data-trade-id="${t.id}" class="delete-trade-btn" style="padding: 4px 8px; font-size: 12px;">Delete</button>
+                                    </td>
+                                `;
                             tbody.appendChild(tr);
                         });
 
@@ -7251,15 +7256,15 @@
                         monthSummaryRow.style.fontWeight = 'bold';
                         monthSummaryRow.style.fontSize = '13px';
                         monthSummaryRow.innerHTML = `
-                        <td colspan="3" style="padding: 8px; text-align: right; color: #173b63;">
-                            ${monthLabel} Total:
-                        </td>
-                        <td style="color: #173b63;">${group.monthInvested.toFixed(2)}</td>
-                        <td style="color: #173b63;">${group.monthReturned.toFixed(2)}</td>
-                        <td colspan="2" style="color: ${group.monthPL >= 0 ? 'green' : 'red'}">
-                            P/L: ${group.monthPL >= 0 ? '+' : ''}${group.monthPL.toFixed(2)} (${monthPLPercent >= 0 ? '+' : ''}${monthPLPercent.toFixed(2)}%)
-                        </td>
-                    `;
+                                <td colspan="3" style="padding: 8px; text-align: right; color: #173b63;">
+                                    ${monthLabel} Total:
+                                </td>
+                                <td style="color: #173b63;">${group.monthInvested.toFixed(2)}</td>
+                                <td style="color: #173b63;">${group.monthReturned.toFixed(2)}</td>
+                                <td colspan="2" style="color: ${group.monthPL >= 0 ? 'green' : 'red'}">
+                                    P/L: ${group.monthPL >= 0 ? '+' : ''}${group.monthPL.toFixed(2)} (${monthPLPercent >= 0 ? '+' : ''}${monthPLPercent.toFixed(2)}%)
+                                </td>
+                            `;
                         tbody.appendChild(monthSummaryRow);
 
                         // Spacer row
@@ -7278,13 +7283,13 @@
                     totalRow.style.fontSize = '15px';
                     totalRow.style.borderTop = '2px solid #c792ea';
                     totalRow.innerHTML = `
-                    <td colspan="3" style="padding: 10px; text-align: right; color: #4a148c;">GRAND TOTAL</td>
-                    <td style="color: #4a148c;">${grandTotalInvested.toFixed(2)}</td>
-                    <td style="color: #4a148c;">${grandTotalReturned.toFixed(2)}</td>
-                    <td colspan="2" style="color: ${grandPL >= 0 ? 'green' : 'red'}; font-size: 16px;">
-                        P/L: ${grandPL >= 0 ? '+' : ''}${grandPL.toFixed(2)} (${grandPLPercent >= 0 ? '+' : ''}${grandPLPercent.toFixed(2)}%)
-                    </td>
-                `;
+                            <td colspan="3" style="padding: 10px; text-align: right; color: #4a148c;">GRAND TOTAL</td>
+                            <td style="color: #4a148c;">${grandTotalInvested.toFixed(2)}</td>
+                            <td style="color: #4a148c;">${grandTotalReturned.toFixed(2)}</td>
+                            <td colspan="2" style="color: ${grandPL >= 0 ? 'green' : 'red'}; font-size: 16px;">
+                                P/L: ${grandPL >= 0 ? '+' : ''}${grandPL.toFixed(2)} (${grandPLPercent >= 0 ? '+' : ''}${grandPLPercent.toFixed(2)}%)
+                            </td>
+                        `;
                     tbody.appendChild(totalRow);
 
                     // Delete handlers
@@ -7400,10 +7405,10 @@
                     const data = analysis[threshold.toString()] || { count: 0, total: 0, gain_percentage: 0 };
                     const color = data.gain_percentage >= 90 ? '#16a34a' : data.gain_percentage >= 70 ? '#2563eb' : '#dc2626';
                     html += `<tr>
-                    <td style="padding: 10px; font-weight: bold; text-align: center;">≥ ${threshold}x</td>
-                    <td style="padding: 10px; text-align: center; font-weight: bold;">${data.count} / ${data.total}</td>
-                    <td style="padding: 10px; text-align: center; font-weight: bold; color: ${color};">${data.gain_percentage}%</td>
-                </tr>`;
+                            <td style="padding: 10px; font-weight: bold; text-align: center;">≥ ${threshold}x</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold;">${data.count} / ${data.total}</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold; color: ${color};">${data.gain_percentage}%</td>
+                        </tr>`;
                 });
 
                 html += '</tbody></table></div>';
@@ -7506,24 +7511,24 @@
                         // UPDATED: Use company_url for IPOMarkets link
                         const companyLink = ipo.company_url ?
                             `<a href="${ipo.company_url}" target="_blank" style="color: ${textColor || '#0d6efd'}; text-decoration: none; font-weight: bold;">
-                            ${ipo.company || '-'}
-                        </a>` :
+                                    ${ipo.company || '-'}
+                                </a>` :
                             `<span style="color: ${textColor || '#6c757d'}; font-weight: bold;">
-                            ${ipo.company || '-'}
-                        </span>`;
+                                    ${ipo.company || '-'}
+                                </span>`;
 
                         tr.innerHTML = `
-                        <td>${companyLink}</td>
-                        <td>${ipo.listing_date || '-'}</td>
-                        <td class="text-end">₹${bidPrice}</td>
-                        <td class="text-end">₹${listedPrice}</td>
-                        <td class="text-end" style="color: ${listingGainClass}; font-weight: bold;">
-                            ${listingGain}
-                        </td>
-                        <td class="text-end">${subscription}</td>
-                        <td class="text-end">${gmp}</td>
-                        <td class="text-center">${statusBadge}</td>
-                    `;
+                                <td>${companyLink}</td>
+                                <td>${ipo.listing_date || '-'}</td>
+                                <td class="text-end">₹${bidPrice}</td>
+                                <td class="text-end">₹${listedPrice}</td>
+                                <td class="text-end" style="color: ${listingGainClass}; font-weight: bold;">
+                                    ${listingGain}
+                                </td>
+                                <td class="text-end">${subscription}</td>
+                                <td class="text-end">${gmp}</td>
+                                <td class="text-center">${statusBadge}</td>
+                            `;
 
                         tbody.appendChild(tr);
                     });
@@ -7647,10 +7652,26 @@
             }
 
             document.addEventListener('DOMContentLoaded', async function () {
-                // ✅ STEP 0: Initialize user from sessionStorage
+                // ✅ BLOCK PAGE - prevent any interaction
+                document.body.classList.add('page-blocked');
+
+                // ✅ STEP 0: ASK FOR LOGIN FIRST (blocking prompt)
                 const stored = sessionStorage.getItem('kp_stocks_user');
                 if (stored) {
                     CURRENT_USER = stored;
+                } else {
+                    // This prompt BLOCKS until user enters something
+                    const name = window.prompt(
+                        'Enter a user name for this session (leave blank for default files):\n\nExample: KP, RA, etc.\nIf left blank, Holdings.json and wishlist.txt will be used.'
+                    );
+                    CURRENT_USER = (name || '').trim();
+                    sessionStorage.setItem('kp_stocks_user', CURRENT_USER);
+                }
+
+                // ✅ NOW SHOW LOADING OVERLAY (after login complete)
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
                 }
 
                 // ✅ STEP 1: Load rates from server (ONCE)
@@ -7718,11 +7739,23 @@
                     });
                 }
 
-                // ✅ FINAL STEP: Hide loading overlay (ALL data loaded)
+                // ✅ FINAL STEP: Hide loading overlay + UNBLOCK PAGE
                 hideLoadingOverlay();
+                document.body.classList.remove('page-blocked');
 
                 console.log('✅ App initialized - All setup complete!');
             });
+
+            // Helper function
+            function hideLoadingOverlay() {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 400);
+                }
+            }
 
 
         </script>
