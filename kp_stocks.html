@@ -4026,7 +4026,6 @@ async function refreshAllPrices(isInitialLoad = false) {
             (autoOn ? "ON (every 60 seconds)." : "OFF.");
 
         // ✅ ADD THIS LINE - Refresh indices with prices:
-        await refreshIndices();
 
     } catch (error) {
         status.textContent = "Price refresh failed: " + error.message;
@@ -5778,43 +5777,7 @@ function showSection(sectionId) {
 }
 
     
-(async function initPage() {
-    const stored = sessionStorage.getItem('kp_stocks_user');
-    if (stored) {
-        CURRENT_USER = stored;
-    }
-
-    await loadRatesFromServer();
-
-    const titleText = buildPageTitle(CURRENT_USER);
-    document.title = titleText;
-    const headerEl = document.getElementById('pageHeaderTitle');
-    if (headerEl) {
-        headerEl.textContent = titleText;
-    }
-
-    setSettingsInputsFromValues();
-
-    document.getElementById("brokerageBuy1").value = settings.buyBrokerage;
-    document.getElementById("brokerageSell1").value = settings.sellBrokerage;
-    document.getElementById("brokerageBuy2").value = settings.buyBrokerage;
-    document.getElementById("brokerageSell2").value = settings.sellBrokerage;
-    document.getElementById("tradeBrokerage").value = settings.buyBrokerage;
-
-    updateRatesUsedText();
-    loadHoldings();
-
-    load52WeekLowAR();
-    loadTopLosersAR();
-    load52WeekHighAR();
-    loadTopGainersAR();
-    loadVolumeGainersAR();
-
-    refreshWishlist(true);
-    onChartIntervalChange();
-    startAutoRefresh();
-})();
-    
+   
 
 /* ==================== AUTHENTICATION (IF USED) ==================== */
 (function () {
@@ -7605,33 +7568,67 @@ window.showSection = function (sectionId) {
 
 
     document.addEventListener('DOMContentLoaded', async function () {
-        // Hide all sections, show only holdings
+        // ✅ STEP 0: Initialize user from sessionStorage
+        const stored = sessionStorage.getItem('kp_stocks_user');
+        if (stored) {
+            CURRENT_USER = stored;
+        }
+
+        // ✅ STEP 1: Load rates from server (ONCE)
+        await loadRatesFromServer();
+
+        // ✅ STEP 2: Set page title
+        const titleText = buildPageTitle(CURRENT_USER);
+        document.title = titleText;
+        const headerEl = document.getElementById('pageHeaderTitle');
+        if (headerEl) {
+            headerEl.textContent = titleText;
+        }
+
+        // ✅ STEP 3: Initialize settings inputs
+        setSettingsInputsFromValues();
+
+        document.getElementById("brokerageBuy1").value = settings.buyBrokerage;
+        document.getElementById("brokerageSell1").value = settings.sellBrokerage;
+        document.getElementById("brokerageBuy2").value = settings.buyBrokerage;
+        document.getElementById("brokerageSell2").value = settings.buyBrokerage;
+        document.getElementById("tradeBrokerage").value = settings.buyBrokerage;
+
+        updateRatesUsedText();
+
+        // ✅ STEP 4: Hide all sections, show only holdings
         document.querySelectorAll('.section-block').forEach(el => el.classList.remove('active'));
         const holdingsBlock = document.getElementById('holdingsSection')?.closest('.section-block');
         if (holdingsBlock) {
             holdingsBlock.classList.add('active');
         }
 
-        // Load initial data
+        // ✅ STEP 5: Load holdings FIRST
         await loadHoldings();
-        await refreshAllPrices(true);  // ✅ Load prices immediately
-        //refreshWishlist(true);
-        //loadIPOData();
 
-        // Load indices on page load
-        //refreshIndices();
+        // ✅ STEP 6: THEN refresh prices (holdingsList is now populated)
+        await refreshAllPrices(true);
 
-        // Initialize chart and start auto-refresh
+        // ✅ STEP 7: Load screeners (ONCE - don't repeat every 60s)
+        load52WeekLowAR();
+        loadTopLosersAR();
+        load52WeekHighAR();
+        loadTopGainersAR();
+        loadVolumeGainersAR();
+
+        // ✅ STEP 8: Initialize chart interval dropdown
         onChartIntervalChange();
+
+        // ✅ STEP 9: Start auto-refresh timer
         startAutoRefresh();
 
-        // Initialize portfolio targets table
+        // ✅ STEP 10: Initialize portfolio targets table
         if (typeof computeAndRenderPortfolioTargets === 'function') {
             const requiredPercent = parseFloat(document.getElementById('targetPercent')?.value) || 0;
             computeAndRenderPortfolioTargets(requiredPercent);
         }
 
-        // Add listener to target percent input to update table
+        // ✅ STEP 11: Add listener to target percent input
         const targetPercentInput = document.getElementById('targetPercent');
         if (targetPercentInput) {
             targetPercentInput.addEventListener('input', function () {
@@ -7641,6 +7638,8 @@ window.showSection = function (sectionId) {
                 }
             });
         }
+
+        console.log('✅ App initialized - All setup complete!');
     });
 
 
