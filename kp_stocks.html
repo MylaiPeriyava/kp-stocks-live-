@@ -3209,7 +3209,10 @@
                 <div id="ipo-section" class="mt-4" style="display:none;">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
+                            <div>
+                                <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
+                                <small id="ipo-pan-display" class="text-muted" style="display:block; margin-top:4px;"></small>
+                            </div>
                             <button class="btn btn-sm btn-outline-primary" onclick="loadIPOData()">
                                 🔄 Refresh
                             </button>
@@ -5925,6 +5928,9 @@ function showSection(sectionId) {
                 }
                 return;
             }
+            // ✅ STORE PAN FROM RESPONSE
+            window.CURRENT_USER_PAN = vd.pan || null;
+            console.log('PAN loaded:', window.CURRENT_USER_PAN);
 
             // ✅ STORE PAN FROM RESPONSE
             window.CURRENT_USER_PAN = vd.pan || null;
