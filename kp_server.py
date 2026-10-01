@@ -4,8 +4,8 @@
 
 # ============ USER CONFIG ============
 USERS = {
-    "KP": {"password": "vsk", "pan": "ABCDE1234F"},
-    "PK": {"password": "suk", "pan": None},  # No PAN yet
+    "KP": "vsk",
+    "PK": "suk",
 }
 
 import json
@@ -240,8 +240,7 @@ def scrape_ipomarkets_page(base_url, page=1):
                     'ai_prediction': '',
                     'issue_size': '',
                     'status': final_status,
-                    'ipo_type': 'Mainboard',
-                    'registrar': ''  # Will be populated later
+                    'ipo_type': 'Mainboard'
                 })
         
         has_more = False
@@ -735,22 +734,7 @@ def validate_user():
     user = (request.args.get("user") or "").strip().upper()
     pwd = request.args.get("pwd") or ""
 
-    # ✅ UPDATED: Handle dict format for USERS
-    if user not in USERS:
-        return jsonify({"exists": False, "error": "Invalid user name or password."}), 404
-    
-    user_data = USERS[user]
-    
-    # Handle both old format (string) and new format (dict)
-    if isinstance(user_data, dict):
-        stored_password = user_data.get("password")
-        stored_pan = user_data.get("pan")
-    else:
-        # Old format: USERS = {"KP": "vsk"}
-        stored_password = user_data
-        stored_pan = None
-    
-    if pwd != stored_password:
+    if user not in USERS or USERS[user] != pwd:
         return jsonify({"exists": False, "error": "Invalid user name or password."}), 404
 
     holdings_doc = db.collection('holdings').document(user).get()
@@ -774,11 +758,7 @@ def validate_user():
             print(f"Error auto-creating documents for {user}: {e}")
             return jsonify({"exists": False, "error": "Failed to initialize user data"}), 500
 
-    # ✅ Return PAN in response
-    return jsonify({
-        "exists": True,
-        "pan": stored_pan
-    }), 200
+    return jsonify({"exists": True}), 200
 
 
 # ============ MANAGE HOLDINGS ============

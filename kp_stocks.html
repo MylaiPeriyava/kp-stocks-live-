@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KP's Stocks (Live)</title>
 
-    <!-- TradingView Lightweight Charts library --> 
+    <!-- TradingView Lightweight Charts library -->
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <!-- Chart.js for scatter plots (WL Pattern) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -3209,10 +3209,7 @@
                 <div id="ipo-section" class="mt-4" style="display:none;">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <div>
-                                <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
-                                <small id="ipo-pan-display" class="text-muted" style="display:block; margin-top:4px;"></small>
-                            </div>
+                            <h5 class="mb-0">📈 IPO Listing Data - Mainboard 2026</h5>
                             <button class="btn btn-sm btn-outline-primary" onclick="loadIPOData()">
                                 🔄 Refresh
                             </button>
@@ -3222,15 +3219,14 @@
                                 <table class="table table-hover table-sm mb-0" id="ipo-table">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width: 16%;">Symbol</th>
-                                            <th style="width: 11%;">Listing Date</th>
-                                            <th style="width: 9%;" class="text-end">Issue Price</th>
-                                            <th style="width: 9%;" class="text-end">Listed Price</th>
-                                            <th style="width: 7%;" class="text-end">Gain %</th>
-                                            <th style="width: 9%;" class="text-end">Subscription</th>
-                                            <th style="width: 7%;" class="text-end">GMP</th>
-                                            <th style="width: 11%;">Status</th>
-                                            <th style="width: 11%;" class="text-center">Check Status</th>
+                                            <th style="width: 18%;">Symbol</th>
+                                            <th style="width: 12%;">Listing Date</th>
+                                            <th style="width: 10%;" class="text-end">Issue Price</th>
+                                            <th style="width: 10%;" class="text-end">Listed Price</th>
+                                            <th style="width: 8%;" class="text-end">Gain %</th>
+                                            <th style="width: 10%;" class="text-end">Subscription</th>
+                                            <th style="width: 8%;" class="text-end">GMP</th>
+                                            <th style="width: 14%;">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody id="ipo-tbody">
@@ -5778,10 +5774,6 @@ function showSection(sectionId) {
 
     
 (async function initPage() {
-    // ✅ Load PAN from sessionStorage on page load
-    window.CURRENT_USER_PAN = sessionStorage.getItem('kp_stocks_pan') || null;
-    console.log('PAN from sessionStorage:', window.CURRENT_USER_PAN);
-
     const stored = sessionStorage.getItem('kp_stocks_user');
     if (stored) {
         CURRENT_USER = stored;
@@ -5933,13 +5925,6 @@ function showSection(sectionId) {
                 }
                 return;
             }
-
-            // ✅ STORE PAN FROM FIRST VALIDATE CALL
-            if (vd.pan) {
-                sessionStorage.setItem('kp_stocks_pan', vd.pan);
-                console.log('✅ PAN saved:', vd.pan);
-            }
-
         } catch (e) {
             showAuth(['Validation failed: ' + e.message]);
             if (btn) {
@@ -5982,7 +5967,6 @@ function showSection(sectionId) {
 
         location.reload();
     }
-
 
     const stored = sessionStorage.getItem('kp_stocks_user');
     if (stored) {
@@ -7411,30 +7395,8 @@ window.showSection = function (sectionId) {
                 return;
             }
 
-            // ✅ Display PAN if available
-            const panDisplay = document.getElementById('ipo-pan-display');
-            if (window.CURRENT_USER_PAN) {
-                panDisplay.textContent = `Checking status for PAN: ${window.CURRENT_USER_PAN}`;
-                panDisplay.style.display = 'block';
-            } else {
-                panDisplay.textContent = '⚠️ PAN not configured for this user';
-                panDisplay.style.display = 'block';
-                panDisplay.style.color = '#dc3545';
-            }
-
             const tbody = document.getElementById('ipo-tbody');
             tbody.innerHTML = '';
-
-            // ✅ Registrar URL mapping
-            const registrarLinks = {
-                'Link Intime': 'https://linkintime.co.in/MIPO/Ipopansearch.html',
-                'Bigshare': 'https://bigshareonline.com/Investor-Acces/Pre-IPO/Allotment-Status',
-                'KFintech': 'https://kfintech.com/ipo-status',
-                'MUFG': 'https://in.mpms.mufg.com/InitialPublicOfferings.aspx',
-                'Skyline': 'https://skylinerta.com/ipo-allotment-status/',
-                'Purva': 'https://purvashare.com/ipo-status/',
-                'Maashitla': 'https://maashitlasecurities.com/ipo-allotment-status/'
-            };
 
             ipos.forEach(ipo => {
                 const tr = document.createElement('tr');
@@ -7445,6 +7407,7 @@ window.showSection = function (sectionId) {
                 let statusBadge = '';
 
                 if (ipo.status === 'upcoming') {
+                    // For Upcoming IPOs (including "Closes today/tomorrow"), highlight based on subscription
                     let subValue = 0;
                     if (ipo.subscription) {
                         const subStr = ipo.subscription.toString().replace('x', '').trim();
@@ -7452,26 +7415,29 @@ window.showSection = function (sectionId) {
                     }
 
                     if (subValue >= 10) {
-                        bgColor = '#198754';
-                        textColor = '#ffffff';
+                        bgColor = '#198754';  // Dark green for >=10x
+                        textColor = '#ffffff';  // White text for contrast
                     } else if (subValue >= 5) {
-                        bgColor = '#20c997';
-                        textColor = '#000000';
+                        bgColor = '#20c997';  // Light green/teal for >=5x
+                        textColor = '#000000';  // Black text (light background)
                     } else {
-                        bgColor = '#dc3545';
-                        textColor = '#ffffff';
+                        bgColor = '#dc3545';  // Red for <5x
+                        textColor = '#ffffff';  // White text for contrast
                     }
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
                 } else if (ipo.status === 'open') {
-                    bgColor = '#fff3cd';
-                    textColor = '#000000';
+                    // Open IPOs (allotted, awaiting listing) - Yellow background
+                    bgColor = '#fff3cd';  // Yellow
+                    textColor = '#000000';  // Black text
                     statusBadge = '<span class="badge bg-info text-dark">Open</span>';
                 } else {
+                    // Listed IPOs - White background
                     bgColor = '';
                     textColor = '';
                     statusBadge = '<span class="badge bg-success">Listed</span>';
                 }
 
+                // Apply background and text color
                 if (bgColor) {
                     tr.style.backgroundColor = bgColor;
                 }
@@ -7500,40 +7466,14 @@ window.showSection = function (sectionId) {
                     gmp = '₹' + ipo.gmp;
                 }
 
+                // UPDATED: Use company_url for IPOMarkets link
                 const companyLink = ipo.company_url ?
                     `<a href="${ipo.company_url}" target="_blank" style="color: ${textColor || '#0d6efd'}; text-decoration: none; font-weight: bold;">
-                ${ipo.company || '-'}
-            </a>` :
+                    ${ipo.company || '-'}
+                </a>` :
                     `<span style="color: ${textColor || '#6c757d'}; font-weight: bold;">
-                ${ipo.company || '-'}
-            </span>`;
-
-                // ✅ Check Status Button
-                let checkStatusBtn = '';
-                if (ipo.status === 'open' || ipo.status === 'upcoming') {
-                    if (window.CURRENT_USER_PAN) {
-                        const registrarUrl = registrarLinks[ipo.registrar || ''] || '#';
-                        const statusUrl = registrarUrl !== '#' ? `${registrarUrl}?pan=${window.CURRENT_USER_PAN}` : '#';
-
-                        checkStatusBtn = `
-                        <button class="btn btn-sm btn-primary" 
-                                onclick="window.open('${statusUrl}', '_blank')"
-                                title="Check allotment status for PAN: ${window.CURRENT_USER_PAN}"
-                                style="font-size: 11px; padding: 3px 6px;">
-                            🔍 Check
-                        </button>
-                    `;
-                    } else {
-                        checkStatusBtn = `
-                        <span class="text-muted" style="font-size: 11px;" 
-                              title="PAN not configured for this user">
-                            ⚠️ No PAN
-                        </span>
-                    `;
-                    }
-                } else {
-                    checkStatusBtn = '<span class="text-muted" style="font-size: 11px;">-</span>';
-                }
+                    ${ipo.company || '-'}
+                </span>`;
 
                 tr.innerHTML = `
                 <td>${companyLink}</td>
@@ -7546,12 +7486,12 @@ window.showSection = function (sectionId) {
                 <td class="text-end">${subscription}</td>
                 <td class="text-end">${gmp}</td>
                 <td class="text-center">${statusBadge}</td>
-                <td class="text-center">${checkStatusBtn}</td>
             `;
 
                 tbody.appendChild(tr);
             });
 
+            // Display subscription analysis (if available)
             if (analysis && Object.keys(analysis).length > 0) {
                 displayAnalysis(analysis);
             }
