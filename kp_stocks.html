@@ -4012,6 +4012,7 @@ async function refreshAllPrices(isInitialLoad = false) {
     try {
         await loadAllLivePrices();
         await refreshWishlist(true);
+        await updateStopLossAlerts();
         await refreshIndices();
         await loadIPOData();
 
