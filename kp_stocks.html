@@ -7652,26 +7652,19 @@
             }
 
             document.addEventListener('DOMContentLoaded', async function () {
-                // ✅ BLOCK PAGE - prevent any interaction
+                // ✅ BLOCK PAGE - prevent interaction during load
                 document.body.classList.add('page-blocked');
 
-                // ✅ STEP 0: ASK FOR LOGIN FIRST (blocking prompt)
-                const stored = sessionStorage.getItem('kp_stocks_user');
-                if (stored) {
-                    CURRENT_USER = stored;
-                } else {
-                    // This prompt BLOCKS until user enters something
-                    const name = window.prompt(
-                        'Enter a user name for this session (leave blank for default files):\n\nExample: KP, RA, etc.\nIf left blank, Holdings.json and wishlist.txt will be used.'
-                    );
-                    CURRENT_USER = (name || '').trim();
-                    sessionStorage.setItem('kp_stocks_user', CURRENT_USER);
-                }
-
-                // ✅ NOW SHOW LOADING OVERLAY (after login complete)
+                // ✅ SHOW LOADING OVERLAY IMMEDIATELY
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) {
                     overlay.style.display = 'flex';
+                }
+
+                // ✅ STEP 0: Get user from sessionStorage (server already handled login)
+                const stored = sessionStorage.getItem('kp_stocks_user');
+                if (stored) {
+                    CURRENT_USER = stored;
                 }
 
                 // ✅ STEP 1: Load rates from server (ONCE)
