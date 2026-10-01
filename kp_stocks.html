@@ -5925,6 +5925,10 @@ function showSection(sectionId) {
                 }
                 return;
             }
+
+            // ✅ STORE PAN FROM RESPONSE
+            window.CURRENT_USER_PAN = vd.pan || null;
+
         } catch (e) {
             showAuth(['Validation failed: ' + e.message]);
             if (btn) {
@@ -5967,6 +5971,7 @@ function showSection(sectionId) {
 
         location.reload();
     }
+
 
     const stored = sessionStorage.getItem('kp_stocks_user');
     if (stored) {
@@ -7395,8 +7400,30 @@ window.showSection = function (sectionId) {
                 return;
             }
 
+            // ✅ Display PAN if available
+            const panDisplay = document.getElementById('ipo-pan-display');
+            if (window.CURRENT_USER_PAN) {
+                panDisplay.textContent = `Checking status for PAN: ${window.CURRENT_USER_PAN}`;
+                panDisplay.style.display = 'block';
+            } else {
+                panDisplay.textContent = '⚠️ PAN not configured for this user';
+                panDisplay.style.display = 'block';
+                panDisplay.style.color = '#dc3545';
+            }
+
             const tbody = document.getElementById('ipo-tbody');
             tbody.innerHTML = '';
+
+            // ✅ Registrar URL mapping
+            const registrarLinks = {
+                'Link Intime': 'https://linkintime.co.in/MIPO/Ipopansearch.html',
+                'Bigshare': 'https://bigshareonline.com/Investor-Acces/Pre-IPO/Allotment-Status',
+                'KFintech': 'https://kfintech.com/ipo-status',
+                'MUFG': 'https://in.mpms.mufg.com/InitialPublicOfferings.aspx',
+                'Skyline': 'https://skylinerta.com/ipo-allotment-status/',
+                'Purva': 'https://purvashare.com/ipo-status/',
+                'Maashitla': 'https://maashitlasecurities.com/ipo-allotment-status/'
+            };
 
             ipos.forEach(ipo => {
                 const tr = document.createElement('tr');
@@ -7407,7 +7434,6 @@ window.showSection = function (sectionId) {
                 let statusBadge = '';
 
                 if (ipo.status === 'upcoming') {
-                    // For Upcoming IPOs (including "Closes today/tomorrow"), highlight based on subscription
                     let subValue = 0;
                     if (ipo.subscription) {
                         const subStr = ipo.subscription.toString().replace('x', '').trim();
@@ -7415,29 +7441,26 @@ window.showSection = function (sectionId) {
                     }
 
                     if (subValue >= 10) {
-                        bgColor = '#198754';  // Dark green for >=10x
-                        textColor = '#ffffff';  // White text for contrast
+                        bgColor = '#198754';
+                        textColor = '#ffffff';
                     } else if (subValue >= 5) {
-                        bgColor = '#20c997';  // Light green/teal for >=5x
-                        textColor = '#000000';  // Black text (light background)
+                        bgColor = '#20c997';
+                        textColor = '#000000';
                     } else {
-                        bgColor = '#dc3545';  // Red for <5x
-                        textColor = '#ffffff';  // White text for contrast
+                        bgColor = '#dc3545';
+                        textColor = '#ffffff';
                     }
                     statusBadge = '<span class="badge bg-warning text-dark">Upcoming</span>';
                 } else if (ipo.status === 'open') {
-                    // Open IPOs (allotted, awaiting listing) - Yellow background
-                    bgColor = '#fff3cd';  // Yellow
-                    textColor = '#000000';  // Black text
+                    bgColor = '#fff3cd';
+                    textColor = '#000000';
                     statusBadge = '<span class="badge bg-info text-dark">Open</span>';
                 } else {
-                    // Listed IPOs - White background
                     bgColor = '';
                     textColor = '';
                     statusBadge = '<span class="badge bg-success">Listed</span>';
                 }
 
-                // Apply background and text color
                 if (bgColor) {
                     tr.style.backgroundColor = bgColor;
                 }
@@ -7466,14 +7489,40 @@ window.showSection = function (sectionId) {
                     gmp = '₹' + ipo.gmp;
                 }
 
-                // UPDATED: Use company_url for IPOMarkets link
                 const companyLink = ipo.company_url ?
                     `<a href="${ipo.company_url}" target="_blank" style="color: ${textColor || '#0d6efd'}; text-decoration: none; font-weight: bold;">
-                    ${ipo.company || '-'}
-                </a>` :
+                ${ipo.company || '-'}
+            </a>` :
                     `<span style="color: ${textColor || '#6c757d'}; font-weight: bold;">
-                    ${ipo.company || '-'}
-                </span>`;
+                ${ipo.company || '-'}
+            </span>`;
+
+                // ✅ Check Status Button
+                let checkStatusBtn = '';
+                if (ipo.status === 'open' || ipo.status === 'upcoming') {
+                    if (window.CURRENT_USER_PAN) {
+                        const registrarUrl = registrarLinks[ipo.registrar || ''] || '#';
+                        const statusUrl = registrarUrl !== '#' ? `${registrarUrl}?pan=${window.CURRENT_USER_PAN}` : '#';
+
+                        checkStatusBtn = `
+                        <button class="btn btn-sm btn-primary" 
+                                onclick="window.open('${statusUrl}', '_blank')"
+                                title="Check allotment status for PAN: ${window.CURRENT_USER_PAN}"
+                                style="font-size: 12px; padding: 4px 8px;">
+                            🔍 Check Status
+                        </button>
+                    `;
+                    } else {
+                        checkStatusBtn = `
+                        <span class="text-muted" style="font-size: 12px;" 
+                              title="PAN not configured for this user">
+                            ⚠️ No PAN
+                        </span>
+                    `;
+                    }
+                } else {
+                    checkStatusBtn = '<span class="text-muted" style="font-size: 12px;">-</span>';
+                }
 
                 tr.innerHTML = `
                 <td>${companyLink}</td>
@@ -7491,7 +7540,6 @@ window.showSection = function (sectionId) {
                 tbody.appendChild(tr);
             });
 
-            // Display subscription analysis (if available)
             if (analysis && Object.keys(analysis).length > 0) {
                 displayAnalysis(analysis);
             }
@@ -7503,6 +7551,7 @@ window.showSection = function (sectionId) {
             document.getElementById('ipo-section').style.display = 'none';
         }
     }
+
 
 
 
