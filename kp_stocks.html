@@ -3927,7 +3927,7 @@ async function loadHoldings() {
         populateManageLotSelect();
         computeAndRenderPortfolioTargets(0);
 
-        // ✅ refreshAllPrices() will be called from DOMContentLoaded
+        await refreshAllPrices(true);
     } catch (error) {
         document.getElementById("holdingsInfo").textContent =
             "Error loading holdings from server: " + error.message;
@@ -3999,48 +3999,37 @@ async function loadAllLivePrices() {
     if (symbol2) fillStock2(symbol2);
 }
 
-    async function refreshAllPrices(isInitialLoad = false) {
-        if (isRefreshingPrices || holdingsList.length === 0) return;
+async function refreshAllPrices(isInitialLoad = false) {
+    if (isRefreshingPrices || holdingsList.length === 0) return;
 
-        const status = document.getElementById("refreshStatus");
-        isRefreshingPrices = true;
+    const status = document.getElementById("refreshStatus");
+    isRefreshingPrices = true;
 
-        status.textContent = isInitialLoad
-            ? "Loading current prices..."
-            : "Refreshing all current prices...";
+    status.textContent = isInitialLoad
+        ? "Loading current prices..."
+        : "Refreshing all current prices...";
 
-        try {
-            // ✅ Priority 1: Load live prices for holdings
-            await loadAllLivePrices();
+    try {
+        await loadAllLivePrices();
+        await refreshWishlist(true);
 
-            // ✅ Priority 2: Refresh wishlist with new prices
-            await refreshWishlist(true);
+        const autoOn = document.getElementById("autoRefreshToggle").checked;
+        status.textContent =
+            "Prices last refreshed: " +
+            formatTime(new Date()) +
+            ". Auto refresh is " +
+            (autoOn ? "ON (every 60 seconds)." : "OFF.");
 
-            // ✅ Priority 3: Refresh indices (depends on prices)
-            await refreshIndices();
+        // ✅ ADD THIS LINE - Refresh indices with prices:
+        await refreshIndices();
 
-            // ✅ Priority 4: IPO data (background - don't await on subsequent calls)
-            if (isInitialLoad) {
-                await loadIPOData();  // Wait on initial load
-            } else {
-                loadIPOData();  // Don't wait on auto-refresh
-            }
-
-            const autoOn = document.getElementById("autoRefreshToggle").checked;
-            status.textContent =
-                "Prices last refreshed: " +
-                formatTime(new Date()) +
-                ". Auto refresh is " +
-                (autoOn ? "ON (every 60 seconds)." : "OFF.");
-
-        } catch (error) {
-            console.error('Error in refreshAllPrices:', error);
-            status.textContent = "Price refresh failed: " + error.message;
-        } finally {
-            isRefreshingPrices = false;
-        }
+    } catch (error) {
+        status.textContent = "Price refresh failed: " + error.message;
+    } finally {
+        isRefreshingPrices = false;
     }
 
+}
 
 function setAutoRefresh(enabled) {
     if (autoRefreshTimer) {
@@ -5784,34 +5773,43 @@ function showSection(sectionId) {
 }
 
     
-    (async function initPage() {
-        const stored = sessionStorage.getItem('kp_stocks_user');
-        if (stored) {
-            CURRENT_USER = stored;
-        }
+(async function initPage() {
+    const stored = sessionStorage.getItem('kp_stocks_user');
+    if (stored) {
+        CURRENT_USER = stored;
+    }
 
-        await loadRatesFromServer();
+    await loadRatesFromServer();
 
-        const titleText = buildPageTitle(CURRENT_USER);
-        document.title = titleText;
-        const headerEl = document.getElementById('pageHeaderTitle');
-        if (headerEl) {
-            headerEl.textContent = titleText;
-        }
+    const titleText = buildPageTitle(CURRENT_USER);
+    document.title = titleText;
+    const headerEl = document.getElementById('pageHeaderTitle');
+    if (headerEl) {
+        headerEl.textContent = titleText;
+    }
 
-        setSettingsInputsFromValues();
+    setSettingsInputsFromValues();
 
-        document.getElementById("brokerageBuy1").value = settings.buyBrokerage;
-        document.getElementById("brokerageSell1").value = settings.sellBrokerage;
-        document.getElementById("brokerageBuy2").value = settings.buyBrokerage;
-        document.getElementById("brokerageSell2").value = settings.buyBrokerage;
-        document.getElementById("tradeBrokerage").value = settings.buyBrokerage;
+    document.getElementById("brokerageBuy1").value = settings.buyBrokerage;
+    document.getElementById("brokerageSell1").value = settings.sellBrokerage;
+    document.getElementById("brokerageBuy2").value = settings.buyBrokerage;
+    document.getElementById("brokerageSell2").value = settings.sellBrokerage;
+    document.getElementById("tradeBrokerage").value = settings.buyBrokerage;
 
-        updateRatesUsedText();
+    updateRatesUsedText();
+    loadHoldings();
 
-        // ✅ loadHoldings() and other calls moved to DOMContentLoaded
-    })();
+    load52WeekLowAR();
+    loadTopLosersAR();
+    load52WeekHighAR();
+    loadTopGainersAR();
+    loadVolumeGainersAR();
 
+    refreshWishlist(true);
+    onChartIntervalChange();
+    startAutoRefresh();
+})();
+    
 
 /* ==================== AUTHENTICATION (IF USED) ==================== */
 (function () {
@@ -7609,13 +7607,17 @@ window.showSection = function (sectionId) {
             holdingsBlock.classList.add('active');
         }
 
-        // ✅ CENTRAL CALL - refreshAllPrices does EVERYTHING
-        await refreshAllPrices(true);
+        // Load initial data
+        await loadHoldings();
+        await refreshAllPrices(true);  // ✅ Load prices immediately
+        refreshWishlist(true);
+        loadIPOData();
 
-        // Initialize chart interval dropdown
+        // Load indices on page load
+        refreshIndices();
+
+        // Initialize chart and start auto-refresh
         onChartIntervalChange();
-
-        // Start auto-refresh timer
         startAutoRefresh();
 
         // Initialize portfolio targets table
@@ -7634,8 +7636,6 @@ window.showSection = function (sectionId) {
                 }
             });
         }
-
-        console.log('✅ App initialized - refreshAllPrices() handles everything!');
     });
 
 
