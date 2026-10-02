@@ -1485,6 +1485,63 @@ def research_ideas():
         traceback.print_exc()
         return jsonify([])
 
+
+@app.route("/wishlist/add", methods=["POST"])
+def add_to_wishlist():
+    user = get_user_from_request()
+    payload = request.get_json(silent=True)
+    
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Request body must contain valid JSON."}), 400
+    
+    symbols = payload.get("symbols", [])
+    
+    if not isinstance(symbols, list) or len(symbols) == 0:
+        return jsonify({"error": "Symbols must be a non-empty list."}), 400
+    
+    try:
+        # Get current wishlist from Firebase
+        doc_ref = db.collection('wishlist').document(user)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            lines = data.get('lines', [])
+        else:
+            lines = []
+        
+        # Get existing symbols (skip headings)
+        existing_symbols = [
+            item["symbol"] for item in lines 
+            if item.get("type") == "symbol"
+        ]
+        
+        # Find new symbols to add
+        new_symbols = [s for s in symbols if s not in existing_symbols]
+        
+        if len(new_symbols) == 0:
+            return jsonify({"ok": True, "added": 0, "message": "All symbols already exist"}), 200
+        
+        # Add new symbols as symbol type items
+        for symbol in new_symbols:
+            lines.append({"type": "symbol", "symbol": symbol})
+        
+        # Sort: headings first, then symbols alphabetically
+        headings = [item for item in lines if item.get("type") == "heading"]
+        symbols_list = [item for item in lines if item.get("type") == "symbol"]
+        symbols_list.sort(key=lambda x: x.get("symbol", ""))
+        final_lines = headings + symbols_list
+        
+        # Save back to Firebase
+        doc_ref.set({"lines": final_lines}, merge=True)
+        
+        return jsonify({"ok": True, "added": len(new_symbols)}), 200
+    
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
 
