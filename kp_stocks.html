@@ -2770,6 +2770,17 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- ✅ ADD THIS BUTTON SECTION -->
+                        <div class="wishlist-import-section" style="margin-top: 18px; padding-top: 18px; border-top: 1px solid #e5e7eb;">
+                            <button type="button" class="add-btn" onclick="importHoldingsToWishlist()" style="background: #059669;">
+                                Import Holdings to Wishlist
+                            </button>
+
+                            <span class="wishlist-refresh-status" id="wishlistImportStatus" style="margin-left: 12px;">
+                                Click to add all holdings symbols to wishlist.txt
+                            </span>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -8034,6 +8045,79 @@
                         }
                     }, 500);
                 });
+            }
+
+            async function importHoldingsToWishlist() {
+                const status = document.getElementById("wishlistImportStatus");
+
+                if (!holdingsList || holdingsList.length === 0) {
+                    status.textContent = "No holdings to import.";
+                    status.style.color = "#dc2626";
+                    return;
+                }
+
+                status.textContent = "Importing holdings to wishlist...";
+                status.style.color = "#2563eb";
+
+                try {
+                    // Extract symbols from holdings
+                    const holdingsSymbols = holdingsList.map(h => h.symbol).filter(s => s);
+
+                    if (holdingsSymbols.length === 0) {
+                        status.textContent = "No holdings symbols found.";
+                        status.style.color = "#dc2626";
+                        return;
+                    }
+
+                    // Get current wishlist
+                    const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+                    const getResponse = await fetch(API_BASE + "/wishlist" + userParam);
+                    if (!getResponse.ok) throw new Error("Failed to fetch current wishlist");
+
+                    const getData = await getResponse.json();
+                    const currentRows = Array.isArray(getData.rows) ? getData.rows : [];
+
+                    // Extract existing symbols (skip headings)
+                    const existingSymbols = currentRows
+                        .filter(row => row.type === "symbol")
+                        .map(row => row.symbol);
+
+                    // Find new symbols to add
+                    const newSymbols = holdingsSymbols.filter(s => !existingSymbols.includes(s));
+
+                    if (newSymbols.length === 0) {
+                        status.textContent = "All holdings already in wishlist. No changes needed.";
+                        status.style.color = "#059669";
+                        return;
+                    }
+
+                    // Sort new symbols alphabetically
+                    newSymbols.sort();
+
+                    // Add new symbols to wishlist
+                    const userParamPost = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+                    const postResponse = await fetch(API_BASE + "/wishlist/add" + userParamPost, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ symbols: newSymbols })
+                    });
+
+                    if (!postResponse.ok) {
+                        const errorData = await postResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || ("HTTP " + postResponse.status));
+                    }
+
+                    // Refresh wishlist to show changes
+                    await refreshWishlist();
+
+                    status.textContent = "✅ Added " + newSymbols.length + " symbol(s) to wishlist: " + newSymbols.join(", ");
+                    status.style.color = "#059669";
+
+                } catch (error) {
+                    status.textContent = "❌ Error: " + error.message;
+                    status.style.color = "#dc2626";
+                    console.error("Import holdings to wishlist error:", error);
+                }
             }
 
 
