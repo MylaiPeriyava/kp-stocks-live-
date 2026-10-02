@@ -1541,6 +1541,52 @@ def add_to_wishlist():
         return jsonify({"error": str(error)}), 500
 
 
+@app.route("/wishlist/remove", methods=["POST"])
+def remove_from_wishlist():
+    user = get_user_from_request()
+    payload = request.get_json(silent=True)
+    
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Request body must contain valid JSON."}), 400
+    
+    symbols = payload.get("symbols", [])
+    
+    if not isinstance(symbols, list) or len(symbols) == 0:
+        return jsonify({"error": "Symbols must be a non-empty list."}), 400
+    
+    try:
+        # Get current wishlist from Firebase
+        doc_ref = db.collection('wishlist').document(user)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            lines = data.get('lines', [])
+        else:
+            lines = []
+        
+        # Get symbols to remove
+        symbols_to_remove = set(symbols)
+        
+        # Filter out symbols that match
+        removed_count = 0
+        final_lines = []
+        for item in lines:
+            if item.get("type") == "symbol" and item.get("symbol") in symbols_to_remove:
+                removed_count += 1
+            else:
+                final_lines.append(item)
+        
+        if removed_count == 0:
+            return jsonify({"ok": True, "removed": 0, "message": "No matching symbols found"}), 200
+        
+        # Save back to Firebase
+        doc_ref.set({"lines": final_lines}, merge=True)
+        
+        return jsonify({"ok": True, "removed": removed_count}), 200
+    
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
