@@ -4613,6 +4613,7 @@
                         "<td>" + item.newQty + "</td>" +
                         "<td>" + money(item.newAveragePrice) + "</td>" +
                         "<td>" + money(item.currentPrice) + "</td>" +
+                        "<td>" + item.holdingDays + "</td>" +  // ✅ Added holding days column
                         '<td class="' + (item.scenarioPnlValue >= 0 ? "positive" : "scenario-pnl-negative") + '">' +
                         (item.scenarioPnlValue >= 0 ? "+" : "") +
                         money(item.scenarioPnlValue) +
