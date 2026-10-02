@@ -8106,8 +8106,13 @@
                         throw new Error(errorData.error || ("HTTP " + postResponse.status));
                     }
 
-                    // 7. Refresh wishlist
+                    // 7. Refresh wishlist table
                     await refreshWishlist();
+
+                    // ✅ 8. REFRESH THE DROPDOWN TOO!
+                    if (typeof loadWishlistSymbols === "function") {
+                        await loadWishlistSymbols();
+                    }
 
                     status.textContent = "✅ Added " + newSymbols.length + " symbol(s): " + newSymbols.join(", ");
                     status.style.color = "#059669";
