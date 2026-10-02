@@ -8060,7 +8060,7 @@
                 status.style.color = "#2563eb";
 
                 try {
-                    // Extract symbols from holdings
+                    // 1. Get holdings symbols
                     const holdingsSymbols = holdingsList.map(h => h.symbol).filter(s => s);
 
                     if (holdingsSymbols.length === 0) {
@@ -8069,7 +8069,7 @@
                         return;
                     }
 
-                    // Get current wishlist
+                    // 2. Get current wishlist
                     const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
                     const getResponse = await fetch(API_BASE + "/wishlist" + userParam);
                     if (!getResponse.ok) throw new Error("Failed to fetch current wishlist");
@@ -8077,26 +8077,25 @@
                     const getData = await getResponse.json();
                     const currentRows = Array.isArray(getData.rows) ? getData.rows : [];
 
-                    // Extract existing symbols (skip headings)
+                    // 3. Extract existing symbols (skip headings)
                     const existingSymbols = currentRows
                         .filter(row => row.type === "symbol")
                         .map(row => row.symbol);
 
-                    // Find new symbols to add
+                    // 4. Find new symbols to add
                     const newSymbols = holdingsSymbols.filter(s => !existingSymbols.includes(s));
 
                     if (newSymbols.length === 0) {
-                        status.textContent = "All holdings already in wishlist. No changes needed.";
+                        status.textContent = "✅ All holdings already in wishlist. No changes needed.";
                         status.style.color = "#059669";
                         return;
                     }
 
-                    // Sort new symbols alphabetically
+                    // 5. Sort alphabetically
                     newSymbols.sort();
 
-                    // Add new symbols to wishlist
-                    const userParamPost = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
-                    const postResponse = await fetch(API_BASE + "/wishlist/add" + userParamPost, {
+                    // 6. Call new /wishlist/add endpoint
+                    const postResponse = await fetch(API_BASE + "/wishlist/add" + userParam, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ symbols: newSymbols })
@@ -8107,10 +8106,10 @@
                         throw new Error(errorData.error || ("HTTP " + postResponse.status));
                     }
 
-                    // Refresh wishlist to show changes
+                    // 7. Refresh wishlist
                     await refreshWishlist();
 
-                    status.textContent = "✅ Added " + newSymbols.length + " symbol(s) to wishlist: " + newSymbols.join(", ");
+                    status.textContent = "✅ Added " + newSymbols.length + " symbol(s): " + newSymbols.join(", ");
                     status.style.color = "#059669";
 
                 } catch (error) {
