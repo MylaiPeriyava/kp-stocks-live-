@@ -13,6 +13,63 @@
     <style>
 
 
+        .screeners-list-wrap {
+            margin-top: 10px;
+        }
+
+        .screeners-list-table {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .screeners-list-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .screeners-list-item {
+            padding: 8px 12px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+            .screeners-list-item:hover {
+                background: #f3f4f6;
+                border-color: #d1d5db;
+                transform: translateX(2px);
+            }
+
+            .screeners-list-item a {
+                color: #2563eb;
+                text-decoration: none;
+                font-weight: 500;
+                display: block;
+            }
+
+                .screeners-list-item a:hover {
+                    text-decoration: underline;
+                    color: #1d4ed8;
+                }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .screeners-list-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .screeners-list-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+
     /* Loading Overlay */
     #loadingOverlay {
         position: fixed;
@@ -2640,6 +2697,21 @@
                             </div>
 
                             <div id="researchIdeasList" style="font-size: 14px; line-height: 1.5; color: #1f2937;">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Other Screeners Section -->
+                        <div style="margin-top: 22px; border-top: 1px solid #e5e7eb; padding-top: 18px;">
+                            <div class="screener-title-row" style="margin-bottom: 10px;">
+                                <span class="screener-title">Other Screeners to Check</span>
+                            </div>
+
+                            <p class="small" style="margin-bottom: 10px;">
+                                Curated list of popular stock screeners from Screener.in (opens in new tab).
+                            </p>
+
+                            <div class="screeners-list-wrap" id="screenersListWrap">
                                 <!-- Filled by JS -->
                             </div>
                         </div>
@@ -7944,6 +8016,102 @@
                     }, 500);
                 });
             }
+
+
+            const SCREENER_LIST = [
+                { title: "Golden Crossover", url: "https://www.screener.in/screens/336509/golden-crossover" },
+                { title: "Top Gainers of the Day", url: "https://www.screener.in/screens/2594078/top-gainers-of-the-day/" },
+                { title: "Penny Stocks", url: "https://www.screener.in/screens/2713404/penny-stocks" },
+                { title: "Best Stock in 2026", url: "https://www.screener.in/screens/3187942/best-stock-in-2026" },
+                { title: "Best High Profit Growth", url: "https://www.screener.in/screens/449773/best-high-profit-growth-companies" },
+                { title: "Multibaggers", url: "https://www.screener.in/screens/3788976/multibaggers" },
+                { title: "Fundamentally Strong Undervalued", url: "https://www.screener.in/screens/319814/fundamentally-strong-undervalued-stocks" },
+                { title: "Above 50 & 200 EMA", url: "https://www.screener.in/screens/1366013/above-50-200-ema" },
+                { title: "Stocks Down >40% from 52W High", url: "https://www.screener.in/screens/4101/stocks-down-more-than-40-from-52-week-high" },
+                { title: "Daily RSI 40 Support", url: "https://www.screener.in/screens/921819/daily-rsi-40-support/" },
+                { title: "Growth Stock with Low PE", url: "https://www.screener.in/screens/43269/growth-stock-with-low-pe-ratio" },
+                { title: "High ROCE ROE Growth", url: "https://www.screener.in/screens/134931/high-roce-roe-and-decent-growth-companies" },
+                { title: "Top SME Gainer", url: "https://www.screener.in/screens/2748717/top-sme-gainer-of-the-day" },
+                { title: "Best Stocks Under 200", url: "https://www.screener.in/screens/780362/best-stocks-under-200" },
+                { title: "52W Low + FII/DII Increase", url: "https://www.screener.in/screens/457831/52-week-low-stock-increase-in-fii-dii-holding" },
+                { title: "Companies with 30% Growth", url: "https://www.screener.in/screens/1675156/companies-with-30-growth" },
+                { title: "Companies Creating New High", url: "https://www.screener.in/screens/214283/companies-creating-new-high" },
+                { title: "Stocks Near/Above 50 EMA", url: "https://www.screener.in/screens/1139844/stocks-near-and-above-50-ema-bullish" },
+                { title: "Stocks Nearing 52W High", url: "https://www.screener.in/screens/4102/stocks-nearing-52-week-high" },
+                { title: "Stocks Staying Above 200 EMA", url: "https://www.screener.in/screens/2493311/stocks-staying-above-200-ema/" },
+                { title: "Dividend Yielding Stocks", url: "https://www.screener.in/screens/761229/dividend-yielding-stocks" },
+                { title: "Best Stocks Under 500", url: "https://www.screener.in/screens/1062185/best-stocks-under-500-rs" },
+                { title: "Breakout Stocks", url: "https://www.screener.in/screens/209239/breakout-stocks" },
+                { title: "Darvas Scan", url: "https://www.screener.in/screens/4928/darvas-scan" },
+                { title: "Quality Stock", url: "https://www.screener.in/screens/345425/quality-stock/" },
+                { title: "Stocks Below Intrinsic Value", url: "https://www.screener.in/screens/27820/stocks-below-intrinsic-value" },
+                { title: "Undervalued High Growth", url: "https://www.screener.in/screens/533318/undervalued-stocks-with-high-growth" },
+                { title: "FII Buying", url: "https://www.screener.in/screens/343087/fii-buying" },
+                { title: "The Bull Cartel", url: "https://www.screener.in/screens/1/the-bull-cartel" },
+                { title: "Low on 10Y Avg Earnings", url: "https://www.screener.in/screens/6994/low-on-10-year-average-earnings" },
+                { title: "Magic Formula", url: "https://www.screener.in/screens/59/magic-formula" },
+                { title: "Growth Stocks", url: "https://www.screener.in/screens/178/growth-stocks" },
+                { title: "Highest Dividend Yield", url: "https://www.screener.in/screens/3/highest-dividend-yield-shares" },
+                { title: "Capacity Expansion", url: "https://www.screener.in/screens/97687/capacity-expansion" },
+                { title: "Piotroski Scan", url: "https://www.screener.in/screens/2/piotroski-scan" },
+                { title: "High Growth High ROE Low PE", url: "https://www.screener.in/screens/18/high-growth-high-roe-low-pe" },
+                { title: "Debt Reduction", url: "https://www.screener.in/screens/126864/debt-reduction" },
+                { title: "Loss to Profit", url: "https://www.screener.in/screens/49/loss-to-profit-companies" },
+                { title: "Coffee Can Portfolio", url: "https://www.screener.in/screens/57601/coffee-can-portfolio" },
+                { title: "RSI Oversold Stocks", url: "https://www.screener.in/screens/985942/rsi-oversold-stocks" },
+                { title: "Bluest of Blue Chips", url: "https://www.screener.in/screens/234/bluest-of-the-blue-chips" },
+                { title: "Value Stocks", url: "https://www.screener.in/screens/184/value-stocks" },
+                { title: "Quarterly Growers", url: "https://www.screener.in/screens/86/quarterly-growers" },
+                { title: "Multibagger Stocks", url: "https://www.screener.in/screens/60880/multibagger-stocks" },
+                { title: "Growth Without Dilution", url: "https://www.screener.in/screens/226712/growth-without-dilution" },
+                { title: "Peter Lynch Screener", url: "https://www.screener.in/screens/8117/peter-lynch-stock-screener" },
+                { title: "All Stocks", url: "https://www.screener.in/screens/71064/all-stocks" },
+                { title: "Debt Free Companies", url: "https://www.screener.in/screens/27897/debt-free-companies" },
+                { title: "Undervalued Stocks", url: "https://www.screener.in/screens/2608/undervalued-stocks" },
+                { title: "Stocks Under 100", url: "https://www.screener.in/screens/398574/stocks-under-100" },
+                { title: "Daily Upper Circuit", url: "https://www.screener.in/screens/743583/daily-upper-circuit" },
+                { title: "Best Long Term Stocks", url: "https://www.screener.in/screens/92669/best-long-term-stocks" },
+                { title: "CANSLIM Stocks", url: "https://www.screener.in/screens/44995/canslim-stocks" },
+                { title: "Low from 52W High", url: "https://www.screener.in/screens/103296/low-from-52-week-high" }
+            ];
+
+            function renderScreenersList() {
+                const wrap = document.getElementById("screenersListWrap");
+                if (!wrap) return;
+
+                let html = '<div class="screeners-list-table">';
+
+                // Create 3-column layout
+                const columns = 3;
+                const rows = Math.ceil(SCREENER_LIST.length / columns);
+
+                for (let i = 0; i < rows; i++) {
+                    html += '<div class="screeners-list-row">';
+
+                    for (let j = 0; j < columns; j++) {
+                        const index = i + (j * rows);
+                        if (index < SCREENER_LIST.length) {
+                            const screener = SCREENER_LIST[index];
+                            html +=
+                                '<div class="screeners-list-item">' +
+                                '<a href="' + screener.url + '" target="_blank" rel="noopener">' +
+                                escapeHtml(screener.title) +
+                                '</a>' +
+                                '</div>';
+                        }
+                    }
+
+                    html += '</div>';
+                }
+
+                html += '</div>';
+                wrap.innerHTML = html;
+            }
+
+            // Call on page load
+            document.addEventListener("DOMContentLoaded", function () {
+                renderScreenersList();
+            });
 
             document.addEventListener('DOMContentLoaded', async function () {
                 // ✅ STEP 0: WAIT FOR LOGIN (page is NOT blocked - user can type!)
