@@ -4496,92 +4496,83 @@
 
 
             function updateSellGainAlerts() {
-                try {
-                    const box = document.getElementById("sellGainBox");
-                    const safeMessage = document.getElementById("sellGainSafeMessage");
-                    const tableWrap = document.getElementById("sellGainTableWrap");
-                    const rowsBody = document.getElementById("sellGainRows");
-                    const subtitle = document.getElementById("sellGainSubtitle");
+                const box = document.getElementById("sellGainBox");
+                const safeMessage = document.getElementById("sellGainSafeMessage");
+                const tableWrap = document.getElementById("sellGainTableWrap");
+                const tbody = document.getElementById("sellGainRows");
+                const subtitle = document.getElementById("sellGainSubtitle");
 
-                    // ✅ Check if elements exist
-                    if (!box || !safeMessage || !tableWrap || !rowsBody || !subtitle) {
-                        console.warn("Sell gain elements not found in DOM");
-                        return;
-                    }
+                const sellGainThreshold = Math.abs(settings.sellGainPct || 3);
+                subtitle.textContent = "Holdings with simple P/L of +" + sellGainThreshold.toFixed(2) + "% or above";
 
-                    if (!rawHoldings || rawHoldings.length === 0) {
-                        box.style.display = "none";
-                        return;
-                    }
-
-                    const threshold = settings.sellGainPct || 3;
-                    subtitle.textContent = "Holdings with simple P/L of +" + threshold.toFixed(2) + "% or above";
-                    safeMessage.textContent = "No holdings currently at +" + threshold.toFixed(2) + "% or above.";
-
-                    const gainHoldings = [];
-
-                    for (const raw of rawHoldings) {
-                        const symbol = raw.symbol;
-                        const scenarios = raw.scenarios || [];
-
-                        for (const scenario of scenarios) {
-                            const qty = numberOrZero(scenario.qty);
-                            if (qty <= 0) continue;
-
-                            const avgBuyPrice = numberOrZero(scenario.avgBuyPrice);
-                            const currentPrice = numberOrZero(scenario.currentPrice);
-                            if (avgBuyPrice <= 0 || currentPrice <= 0) continue;
-
-                            const pnlPercent = ((currentPrice - avgBuyPrice) / avgBuyPrice) * 100;
-
-                            if (pnlPercent >= threshold) {
-                                gainHoldings.push({
-                                    symbol: symbol,
-                                    scenarioName: scenario.scenarioName || "Main",
-                                    qty: qty,
-                                    avgBuyPrice: avgBuyPrice,
-                                    currentPrice: currentPrice,
-                                    pnl: (currentPrice - avgBuyPrice) * qty,
-                                    pnlPercent: pnlPercent
-                                });
-                            }
-                        }
-                    }
-
-                    if (gainHoldings.length === 0) {
-                        box.style.display = "block";
-                        safeMessage.style.display = "block";
-                        tableWrap.style.display = "none";
-                    } else {
-                        box.style.display = "block";
-                        safeMessage.style.display = "none";
-                        tableWrap.style.display = "block";
-
-                        rowsBody.innerHTML = "";
-
-                        gainHoldings.sort((a, b) => b.pnlPercent - a.pnlPercent);
-
-                        for (const h of gainHoldings) {
-                            const row = document.createElement("tr");
-
-                            const scenarioText = h.scenarioName !== "Main"
-                                ? (h.symbol + " (" + h.scenarioName + ")")
-                                : h.symbol;
-
-                            row.innerHTML =
-                                "<td>" + escapeHtml(scenarioText) + "</td>" +
-                                "<td>" + h.qty + "</td>" +
-                                "<td>₹" + h.avgBuyPrice.toFixed(2) + "</td>" +
-                                "<td>₹" + h.currentPrice.toFixed(2) + "</td>" +
-                                "<td class='pnl-positive'>₹" + h.pnl.toFixed(2) + "</td>" +
-                                "<td class='pnl-positive'>+" + h.pnlPercent.toFixed(2) + "%</td>";
-
-                            rowsBody.appendChild(row);
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error in updateSellGainAlerts:", error);
+                if (holdingsList.length === 0) {
+                    box.style.display = "none";
+                    return;
                 }
+
+                const alerts = holdingsList
+                    .filter(h => {
+                        const avg = numberOrZero(h.avgPrice);
+                        const current = numberOrZero(h.livePrice);
+                        if (avg <= 0 || current <= 0) return false;
+                        const pnlPercent = ((current - avg) / avg) * 100;
+                        return pnlPercent >= sellGainThreshold;
+                    })
+                    .map(h => {
+                        const avg = numberOrZero(h.avgPrice);
+                        const current = numberOrZero(h.livePrice);
+                        const qty = numberOrZero(h.qty);
+
+                        const currentPnlValue = (current - avg) * qty;
+                        const currentPnlPercent = ((current - avg) / avg) * 100;
+
+                        return {
+                            symbol: h.symbol,
+                            qty: qty,
+                            avgPrice: avg,
+                            currentPrice: current,
+                            currentPnlValue: currentPnlValue,
+                            currentPnlPercent: currentPnlPercent
+                        };
+                    })
+                    .sort((a, b) => b.currentPnlPercent - a.currentPnlPercent);
+
+                box.style.display = "block";
+
+                if (alerts.length === 0) {
+                    safeMessage.style.display = "block";
+                    safeMessage.textContent = "No holdings currently at +" + sellGainThreshold.toFixed(2) + "% or above.";
+                    tableWrap.style.display = "none";
+                    tbody.innerHTML = "";
+                    return;
+                }
+
+                safeMessage.style.display = "none";
+                tableWrap.style.display = "block";
+
+                let html = "";
+                alerts.forEach(item => {
+                    const yahooSymbol = item.symbol.replace("-EQ", "") + ".NS";
+                    const yahooUrl = "https://finance.yahoo.com/quote/" + encodeURIComponent(yahooSymbol);
+
+                    const symbolCell = '<td>' +
+                        '<a href="' + yahooUrl + '" target="_blank" style="color: #2e7d32; font-weight: 700; text-decoration: underline;">' +
+                        escapeHtml(item.symbol) +
+                        '</a>' +
+                        '</td>';
+
+                    html +=
+                        "<tr>" +
+                        symbolCell +
+                        "<td>" + item.qty + "</td>" +
+                        "<td>" + money(item.avgPrice) + "</td>" +
+                        "<td>" + money(item.currentPrice) + "</td>" +
+                        '<td class="positive">+' + money(item.currentPnlValue) + "</td>" +
+                        '<td class="positive">+' + item.currentPnlPercent.toFixed(2) + "%</td>" +
+                        "</tr>";
+                });
+
+                tbody.innerHTML = html;
             }
 
             /* ==================== SELECTED HOLDING P&L ==================== */
