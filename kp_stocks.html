@@ -2781,6 +2781,18 @@
                                 Click to add all holdings symbols to wishlist.txt
                             </span>
                         </div>
+
+                        <!-- ✅ ADD THIS REMOVE SECTION -->
+                        <div class="wishlist-import-section" style="margin-top: 12px; padding-top: 12px;">
+                            <button type="button" class="add-btn" onclick="removeHoldingsFromWishlist()" style="background: #dc2626;">
+                                Remove Holdings from Wishlist
+                            </button>
+
+                            <span class="wishlist-refresh-status" id="wishlistRemoveStatus" style="margin-left: 12px;">
+                                Click to remove all holdings symbols from wishlist
+                            </span>
+                        </div>
+
                     </div>
                 </section>
             </div>
@@ -8124,6 +8136,81 @@
                 }
             }
 
+            async function removeHoldingsFromWishlist() {
+                const status = document.getElementById("wishlistRemoveStatus");
+
+                if (!holdingsList || holdingsList.length === 0) {
+                    status.textContent = "No holdings to remove.";
+                    status.style.color = "#dc2626";
+                    return;
+                }
+
+                status.textContent = "Removing holdings from wishlist...";
+                status.style.color = "#2563eb";
+
+                try {
+                    // 1. Get holdings symbols
+                    const holdingsSymbols = holdingsList.map(h => h.symbol).filter(s => s);
+
+                    if (holdingsSymbols.length === 0) {
+                        status.textContent = "No holdings symbols found.";
+                        status.style.color = "#dc2626";
+                        return;
+                    }
+
+                    // 2. Get current wishlist
+                    const userParam = CURRENT_USER ? "?user=" + encodeURIComponent(CURRENT_USER) : "";
+                    const getResponse = await fetch(API_BASE + "/wishlist" + userParam);
+                    if (!getResponse.ok) throw new Error("Failed to fetch current wishlist");
+
+                    const getData = await getResponse.json();
+                    const currentRows = Array.isArray(getData.rows) ? getData.rows : [];
+
+                    // 3. Extract existing symbols (skip headings)
+                    const existingSymbols = currentRows
+                        .filter(row => row.type === "symbol")
+                        .map(row => row.symbol);
+
+                    // 4. Find symbols to remove (only those that exist in wishlist)
+                    const symbolsToRemove = holdingsSymbols.filter(s => existingSymbols.includes(s));
+
+                    if (symbolsToRemove.length === 0) {
+                        status.textContent = "✅ No holdings symbols found in wishlist. Nothing to remove.";
+                        status.style.color = "#059669";
+                        return;
+                    }
+
+                    // 5. Call /wishlist/remove endpoint
+                    const postResponse = await fetch(API_BASE + "/wishlist/remove" + userParam, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ symbols: symbolsToRemove })
+                    });
+
+                    if (!postResponse.ok) {
+                        const errorData = await postResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || ("HTTP " + postResponse.status));
+                    }
+
+                    const result = await postResponse.json();
+
+                    // 6. Refresh wishlist table
+                    await refreshWishlist();
+
+                    // 7. Refresh dropdown
+                    if (typeof loadWishlistSymbols === "function") {
+                        await loadWishlistSymbols();
+                    }
+
+                    status.textContent = "✅ Removed " + result.removed + " symbol(s): " + symbolsToRemove.join(", ");
+                    status.style.color = "#059669";
+
+                } catch (error) {
+                    status.textContent = "❌ Error: " + error.message;
+                    status.style.color = "#dc2626";
+                    console.error("Remove holdings from wishlist error:", error);
+                }
+            }
 
             const SCREENER_LIST = [
                 // POPULAR SECTION (First batch you gave)
