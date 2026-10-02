@@ -594,7 +594,7 @@
             flex-direction: column;
             gap: 5px;
             margin-bottom: 15px;
-            text-align: left; /* ✅ ADD THIS */
+            text-align: left;
         }
 
             .sell-gain-header span:first-child {
@@ -608,13 +608,29 @@
             color: #388e3c;
         }
 
-        /* ✅ ADD THIS FOR HOLDING DAYS COLUMN */
-        .sell-gain-table th:nth-child(5),
-        .sell-gain-table td:nth-child(5) {
-            text-align: center;
-            font-weight: 600;
-            color: #558b2f;
-            background: #f1f8e9;
+        /* ✅ RIGHT-ALIGN ALL HEADERS EXCEPT SYMBOL */
+        .sell-gain-table th {
+            text-align: right;
+            padding: 12px 8px;
+        }
+
+            .sell-gain-table th:first-child {
+                text-align: left; /* ✅ Symbol stays left */
+            }
+
+            /* ✅ HOLDING DAYS COLUMN */
+            .sell-gain-table th:nth-child(5),
+            .sell-gain-table td:nth-child(5) {
+                text-align: center;
+                font-weight: 600;
+                color: #558b2f;
+                background: #f1f8e9;
+            }
+
+        /* ✅ RIGHT-ALIGN DATA CELLS */
+        .sell-gain-table td {
+            text-align: right;
+            padding: 10px 8px;
         }
 
 
@@ -2138,10 +2154,11 @@
                                 <table class="sell-gain-table">
                                     <thead>
                                         <tr>
-                                            <th>Symbol / Scenario</th>
+                                            <th class="sell-gain-symbol-header">Symbol</th>
                                             <th>Qty</th>
                                             <th>Avg Buy Price</th>
                                             <th>Current Price</th>
+                                            <th>Holding Days</th>
                                             <th>Profit / Loss</th>
                                             <th>Profit / Loss %</th>
                                         </tr>
