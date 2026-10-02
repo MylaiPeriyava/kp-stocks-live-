@@ -4569,8 +4569,21 @@
                         const currentPnlValue = (current - avg) * qty;
                         const currentPnlPercent = ((current - avg) / avg) * 100;
 
-                        // ✅ Calculate holding days
-                        const buyDate = h.buyDate ? new Date(h.buyDate) : new Date();
+                        // ✅ Parse DD/MM/YYYY correctly
+                        let buyDate;
+                        if (h.buyDate && typeof h.buyDate === 'string' && h.buyDate.includes('/')) {
+                            const parts = h.buyDate.split('/');
+                            // DD/MM/YYYY format
+                            const day = parseInt(parts[0], 10);
+                            const month = parseInt(parts[1], 10) - 1;  // Month is 0-indexed
+                            const year = parseInt(parts[2], 10);
+                            buyDate = new Date(year, month, day);
+                        } else if (h.buyDate) {
+                            buyDate = new Date(h.buyDate);
+                        } else {
+                            buyDate = new Date();
+                        }
+
                         const today = new Date();
                         const holdingDays = Math.floor((today - buyDate) / (1000 * 60 * 60 * 24));
 
@@ -4616,7 +4629,7 @@
                         "<td>" + item.qty + "</td>" +
                         "<td>" + money(item.avgPrice) + "</td>" +
                         "<td>" + money(item.currentPrice) + "</td>" +
-                        "<td>" + item.holdingDays + "</td>" +  // ✅ Holding days column
+                        "<td>" + item.holdingDays + "</td>" +
                         '<td class="positive">+' + money(item.currentPnlValue) + "</td>" +
                         '<td class="positive">+' + item.currentPnlPercent.toFixed(2) + "%</td>" +
                         "</tr>";
@@ -4624,7 +4637,6 @@
 
                 tbody.innerHTML = html;
             }
-
 
             /* ==================== SELECTED HOLDING P&L ==================== */
             function updatePnLWithHolding(h) {
