@@ -3528,8 +3528,9 @@
                     .map(line => line.trim())
                     .filter(line => line && !line.startsWith("#"));
 
-                if (numericLines.length !== 11) {
-                    throw new Error("Rates file must contain exactly 11 numeric values (comments and blank lines are ignored).");
+                // ✅ UPDATED: 11 → 12 values
+                if (numericLines.length !== 12) {
+                    throw new Error("Rates file must contain exactly 12 numeric values (comments and blank lines are ignored).");
                 }
 
                 const values = numericLines.map(value => Number(value));
@@ -3551,7 +3552,8 @@
                     stampBuyPct: values[7],
                     sttBuyPct: values[8],
                     sttSellPct: values[9],
-                    stopLossPct: values[10]
+                    stopLossPct: values[10],
+                    sellGainPct: values[11]  // ✅ ADDED
                 };
             }
 
