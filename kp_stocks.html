@@ -4508,6 +4508,23 @@
                         const currentPnlValue = (current - avg) * qty;
                         const currentPnlPercent = ((current - avg) / avg) * 100;
 
+                        // ✅ Parse DD/MM/YYYY correctly for holding days
+                        let buyDate;
+                        if (h.buyDate && typeof h.buyDate === 'string' && h.buyDate.includes('/')) {
+                            const parts = h.buyDate.split('/');
+                            const day = parseInt(parts[0], 10);
+                            const month = parseInt(parts[1], 10) - 1;
+                            const year = parseInt(parts[2], 10);
+                            buyDate = new Date(year, month, day);
+                        } else if (h.buyDate) {
+                            buyDate = new Date(h.buyDate);
+                        } else {
+                            buyDate = new Date();
+                        }
+
+                        const today = new Date();
+                        const holdingDays = Math.floor((today - buyDate) / (1000 * 60 * 60 * 24));
+
                         const additionalLot = calcBuy(qty, current, settings.buyBrokerage, "nse");
                         const existingCost = numberOrZero(h.totalInvestedWithCharges);
                         const additionalCost = additionalLot ? additionalLot.total : current * qty;
@@ -4527,6 +4544,7 @@
                             currentPrice: current,
                             currentPnlValue: currentPnlValue,
                             currentPnlPercent: currentPnlPercent,
+                            holdingDays: holdingDays >= 0 ? holdingDays : 0,  // ✅ Added
                             additionalLotCost: additionalCost,
                             additionalLotCharges: additionalLot ? additionalLot.charges : 0,
                             newQty: newQty,
@@ -4552,11 +4570,9 @@
 
                 let html = "";
                 alerts.forEach(item => {
-                    // ✅ Create Yahoo Finance URL
                     const yahooSymbol = item.symbol.replace("-EQ", "") + ".NS";
                     const yahooUrl = "https://finance.yahoo.com/quote/" + encodeURIComponent(yahooSymbol);
 
-                    // ✅ Symbol cell with link
                     const symbolCell = '<td>' +
                         '<a href="' + yahooUrl + '" target="_blank" style="color: #7d1c17; font-weight: 700; text-decoration: underline;">' +
                         escapeHtml(item.symbol) +
@@ -4569,6 +4585,7 @@
                         "<td>" + item.qty + "</td>" +
                         "<td>" + money(item.avgPrice) + "</td>" +
                         "<td>" + money(item.currentPrice) + "</td>" +
+                        "<td>" + item.holdingDays + "</td>" +  // ✅ Added holding days column
                         '<td class="negative">' +
                         (item.currentPnlValue >= 0 ? "+" : "") +
                         money(item.currentPnlValue) +
