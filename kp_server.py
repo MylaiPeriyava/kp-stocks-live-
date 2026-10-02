@@ -1485,54 +1485,6 @@ def research_ideas():
         traceback.print_exc()
         return jsonify([])
 
-
-@app.route("/wishlist/add", methods=["POST"])
-def add_to_wishlist():
-    user = get_user_from_request()
-    payload = request.get_json(silent=True)
-    
-    if not isinstance(payload, dict):
-        return jsonify({"error": "Request body must contain valid JSON."}), 400
-    
-    symbols = payload.get("symbols", [])
-    
-    if not isinstance(symbols, list) or len(symbols) == 0:
-        return jsonify({"error": "Symbols must be a non-empty list."}), 400
-    
-    try:
-        # Read current wishlist
-        wishlist_path = get_wishlist_path(user)
-        existing_lines = []
-        
-        if os.path.exists(wishlist_path):
-            with open(wishlist_path, "r", encoding="utf-8") as f:
-                existing_lines = [line.strip() for line in f.readlines() if line.strip()]
-        
-        # Get existing symbols (skip comments and headings)
-        existing_symbols = [line for line in existing_lines if not line.startswith("#")]
-        
-        # Add new symbols (avoid duplicates)
-        new_lines = existing_lines.copy()
-        for symbol in symbols:
-            if symbol not in existing_symbols:
-                new_lines.append(symbol)
-        
-        # Sort alphabetically (keep headings at top)
-        headings = [line for line in new_lines if line.startswith("#")]
-        symbols_only = sorted([line for line in new_lines if not line.startswith("#")])
-        final_lines = headings + symbols_only
-        
-        # Write back
-        with open(wishlist_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(final_lines) + "\n")
-        
-        return jsonify({"ok": True, "added": len(symbols)}), 200
-    
-    except Exception as error:
-        return jsonify({"error": str(error)}), 500
-
-
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
 
