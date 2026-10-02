@@ -569,7 +569,16 @@
         }
 
 
-
+        .sell-gain-caption {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f1f8e9;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #558b2f;
+            text-align: center;
+            line-height: 1.5;
+        }
 
         .sell-gain-box {
             margin: 20px 0;
@@ -2127,6 +2136,11 @@
                                     </thead>
                                     <tbody id="sellGainRows"></tbody>
                                 </table>
+                                <!-- ✅ ADD THIS CAPTION -->
+                                <div class="sell-gain-caption">
+                                    💡 P/L % shown is price-only (buy price vs current price).
+                                    Actual profit after buy & sell charges will be slightly lower.
+                                </div>
                             </div>
                         </div>
 
@@ -4573,6 +4587,16 @@
                 });
 
                 tbody.innerHTML = html;
+
+                // ✅ Add caption dynamically
+                if (!document.querySelector('.sell-gain-caption')) {
+                    const caption = document.createElement('div');
+                    caption.className = 'sell-gain-caption';
+                    caption.textContent =
+                        '💡 P/L % shown is price-only (buy price vs current price). ' +
+                        'Actual profit after buy & sell charges will be slightly lower.';
+                    tableWrap.appendChild(caption);
+                }
             }
 
             /* ==================== SELECTED HOLDING P&L ==================== */
