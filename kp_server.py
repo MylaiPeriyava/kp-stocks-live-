@@ -720,9 +720,11 @@ def get_rates():
         
         if doc.exists:
             data = doc.to_dict()
-            values = data.get('values', [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3])
+            # ✅ UPDATED: 12 values now (added sellGainPct = 3)
+            values = data.get('values', [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3, 3])
         else:
-            values = [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3]
+            # ✅ UPDATED: 12 values now (added sellGainPct = 3)
+            values = [20, 20, 0.00307, 0.000075, 0.0001, 0.0001, 18, 0.015, 0.1, 0.1, 3, 3]
         
         return "\n".join(str(v) for v in values), 200, {"Content-Type": "text/plain"}
     except Exception as error:
@@ -956,8 +958,9 @@ def save_rates():
     
     values = payload.get("values")
     
-    if not isinstance(values, list) or len(values) != 11:
-        return jsonify({"error": "Values must be a list of 11 numbers."}), 400
+    # ✅ UPDATED: 11 → 12 values (added sellGainPct)
+    if not isinstance(values, list) or len(values) != 12:
+        return jsonify({"error": "Values must be a list of 12 numbers."}), 400
     
     try:
         values = [float(v) for v in values]
