@@ -594,6 +594,7 @@
             flex-direction: column;
             gap: 5px;
             margin-bottom: 15px;
+            text-align: left; /* ✅ ADD THIS */
         }
 
             .sell-gain-header span:first-child {
@@ -606,6 +607,16 @@
             font-size: 0.95em;
             color: #388e3c;
         }
+
+        /* ✅ ADD THIS FOR HOLDING DAYS COLUMN */
+        .sell-gain-table th:nth-child(5),
+        .sell-gain-table td:nth-child(5) {
+            text-align: center;
+            font-weight: 600;
+            color: #558b2f;
+            background: #f1f8e9;
+        }
+
 
         .sell-gain-safe {
             padding: 15px;
@@ -2096,10 +2107,11 @@
                                 <table class="stop-loss-table">
                                     <thead>
                                         <tr>
-                                            <th>Symbol / Scenario</th>
+                                            <th>Symbol</th>  <!-- ✅ Simplified from "Symbol / Scenario" -->
                                             <th>Qty</th>
                                             <th>Avg Buy Price</th>
                                             <th>Current Price</th>
+                                            <th>Holding Days</th>
                                             <th>Profit / Loss</th>
                                             <th>Profit / Loss %</th>
                                         </tr>
@@ -4540,13 +4552,19 @@
                         const currentPnlValue = (current - avg) * qty;
                         const currentPnlPercent = ((current - avg) / avg) * 100;
 
+                        // ✅ Calculate holding days
+                        const buyDate = h.buyDate ? new Date(h.buyDate) : new Date();
+                        const today = new Date();
+                        const holdingDays = Math.floor((today - buyDate) / (1000 * 60 * 60 * 24));
+
                         return {
                             symbol: h.symbol,
                             qty: qty,
                             avgPrice: avg,
                             currentPrice: current,
                             currentPnlValue: currentPnlValue,
-                            currentPnlPercent: currentPnlPercent
+                            currentPnlPercent: currentPnlPercent,
+                            holdingDays: holdingDays >= 0 ? holdingDays : 0
                         };
                     })
                     .sort((a, b) => b.currentPnlPercent - a.currentPnlPercent);
@@ -4581,23 +4599,15 @@
                         "<td>" + item.qty + "</td>" +
                         "<td>" + money(item.avgPrice) + "</td>" +
                         "<td>" + money(item.currentPrice) + "</td>" +
+                        "<td>" + item.holdingDays + "</td>" +  // ✅ Holding days column
                         '<td class="positive">+' + money(item.currentPnlValue) + "</td>" +
                         '<td class="positive">+' + item.currentPnlPercent.toFixed(2) + "%</td>" +
                         "</tr>";
                 });
 
                 tbody.innerHTML = html;
-
-                // ✅ Add caption dynamically
-                if (!document.querySelector('.sell-gain-caption')) {
-                    const caption = document.createElement('div');
-                    caption.className = 'sell-gain-caption';
-                    caption.textContent =
-                        '💡 P/L % shown is price-only (buy price vs current price). ' +
-                        'Actual profit after buy & sell charges will be slightly lower.';
-                    tableWrap.appendChild(caption);
-                }
             }
+
 
             /* ==================== SELECTED HOLDING P&L ==================== */
             function updatePnLWithHolding(h) {
