@@ -1706,8 +1706,10 @@ def calculate_stock():
         # Calculate today's change
         today_change = float(((latest['Close'] - prev['Close']) / prev['Close']) * 100)
         
-        # Check if extender (15%+ single day rally)
+        # 3-Zone System
         is_extender = bool(today_change >= 15)
+        is_warning = bool(10 <= today_change < 15)
+        is_safe = bool(today_change < 10)
         
         # Find 3-day low (support)
         recent_lows = float(df['Low'].iloc[-4:].min())
@@ -1732,6 +1734,8 @@ def calculate_stock():
             'success': True,
             'symbol': symbol.replace('.NS', '').replace('.BO', ''),
             'is_extender': is_extender,
+            'is_warning': is_warning,
+            'is_safe': is_safe,
             'today_change': round(float(today_change), 2),
             'entry_price': float(entry_price),
             'stop_loss': float(stop_loss),
