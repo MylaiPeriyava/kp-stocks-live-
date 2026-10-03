@@ -1609,7 +1609,7 @@ def get_daily_calls():
         soup = BeautifulSoup(response.text, 'html.parser')
         tables = soup.find_all('table')
         
-        if len(tables) < 2:
+        if len(tables) < 1:
             return jsonify({
                 'success': False,
                 'error': 'No tables found',
@@ -1618,38 +1618,45 @@ def get_daily_calls():
         
         stocks_data = []
         
-        for table in tables[:2]:
-            rows = table.find_all('tr')
+        # Use first table only
+        table = tables[0]
+        rows = table.find_all('tr')
+        
+        for row_idx, row in enumerate(rows):
+            cells = row.find_all(['td', 'th'])
             
-            for row_idx, row in enumerate(rows):
-                cells = row.find_all(['td', 'th'])
+            # Skip header row
+            if row_idx == 0 or len(cells) < 7:
+                continue
+            
+            # Column 0: Stock name with link
+            stock_cell = cells[0]
+            stock_link_elem = stock_cell.find('a')
+            
+            if stock_link_elem:
+                stock_name = stock_link_elem.get_text(strip=True)
+                stock_url = stock_link_elem.get('href', '')
                 
-                if row_idx == 0 or len(cells) < 5:
-                    continue
-                
-                # First cell has the stock name with link
-                stock_cell = cells[0]
-                stock_link_elem = stock_cell.find('a')
-                
-                if stock_link_elem:
-                    stock_name = stock_link_elem.get_text(strip=True)
-                    stock_url = stock_link_elem.get('href', '')
-                    
-                    if stock_url.startswith('/'):
-                        stock_url = 'https://www.5paisa.com' + stock_url
-                else:
-                    stock_name = stock_cell.get_text(strip=True)
-                    stock_url = ''
-                
-                stocks_data.append({
-                    'stock': stock_name,
-                    'stock_url': stock_url,
-                    'current_price': cells[0].get_text(strip=True),
-                    'entry': cells[1].get_text(strip=True),
-                    'stop_loss': cells[2].get_text(strip=True),
-                    'target': cells[3].get_text(strip=True),
-                    'upside': cells[4].get_text(strip=True)
-                })
+                if stock_url.startswith('/'):
+                    stock_url = 'https://www.5paisa.com' + stock_url
+            else:
+                stock_name = stock_cell.get_text(strip=True)
+                stock_url = ''
+            
+            # Column 6: Action (Buy/Sell)
+            action_cell = cells[6]
+            action_text = action_cell.get_text(strip=True)
+            
+            stocks_data.append({
+                'stock': stock_name,
+                'stock_url': stock_url,
+                'cmp': cells[1].get_text(strip=True),
+                'entry': cells[2].get_text(strip=True),
+                'stop_loss': cells[3].get_text(strip=True),
+                'target': cells[4].get_text(strip=True),
+                'upside': cells[5].get_text(strip=True),
+                'action': action_text
+            })
         
         return jsonify({
             'success': True,
