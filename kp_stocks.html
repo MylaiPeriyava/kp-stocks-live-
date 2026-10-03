@@ -8361,9 +8361,22 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        const statusColor = data.is_extender ? '#dc2626' : '#059669';
-                        const statusIcon = data.is_extender ? '❌' : '✅';
-                        const statusText = data.is_extender ? 'Extender - Skip' : 'Safe Zone';
+                        // Determine status and colors
+                        let statusColor, statusIcon, statusText;
+
+                        if (data.is_extender) {
+                            statusColor = '#dc2626';  // Red
+                            statusIcon = '❌';
+                            statusText = 'Extender - Skip';
+                        } else if (data.is_warning) {
+                            statusColor = '#f59e0b';  // Orange/Yellow
+                            statusIcon = '⚠️';
+                            statusText = 'Caution Zone';
+                        } else {
+                            statusColor = '#059669';  // Green
+                            statusIcon = '✅';
+                            statusText = 'Safe Zone';
+                        }
 
                         let html = `
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -8411,11 +8424,22 @@
                         <td style="padding: 10px; border: 1px solid #e5e7eb; color: #7c3aed; font-weight: 600;">1:${data.rr_ratio}</td>
                     </tr>
                 `;
+
+                            // Add warning message if in caution zone
+                            if (data.is_warning) {
+                                html += `
+                        <tr>
+                            <td colspan="2" style="padding: 12px; border: 1px solid #e5e7eb; background: #fef3c7; color: #92400e; text-align: center; font-weight: 600;">
+                                ⚠️ Stock is up ${data.today_change}% today. Near extended zone - be cautious!
+                            </td>
+                        </tr>
+                    `;
+                            }
                         } else {
                             html += `
                     <tr>
                         <td colspan="2" style="padding: 12px; border: 1px solid #e5e7eb; background: #fef2f2; color: #dc2626; text-align: center; font-weight: 600;">
-                            ⚠️ Stock has rallied ${data.today_change}% today. Wait for pullback!
+                            ❌ Stock has rallied ${data.today_change}% today. Wait for pullback!
                         </td>
                     </tr>
                 `;
