@@ -1588,6 +1588,95 @@ def remove_from_wishlist():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+
+@app.route('/api/daily-calls')
+def get_daily_calls():
+    import requests
+    from bs4 import BeautifulSoup
+    from datetime import datetime
+    
+    try:
+        url = "https://www.5paisa.com/share-market-today/stocks-to-buy-or-sell-today"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Fetch page
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to fetch page. Status: {response.status_code}',
+                'stocks': []
+            })
+        
+        # Parse HTML
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Find all tables
+        tables = soup.find_all('table')
+        
+        if len(tables) < 2:
+            return jsonify({
+                'success': False,
+                'error': 'No tables found on page',
+                'stocks': []
+            })
+        
+        # Extract stocks data
+        stocks_data = []
+        
+        for table in tables[:2]:
+            rows = table.find_all('tr')
+            
+            for row_idx, row in enumerate(rows):
+                cells = row.find_all(['td', 'th'])
+                
+                # Skip header row
+                if row_idx == 0:
+                    continue
+                
+                if len(cells) >= 5:
+                    # Extract data (based on actual 5paisa structure)
+                    current_price = cells[0].get_text(strip=True) if len(cells) > 0 else ''
+                    entry = cells[1].get_text(strip=True) if len(cells) > 1 else ''
+                    stop_loss = cells[2].get_text(strip=True) if len(cells) > 2 else ''
+                    target = cells[3].get_text(strip=True) if len(cells) > 3 else ''
+                    upside = cells[4].get_text(strip=True) if len(cells) > 4 else ''
+                    
+                    # Get stock name from previous cell or context
+                    # Usually stock name is in a different structure
+                    stock_name = cells[0].get_text(strip=True) if len(cells) > 0 else ''
+                    
+                    # Only add if we have meaningful data
+                    if entry and target:
+                        stocks_data.append({
+                            'stock': stock_name,
+                            'current_price': current_price,
+                            'entry': entry,
+                            'stop_loss': stop_loss,
+                            'target': target,
+                            'upside': upside
+                        })
+        
+        # Get today's date
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        return jsonify({
+            'success': True,
+            'date': today,
+            'count': len(stocks_data),
+            'stocks': stocks_data
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'stocks': []
+        })
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
 
