@@ -2402,8 +2402,13 @@
                         </div>
 
                         <!-- Daily Positional Calls -->
-                        <div class="indices-refresh-status" id="dailyCallsStatus" style="margin-left: 15px;">
-                            Loading daily calls...
+                        <div style="display: flex; align-items: center; margin-top: 10px;">
+                            <div class="indices-refresh-status" id="dailyCallsStatus" style="margin-right: 15px;">
+                                Loading daily calls...
+                            </div>
+                            <button type="button" onclick="loadDailyCalls()" style="padding: 6px 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                🔄 Refresh Calls
+                            </button>
                         </div>
 
                         <div id="dailyCallsContainer" style="margin-top: 10px; display: none;">
@@ -8235,11 +8240,14 @@
                 const dateSpan = document.getElementById("dailyCallsDate");
 
                 try {
+                    // Show loading state
+                    status.textContent = "Refreshing...";
+
                     const response = await fetch("/api/daily-calls");
                     const data = await response.json();
 
                     if (data.success && data.stocks.length > 0) {
-                        // Update date
+                        // Update date (from 5paisa page)
                         dateSpan.textContent = data.date;
 
                         // Create table with better styling
@@ -8286,6 +8294,11 @@
                     container.style.display = 'none';
                 }
             }
+
+            // Load daily calls on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                loadDailyCalls();
+            });
 
             // Load daily calls on page load
             document.addEventListener('DOMContentLoaded', function () {
