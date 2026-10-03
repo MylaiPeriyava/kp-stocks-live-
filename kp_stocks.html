@@ -8242,30 +8242,31 @@
                         // Update date
                         dateSpan.textContent = data.date;
 
-                        // Create table
+                        // Create table with better styling
                         let html = `
                 <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
                         <thead>
-                            <tr style="background: #e5e7eb; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #d1d5db;">Stock</th>
-                                <th style="padding: 8px; border: 1px solid #d1d5db;">Entry</th>
-                                <th style="padding: 8px; border: 1px solid #d1d5db;">SL</th>
-                                <th style="padding: 8px; border: 1px solid #d1d5db;">Target</th>
-                                <th style="padding: 8px; border: 1px solid #d1d5db;">Upside</th>
+                            <tr style="background: #374151; color: white; text-align: left;">
+                                <th style="padding: 10px; border: 1px solid #4b5563;">Stock</th>
+                                <th style="padding: 10px; border: 1px solid #4b5563;">Entry</th>
+                                <th style="padding: 10px; border: 1px solid #4b5563;">SL</th>
+                                <th style="padding: 10px; border: 1px solid #4b5563;">Target</th>
+                                <th style="padding: 10px; border: 1px solid #4b5563;">Upside</th>
                             </tr>
                         </thead>
                         <tbody>
             `;
 
-                        data.stocks.forEach(stock => {
+                        data.stocks.forEach((stock, index) => {
+                            const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
                             html += `
-                    <tr style="background: white;">
-                        <td style="padding: 8px; border: 1px solid #d1d5db; font-weight: 600;">${stock.stock}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db;">${stock.entry}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626;">${stock.stop_loss}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669;">${stock.target}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.upside}</td>
+                    <tr style="background: ${rowColor};">
+                        <td style="padding: 10px; border: 1px solid #d1d5db; font-weight: 600; color: #111827;">${stock.stock}</td>
+                        <td style="padding: 10px; border: 1px solid #d1d5db; color: #111827; font-weight: 500;">${stock.entry}</td>
+                        <td style="padding: 10px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">${stock.stop_loss}</td>
+                        <td style="padding: 10px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.target}</td>
+                        <td style="padding: 10px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.upside}</td>
                     </tr>
                 `;
                         });
