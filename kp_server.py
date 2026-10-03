@@ -1591,62 +1591,31 @@ def remove_from_wishlist():
 
 @app.route('/api/daily-calls')
 def get_daily_calls():
-    import requests
-    from bs4 import BeautifulSoup
-    from datetime import datetime
-    import re
-    
     try:
         url = "https://www.5paisa.com/share-market-today/stocks-to-buy-or-sell-today"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        # Fetch page
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code != 200:
             return jsonify({
                 'success': False,
-                'error': f'Failed to fetch page. Status: {response.status_code}',
-                'stocks': [],
-                'page_date': None
+                'error': f'Status: {response.status_code}',
+                'stocks': []
             })
         
-        # Parse HTML
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Try to extract date from page heading
-        page_date = None
-        h1 = soup.find('h1')
-        if h1:
-            h1_text = h1.get_text(strip=True)
-            # Look for date pattern like "03 Oct 2026" or "October 3, 2026"
-            date_match = re.search(r'(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4})', h1_text, re.IGNORECASE)
-            if date_match:
-                page_date = date_match.group(1)
-        
-        # If no date found in h1, try h2
-        if not page_date:
-            h2 = soup.find('h2')
-            if h2:
-                h2_text = h2.get_text(strip=True)
-                date_match = re.search(r'(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4})', h2_text, re.IGNORECASE)
-                if date_match:
-                    page_date = date_match.group(1)
-        
-        # Find all tables
         tables = soup.find_all('table')
         
         if len(tables) < 2:
             return jsonify({
                 'success': False,
-                'error': 'No tables found on page',
-                'stocks': [],
-                'page_date': page_date
+                'error': 'No tables found',
+                'stocks': []
             })
         
-        # Extract stocks data
         stocks_data = []
         
         for table in tables[:2]:
@@ -1655,38 +1624,35 @@ def get_daily_calls():
             for row_idx, row in enumerate(rows):
                 cells = row.find_all(['td', 'th'])
                 
-                # Skip header row
-                if row_idx == 0:
+                if row_idx == 0 or len(cells) < 5:
                     continue
                 
-                if len(cells) >= 5:
-                    # Extract data
-                    current_price = cells[0].get_text(strip=True) if len(cells) > 0 else ''
-                    entry = cells[1].get_text(strip=True) if len(cells) > 1 else ''
-                    stop_loss = cells[2].get_text(strip=True) if len(cells) > 2 else ''
-                    target = cells[3].get_text(strip=True) if len(cells) > 3 else ''
-                    upside = cells[4].get_text(strip=True) if len(cells) > 4 else ''
+                # First cell has the stock name with link
+                stock_cell = cells[0]
+                stock_link_elem = stock_cell.find('a')
+                
+                if stock_link_elem:
+                    stock_name = stock_link_elem.get_text(strip=True)
+                    stock_url = stock_link_elem.get('href', '')
                     
-                    # Get stock name
-                    stock_name = cells[0].get_text(strip=True) if len(cells) > 0 else ''
-                    
-                    # Only add if we have meaningful data
-                    if entry and target:
-                        stocks_data.append({
-                            'stock': stock_name,
-                            'current_price': current_price,
-                            'entry': entry,
-                            'stop_loss': stop_loss,
-                            'target': target,
-                            'upside': upside
-                        })
-        
-        # Use page date if found, otherwise use today's date
-        display_date = page_date if page_date else datetime.now().strftime('%Y-%m-%d')
+                    if stock_url.startswith('/'):
+                        stock_url = 'https://www.5paisa.com' + stock_url
+                else:
+                    stock_name = stock_cell.get_text(strip=True)
+                    stock_url = ''
+                
+                stocks_data.append({
+                    'stock': stock_name,
+                    'stock_url': stock_url,
+                    'current_price': cells[0].get_text(strip=True),
+                    'entry': cells[1].get_text(strip=True),
+                    'stop_loss': cells[2].get_text(strip=True),
+                    'target': cells[3].get_text(strip=True),
+                    'upside': cells[4].get_text(strip=True)
+                })
         
         return jsonify({
             'success': True,
-            'date': display_date,
             'count': len(stocks_data),
             'stocks': stocks_data
         })
@@ -1695,8 +1661,7 @@ def get_daily_calls():
         return jsonify({
             'success': False,
             'error': str(e),
-            'stocks': [],
-            'page_date': None
+            'stocks': []
         })
 
 if __name__ == "__main__":
