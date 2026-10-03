@@ -1704,17 +1704,17 @@ def calculate_stock():
         prev = df.iloc[-2] if len(df) > 1 else latest
         
         # Calculate today's change
-        today_change = ((latest['Close'] - prev['Close']) / prev['Close']) * 100
+        today_change = float(((latest['Close'] - prev['Close']) / prev['Close']) * 100)
         
         # Check if extender (15%+ single day rally)
-        is_extender = today_change >= 15
+        is_extender = bool(today_change >= 15)
         
         # Find 3-day low (support)
-        recent_lows = df['Low'].iloc[-4:].min()
+        recent_lows = float(df['Low'].iloc[-4:].min())
         stop_loss = round(recent_lows, 2)
         
         # Entry price (current CMP)
-        entry_price = round(latest['Close'], 2)
+        entry_price = round(float(latest['Close']), 2)
         
         # Calculate risk
         risk = entry_price - stop_loss
@@ -1726,21 +1726,21 @@ def calculate_stock():
         reward_percent = round((reward / entry_price) * 100, 2)
         
         # Risk:Reward ratio
-        rr_ratio = round(reward / risk, 2) if risk > 0 else 0
+        rr_ratio = round(reward / risk, 2) if risk > 0 else 0.0
         
         return jsonify({
             'success': True,
             'symbol': symbol.replace('.NS', '').replace('.BO', ''),
             'is_extender': is_extender,
-            'today_change': round(today_change, 2),
-            'entry_price': entry_price,
-            'stop_loss': stop_loss,
-            'target': target,
-            'risk': round(risk, 2),
-            'risk_percent': risk_percent,
-            'reward': round(reward, 2),
-            'reward_percent': reward_percent,
-            'rr_ratio': rr_ratio
+            'today_change': round(float(today_change), 2),
+            'entry_price': float(entry_price),
+            'stop_loss': float(stop_loss),
+            'target': float(target),
+            'risk': float(round(risk, 2)),
+            'risk_percent': float(risk_percent),
+            'reward': float(round(reward, 2)),
+            'reward_percent': float(reward_percent),
+            'rr_ratio': float(rr_ratio)
         })
     
     except Exception as e:
@@ -1748,7 +1748,6 @@ def calculate_stock():
             'success': False,
             'error': f'Error: {str(e)}'
         })
-
 
 
 if __name__ == "__main__":
