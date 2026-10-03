@@ -2422,9 +2422,36 @@
                                 </p>
                             </div>
                         </div>
+                        <!-- KP Scan Button & Stock Calculator -->
+                        <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="margin: 0; color: #1f2937; font-size: 16px;">
+                                    🧮 Stock Calculator
+                                </h3>
+                                <button type="button" onclick="window.open('https://chartink.com/screener/kp-scan-19', '_blank')"
+                                        style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                    🔍 KP Scan
+                                </button>
+                            </div>
+
+                            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                <input type="text" id="stockSymbol" placeholder="Enter symbol (e.g., RELIANCE.NS)"
+                                       style="flex: 1; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                                <button type="button" onclick="calculateStock()"
+                                        style="padding: 8px 16px; background: #7c3aed; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                    Calculate
+                                </button>
+                            </div>
+
+                            <div id="calculatorResult" style="display: none;">
+                                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <div id="calculatorTable"></div>
+                                </div>
+                            </div>
+                        </div>
 
 
-        </section>
+</section>
             </div>
 
             <!-- Position Calculator -->
@@ -8315,6 +8342,96 @@
             document.addEventListener('DOMContentLoaded', function () {
                 loadDailyCalls();
             });
+
+            async function calculateStock() {
+                const symbol = document.getElementById("stockSymbol").value.trim().toUpperCase();
+                const resultDiv = document.getElementById("calculatorResult");
+                const tableDiv = document.getElementById("calculatorTable");
+
+                if (!symbol) {
+                    alert("Please enter a stock symbol");
+                    return;
+                }
+
+                tableDiv.innerHTML = '<p style="color: #6b7280; text-align: center;">Calculating...</p>';
+                resultDiv.style.display = 'block';
+
+                try {
+                    const response = await fetch(`/api/calculate-stock?symbol=${symbol}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const statusColor = data.is_extender ? '#dc2626' : '#059669';
+                        const statusIcon = data.is_extender ? '❌' : '✅';
+                        const statusText = data.is_extender ? 'Extender - Skip' : 'Safe Zone';
+
+                        let html = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <tr style="background: #f3f4f6;">
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Stock</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #1f2937;">${data.symbol}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Status</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                            <span style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                ${statusIcon} ${statusText}
+                            </span>
+                            <span style="margin-left: 10px; color: #6b7280; font-size: 12px;">
+                                (Today: ${data.today_change}%)
+                            </span>
+                        </td>
+                    </tr>
+            `;
+
+                        if (!data.is_extender) {
+                            html += `
+                    <tr style="background: #f9fafb;">
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Entry Price</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; font-size: 16px;">₹${data.entry_price}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #dc2626;">Stop Loss</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #dc2626; font-weight: 600; font-size: 16px;">₹${data.stop_loss}</td>
+                    </tr>
+                    <tr style="background: #f9fafb;">
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #059669;">Target</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #059669; font-weight: 600; font-size: 16px;">₹${data.target}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Risk</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">₹${data.risk} (${data.risk_percent}%)</td>
+                    </tr>
+                    <tr style="background: #f9fafb;">
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Reward</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">₹${data.reward} (${data.reward_percent}%)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Risk:Reward</td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #7c3aed; font-weight: 600;">1:${data.rr_ratio}</td>
+                    </tr>
+                `;
+                        } else {
+                            html += `
+                    <tr>
+                        <td colspan="2" style="padding: 12px; border: 1px solid #e5e7eb; background: #fef2f2; color: #dc2626; text-align: center; font-weight: 600;">
+                            ⚠️ Stock has rallied ${data.today_change}% today. Wait for pullback!
+                        </td>
+                    </tr>
+                `;
+                        }
+
+                        html += `</table>`;
+                        tableDiv.innerHTML = html;
+                    } else {
+                        tableDiv.innerHTML = `<p style="color: #dc2626; text-align: center;">${data.error}</p>`;
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    tableDiv.innerHTML = '<p style="color: #dc2626; text-align: center;">Failed to calculate. Please try again.</p>';
+                }
+            }
+
 
             const SCREENER_LIST = [
                 // POPULAR SECTION (First batch you gave)
