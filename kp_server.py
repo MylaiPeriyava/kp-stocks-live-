@@ -1671,6 +1671,86 @@ def get_daily_calls():
             'stocks': []
         })
 
+@app.route('/api/calculate-stock')
+def calculate_stock():
+    import yfinance as yf
+    import pandas as pd
+    
+    symbol = request.args.get('symbol', '').strip()
+    
+    if not symbol:
+        return jsonify({
+            'success': False,
+            'error': 'Please provide a stock symbol'
+        })
+    
+    try:
+        # Add .NS if not present
+        if not symbol.endswith('.NS') and not symbol.endswith('.BO'):
+            symbol = symbol + '.NS'
+        
+        # Fetch 30 days of data
+        stock = yf.Ticker(symbol)
+        df = stock.history(period='30d')
+        
+        if df.empty or len(df) < 5:
+            return jsonify({
+                'success': False,
+                'error': f'No data found for {symbol}'
+            })
+        
+        # Get latest data
+        latest = df.iloc[-1]
+        prev = df.iloc[-2] if len(df) > 1 else latest
+        
+        # Calculate today's change
+        today_change = ((latest['Close'] - prev['Close']) / prev['Close']) * 100
+        
+        # Check if extender (15%+ single day rally)
+        is_extender = today_change >= 15
+        
+        # Find 3-day low (support)
+        recent_lows = df['Low'].iloc[-4:].min()
+        stop_loss = round(recent_lows, 2)
+        
+        # Entry price (current CMP)
+        entry_price = round(latest['Close'], 2)
+        
+        # Calculate risk
+        risk = entry_price - stop_loss
+        risk_percent = round((risk / entry_price) * 100, 2)
+        
+        # Calculate target (2:1 reward)
+        reward = 2 * risk
+        target = round(entry_price + reward, 2)
+        reward_percent = round((reward / entry_price) * 100, 2)
+        
+        # Risk:Reward ratio
+        rr_ratio = round(reward / risk, 2) if risk > 0 else 0
+        
+        return jsonify({
+            'success': True,
+            'symbol': symbol.replace('.NS', '').replace('.BO', ''),
+            'is_extender': is_extender,
+            'today_change': round(today_change, 2),
+            'entry_price': entry_price,
+            'stop_loss': stop_loss,
+            'target': target,
+            'risk': round(risk, 2),
+            'risk_percent': risk_percent,
+            'reward': round(reward, 2),
+            'reward_percent': reward_percent,
+            'rr_ratio': rr_ratio
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error: {str(e)}'
+        })
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
 
