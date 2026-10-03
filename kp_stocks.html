@@ -2414,14 +2414,17 @@
                         <div id="dailyCallsContainer" style="margin-top: 10px; display: none;">
                             <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
                                 <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">
-                                    📊 Daily Positional Calls (<span id="dailyCallsDate"></span>)
+                                    📊 Daily Positional Calls (<span id="dailyCallsDate">Today</span>)
                                 </h3>
                                 <div id="dailyCallsList"></div>
+                                <p style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                                    Data from 5paisa | Click stock name to view details
+                                </p>
                             </div>
                         </div>
-                    </div>
 
-                </section>
+
+        </section>
             </div>
 
             <!-- Position Calculator -->
@@ -8240,17 +8243,14 @@
                 const dateSpan = document.getElementById("dailyCallsDate");
 
                 try {
-                    // Show loading state
                     status.textContent = "Refreshing...";
 
                     const response = await fetch("/api/daily-calls");
                     const data = await response.json();
 
                     if (data.success && data.stocks.length > 0) {
-                        // Update date (from 5paisa page)
-                        dateSpan.textContent = data.date;
+                        dateSpan.textContent = "Today";
 
-                        // Create table with better styling
                         let html = `
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
@@ -8268,9 +8268,14 @@
 
                         data.stocks.forEach((stock, index) => {
                             const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
+
+                            const stockDisplay = stock.stock_url
+                                ? `<a href="${stock.stock_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 600;">${stock.stock} ↗</a>`
+                                : `<span style="font-weight: 600; color: #111827;">${stock.stock}</span>`;
+
                             html += `
                     <tr style="background: ${rowColor};">
-                        <td style="padding: 10px; border: 1px solid #d1d5db; font-weight: 600; color: #111827;">${stock.stock}</td>
+                        <td style="padding: 10px; border: 1px solid #d1d5db; color: #111827;">${stockDisplay}</td>
                         <td style="padding: 10px; border: 1px solid #d1d5db; color: #111827; font-weight: 500;">${stock.entry}</td>
                         <td style="padding: 10px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">${stock.stop_loss}</td>
                         <td style="padding: 10px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.target}</td>
@@ -8283,7 +8288,7 @@
 
                         list.innerHTML = html;
                         container.style.display = 'block';
-                        status.textContent = `Updated: ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+                        status.textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
                     } else {
                         status.textContent = "No calls available today";
                         container.style.display = 'none';
@@ -8295,10 +8300,6 @@
                 }
             }
 
-            // Load daily calls on page load
-            document.addEventListener('DOMContentLoaded', function () {
-                loadDailyCalls();
-            });
 
             // Load daily calls on page load
             document.addEventListener('DOMContentLoaded', function () {
