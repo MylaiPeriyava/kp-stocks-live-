@@ -1758,9 +1758,10 @@ def calculate_stock():
 def get_kp_scan():
     import requests
     from bs4 import BeautifulSoup
+    import yfinance as yf
     
     try:
-        # Your screener formula (ALL 5 CONDITIONS)
+        # Step 1: Get stocks from Chartink
         payload = {
             'scan_clause': '( {cash} ( latest close > latest ema ( latest close , 200 ) and latest close > 1 day ago max ( 20 , daily high ) and latest volume > latest sma ( daily volume , 20 ) * 3 and latest close > 50 and latest close <= 1 day ago min ( 3, daily low ) * 1.09 ) )'
         }
@@ -1808,17 +1809,78 @@ def get_kp_scan():
             
             stocks = data['data']
             
-            # Format for display
+            # Step 2: For each stock, fetch 3-day low from Yahoo Finance
             stocks_data = []
             for stock in stocks:
-                stocks_data.append({
-                    'sr': stock.get('sr', 0),
-                    'symbol': stock.get('nsecode', ''),
-                    'name': stock.get('name', ''),
-                    'close': stock.get('close', 0),
-                    'volume': stock.get('volume', 0),
-                    'per_chg': stock.get('per_chg', 0)
-                })
+                symbol = stock.get('nsecode', '')
+                
+                try:
+                    # Fetch from Yahoo Finance
+                    yf_symbol = symbol + '.NS'
+                    yf_stock = yf.Ticker(yf_symbol)
+                    yf_df = yf_stock.history(period='5d')
+                    
+                    if not yf_df.empty:
+                        # Get 3-day low (stop loss)
+                        recent_lows = float(yf_df['Low'].iloc[-4:].min())
+                        stop_loss = round(recent_lows, 2)
+                        
+                        # Entry price (current close from Chartink)
+                        entry_price = round(float(stock.get('close', 0)), 2)
+                        
+                        # Calculate risk
+                        risk = entry_price - stop_loss
+                        risk_percent = round((risk / entry_price) * 100, 2) if entry_price > 0 else 0
+                        
+                        # Calculate target (2:1 reward)
+                        reward = 2 * risk
+                        target = round(entry_price + reward, 2)
+                        reward_percent = round((reward / entry_price) * 100, 2) if entry_price > 0 else 0
+                        
+                        # Risk:Reward ratio
+                        rr_ratio = round(reward / risk, 2) if risk > 0 else 0
+                        
+                        stocks_data.append({
+                            'sr': stock.get('sr', 0),
+                            'symbol': symbol,
+                            'name': stock.get('name', ''),
+                            'close': entry_price,
+                            'volume': stock.get('volume', 0),
+                            'per_chg': stock.get('per_chg', 0),
+                            'stop_loss': stop_loss,
+                            'target': target,
+                            'risk': round(risk, 2),
+                            'rr_ratio': rr_ratio
+                        })
+                    else:
+                        # Yahoo Finance failed, add without strategy data
+                        stocks_data.append({
+                            'sr': stock.get('sr', 0),
+                            'symbol': symbol,
+                            'name': stock.get('name', ''),
+                            'close': round(float(stock.get('close', 0)), 2),
+                            'volume': stock.get('volume', 0),
+                            'per_chg': stock.get('per_chg', 0),
+                            'stop_loss': 0,
+                            'target': 0,
+                            'risk': 0,
+                            'rr_ratio': 0
+                        })
+                        
+                except Exception as e:
+                    # Yahoo Finance failed for this stock, skip strategy
+                    stocks_data.append({
+                        'sr': stock.get('sr', 0),
+                        'symbol': symbol,
+                        'name': stock.get('name', ''),
+                        'close': round(float(stock.get('close', 0)), 2),
+                        'volume': stock.get('volume', 0),
+                        'per_chg': stock.get('per_chg', 0),
+                        'stop_loss': 0,
+                        'target': 0,
+                        'risk': 0,
+                        'rr_ratio': 0
+                    })
             
             return jsonify({
                 'success': True,
