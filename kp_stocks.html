@@ -8743,56 +8743,66 @@
                 }
 
                 // Build formatted text
-                let text = "═══════════════════════════════════════════════════════════════\n";
-                text += "           KP SCAN - TRADING STRATEGY\n";
-                text += "═══════════════════════════════════════════════════════════════\n\n";
+                let text = "KP SCAN - TRADING STRATEGY\n";
+                text += "=".repeat(100) + "\n\n";
 
-                // Get all rows
+                // Headers
+                const headers = ["Stock", "Entry", "SL", "Target", "Risk", "R:R"];
+
+                // Column widths (increased Stock to 15 for longer symbols)
+                const colWidths = [15, 12, 10, 12, 10, 8];
+
+                // Top border
+                text += "+" + "-".repeat(colWidths[0] + 2) + "+" + "-".repeat(colWidths[1] + 2) + "+" + "-".repeat(colWidths[2] + 2) + "+" + "-".repeat(colWidths[3] + 2) + "+" + "-".repeat(colWidths[4] + 2) + "+" + "-".repeat(colWidths[5] + 2) + "+\n";
+
+                // Header row
+                text += "| " + headers[0].padEnd(colWidths[0]) + " | " + headers[1].padEnd(colWidths[1]) + " | " + headers[2].padEnd(colWidths[2]) + " | " + headers[3].padEnd(colWidths[3]) + " | " + headers[4].padEnd(colWidths[4]) + " | " + headers[5].padEnd(colWidths[5]) + " |\n";
+
+                // Middle border
+                text += "+" + "-".repeat(colWidths[0] + 2) + "+" + "-".repeat(colWidths[1] + 2) + "+" + "-".repeat(colWidths[2] + 2) + "+" + "-".repeat(colWidths[3] + 2) + "+" + "-".repeat(colWidths[4] + 2) + "+" + "-".repeat(colWidths[5] + 2) + "+\n";
+
+                // Data rows
                 const rows = [];
                 table.querySelectorAll("tbody tr").forEach(tr => {
                     const cells = [];
-                    tr.querySelectorAll("td").forEach(td => {
-                        // Get all text content and clean it
-                        let cellText = td.innerText.trim();
-                        // Replace newlines with space (for multi-line cells like name + symbol)
-                        cellText = cellText.replace(/\n/g, ' ');
-                        // Replace ₹ with Rs.
-                        cellText = cellText.replace('₹', 'Rs.');
-                        cells.push(cellText);
-                    });
+                    const tds = tr.querySelectorAll("td");
+
+                    // Get symbol (second div in first cell)
+                    const symbol = tds[0].querySelectorAll("div")[1]?.innerText.trim() || tds[0].innerText.trim();
+
+                    // Get other cells
+                    cells.push(symbol); // Stock (symbol only)
+                    cells.push(tds[1].innerText.trim().replace('₹', 'Rs.')); // Entry
+                    cells.push(tds[2].innerText.trim().replace('₹', 'Rs.')); // SL
+                    cells.push(tds[3].innerText.trim().replace('₹', 'Rs.')); // Target
+                    cells.push(tds[4].innerText.trim().replace('₹', 'Rs.')); // Risk
+                    cells.push(tds[5].innerText.trim()); // R:R
+
                     rows.push(cells);
                 });
 
-                // Calculate column widths
-                const headers = ["Stock", "Entry", "SL", "Target", "Risk", "R:R"];
-                const colWidths = [40, 12, 12, 12, 12, 8]; // Fixed widths
-
-                // Header row
-                text += "┌" + "─".repeat(colWidths[0]) + "┬" + "─".repeat(colWidths[1]) + "┬" + "─".repeat(colWidths[2]) + "┬" + "─".repeat(colWidths[3]) + "┬" + "─".repeat(colWidths[4]) + "┬" + "─".repeat(colWidths[5]) + "┐\n";
-
-                text += "│ " + headers[0].padEnd(colWidths[0]) + " │ " + headers[1].padEnd(colWidths[1]) + " │ " + headers[2].padEnd(colWidths[2]) + " │ " + headers[3].padEnd(colWidths[3]) + " │ " + headers[4].padEnd(colWidths[4]) + " │ " + headers[5].padEnd(colWidths[5]) + " │\n";
-
-                text += "├" + "─".repeat(colWidths[0]) + "┼" + "─".repeat(colWidths[1]) + "┼" + "─".repeat(colWidths[2]) + "┼" + "─".repeat(colWidths[3]) + "┼" + "─".repeat(colWidths[4]) + "┼" + "─".repeat(colWidths[5]) + "┤\n";
-
                 // Data rows
                 rows.forEach(row => {
-                    text += "│ " + row[0].padEnd(colWidths[0]) + " │ " + row[1].padEnd(colWidths[1]) + " │ " + row[2].padEnd(colWidths[2]) + " │ " + row[3].padEnd(colWidths[3]) + " │ " + row[4].padEnd(colWidths[4]) + " │ " + row[5].padEnd(colWidths[5]) + " │\n";
+                    text += "| " + row[0].padEnd(colWidths[0]) + " | " + row[1].padEnd(colWidths[1]) + " | " + row[2].padEnd(colWidths[2]) + " | " + row[3].padEnd(colWidths[3]) + " | " + row[4].padEnd(colWidths[4]) + " | " + row[5].padEnd(colWidths[5]) + " |\n";
                 });
 
-                text += "└" + "─".repeat(colWidths[0]) + "┴" + "─".repeat(colWidths[1]) + "┴" + "─".repeat(colWidths[2]) + "┴" + "─".repeat(colWidths[3]) + "┴" + "─".repeat(colWidths[4]) + "┴" + "─".repeat(colWidths[5]) + "┘\n\n";
+                // Bottom border
+                text += "+" + "-".repeat(colWidths[0] + 2) + "+" + "-".repeat(colWidths[1] + 2) + "+" + "-".repeat(colWidths[2] + 2) + "+" + "-".repeat(colWidths[3] + 2) + "+" + "-".repeat(colWidths[4] + 2) + "+" + "-".repeat(colWidths[5] + 2) + "+\n";
 
-                text += "═══════════════════════════════════════════════════════════════\n";
+                text += "\n" + "=".repeat(100) + "\n";
                 text += `Generated: ${new Date().toLocaleString('en-IN')}\n`;
-                text += "═══════════════════════════════════════════════════════════════\n";
+                text += "=".repeat(100) + "\n";
 
                 // Copy to clipboard
                 navigator.clipboard.writeText(text).then(() => {
-                    alert("✅ Strategy table copied to clipboard!\n\nYou can now paste it in Notepad or share it.");
+                    alert("✅ Strategy table copied to clipboard!");
                 }).catch(err => {
                     console.error("Failed to copy:", err);
-                    alert("❌ Failed to copy. Please try again.");
+                    alert("❌ Failed to copy.");
                 });
             }
+
+
             const SCREENER_LIST = [
                 // POPULAR SECTION (First batch you gave)
                 { title: "Golden Crossover", url: "https://www.screener.in/screens/336509/golden-crossover" },
