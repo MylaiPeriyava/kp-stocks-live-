@@ -3721,6 +3721,24 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Tax Summary Section -->
+                    <div class="card" style="margin-top: 20px;">
+                        <h3>💰 Tax Summary (Financial Year Wise)</h3>
+                        <table id="tax-summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Financial Year</th>
+                                    <th>Short Term Gain (STCG)</th>
+                                    <th>Long Term Gain (LTCG)</th>
+                                    <th>Total Gain</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tax-summary-body">
+                                <!-- Rows will be inserted here by JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
 
             </div>
@@ -7627,6 +7645,96 @@
                 return CURRENT_USER || "USER1";
             }
 
+
+            // ============= ADD THESE 2 FUNCTIONS =============
+
+            // Calculate Tax Summary
+            function calculateTaxSummary(trades) {
+                const fyGroups = {};
+
+                trades.forEach(t => {
+                    const sellDate = new Date(t.sellDate);
+                    const sellYear = sellDate.getFullYear();
+                    const sellMonth = sellDate.getMonth() + 1;
+
+                    // Determine Financial Year
+                    let fyStart, fyEnd;
+
+                    if (sellMonth >= 4) {
+                        fyStart = sellYear;
+                        fyEnd = sellYear + 1;
+                    } else {
+                        fyStart = sellYear - 1;
+                        fyEnd = sellYear;
+                    }
+
+                    const fyKey = `${fyStart}-${fyEnd}`;
+
+                    // Calculate gain/loss
+                    const invested = Number(t.totalSpent || 0);
+                    const returned = Number(t.totalReturned || 0);
+                    const gain = returned - invested;
+
+                    // Calculate holding period
+                    const buyDate = new Date(t.buyDate);
+                    const sellDateObj = new Date(t.sellDate);
+                    const holdingDays = Math.floor((sellDateObj - buyDate) / (1000 * 60 * 60 * 24));
+
+                    // Short term: < 365 days, Long term: >= 365 days
+                    const isLongTerm = holdingDays >= 365;
+
+                    if (!fyGroups[fyKey]) {
+                        fyGroups[fyKey] = {
+                            stcg: 0,
+                            ltcg: 0
+                        };
+                    }
+
+                    if (isLongTerm) {
+                        fyGroups[fyKey].ltcg += gain;
+                    } else {
+                        fyGroups[fyKey].stcg += gain;
+                    }
+                });
+
+                return fyGroups;
+            }
+
+            // Render Tax Summary
+            function renderTaxSummary(fyGroups) {
+                const tbody = document.getElementById("tax-summary-body");
+                tbody.innerHTML = "";
+
+                const fyKeys = Object.keys(fyGroups).sort();
+
+                if (fyKeys.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='4' style='text-align: center; color: #6b7280;'>No trades to calculate tax</td></tr>";
+                    return;
+                }
+
+                fyKeys.forEach(fyKey => {
+                    const data = fyGroups[fyKey];
+                    const totalGain = data.stcg + data.ltcg;
+
+                    const tr = document.createElement("tr");
+                    tr.style.backgroundColor = '#f9fafb';
+                    tr.innerHTML = `
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">FY ${fyKey}</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${data.stcg >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">
+                ${data.stcg >= 0 ? '+' : ''}₹${data.stcg.toFixed(2)}
+            </td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${data.ltcg >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">
+                ${data.ltcg >= 0 ? '+' : ''}₹${data.ltcg.toFixed(2)}
+            </td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${totalGain >= 0 ? '#059669' : '#dc2626'}; font-weight: 600; font-size: 15px;">
+                ${totalGain >= 0 ? '+' : ''}₹${totalGain.toFixed(2)}
+            </td>
+        `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+
             async function loadTrades() {
                 const tbody = document.getElementById("trades-body");
                 tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
@@ -7646,6 +7754,7 @@
 
                     if (trades.length === 0) {
                         tbody.innerHTML = "<tr><td colspan='7'>No trades added yet.</td></tr>";
+                        document.getElementById("tax-summary-body").innerHTML = "<tr><td colspan='4' style='text-align: center; color: #6b7280;'>No trades to calculate tax</td></tr>";
                         return;
                     }
 
@@ -7691,52 +7800,52 @@
                         const monthLabel = monthNames[parseInt(month) - 1] + ' ' + year;
                         const monthPLPercent = group.monthInvested > 0 ? (group.monthPL / group.monthInvested) * 100 : 0;
 
-                        // Month label row (light header)
+                        // Month label row
                         const monthHeaderRow = document.createElement("tr");
                         monthHeaderRow.style.backgroundColor = '#f5f8fc';
                         monthHeaderRow.style.fontWeight = 'bold';
                         monthHeaderRow.innerHTML = `
-                                <td colspan="7" style="padding: 6px; color: #173b63; border-bottom: 1px solid #d7e3f0;">
-                                    ${monthLabel}
-                                </td>
-                            `;
+                <td colspan="7" style="padding: 6px; color: #173b63; border-bottom: 1px solid #d7e3f0;">
+                    ${monthLabel}
+                </td>
+            `;
                         tbody.appendChild(monthHeaderRow);
 
-                        // Individual trades for this month
+                        // Individual trades
                         group.trades.forEach(t => {
                             const plPercent = t.invested > 0 ? (t.pl / t.invested) * 100 : 0;
                             const tr = document.createElement("tr");
                             tr.innerHTML = `
-                                    <td>${t.buyDate || ""}</td>
-                                    <td>${t.sellDate || ""}</td>
-                                    <td>${t.symbol || ""}</td>
-                                    <td>${t.invested.toFixed(2)}</td>
-                                    <td>${t.returned.toFixed(2)}</td>
-                                    <td style="color:${t.pl >= 0 ? 'green' : 'red'}">
-                                        ${t.pl >= 0 ? '+' : ''}${t.pl.toFixed(2)} (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
-                                    </td>
-                                    <td>
-                                        <button data-trade-id="${t.id}" class="delete-trade-btn" style="padding: 4px 8px; font-size: 12px;">Delete</button>
-                                    </td>
-                                `;
+                    <td>${t.buyDate || ""}</td>
+                    <td>${t.sellDate || ""}</td>
+                    <td>${t.symbol || ""}</td>
+                    <td>${t.invested.toFixed(2)}</td>
+                    <td>${t.returned.toFixed(2)}</td>
+                    <td style="color:${t.pl >= 0 ? 'green' : 'red'}">
+                        ${t.pl >= 0 ? '+' : ''}${t.pl.toFixed(2)} (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
+                    </td>
+                    <td>
+                        <button data-trade-id="${t.id}" class="delete-trade-btn" style="padding: 4px 8px; font-size: 12px;">Delete</button>
+                    </td>
+                `;
                             tbody.appendChild(tr);
                         });
 
-                        // Month summary row (at the BOTTOM of the month's trades)
+                        // Month summary row
                         const monthSummaryRow = document.createElement("tr");
                         monthSummaryRow.style.backgroundColor = '#eaf2fb';
                         monthSummaryRow.style.fontWeight = 'bold';
                         monthSummaryRow.style.fontSize = '13px';
                         monthSummaryRow.innerHTML = `
-                                <td colspan="3" style="padding: 8px; text-align: right; color: #173b63;">
-                                    ${monthLabel} Total:
-                                </td>
-                                <td style="color: #173b63;">${group.monthInvested.toFixed(2)}</td>
-                                <td style="color: #173b63;">${group.monthReturned.toFixed(2)}</td>
-                                <td colspan="2" style="color: ${group.monthPL >= 0 ? 'green' : 'red'}">
-                                    P/L: ${group.monthPL >= 0 ? '+' : ''}${group.monthPL.toFixed(2)} (${monthPLPercent >= 0 ? '+' : ''}${monthPLPercent.toFixed(2)}%)
-                                </td>
-                            `;
+                <td colspan="3" style="padding: 8px; text-align: right; color: #173b63;">
+                    ${monthLabel} Total:
+                </td>
+                <td style="color: #173b63;">${group.monthInvested.toFixed(2)}</td>
+                <td style="color: #173b63;">${group.monthReturned.toFixed(2)}</td>
+                <td colspan="2" style="color: ${group.monthPL >= 0 ? 'green' : 'red'}">
+                    P/L: ${group.monthPL >= 0 ? '+' : ''}${group.monthPL.toFixed(2)} (${monthPLPercent >= 0 ? '+' : ''}${monthPLPercent.toFixed(2)}%)
+                </td>
+            `;
                         tbody.appendChild(monthSummaryRow);
 
                         // Spacer row
@@ -7745,7 +7854,7 @@
                         tbody.appendChild(spacerRow);
                     });
 
-                    // Grand total summary (at the very bottom)
+                    // Grand total summary
                     const grandPL = grandTotalReturned - grandTotalInvested;
                     const grandPLPercent = grandTotalInvested > 0 ? (grandPL / grandTotalInvested) * 100 : 0;
 
@@ -7755,14 +7864,18 @@
                     totalRow.style.fontSize = '15px';
                     totalRow.style.borderTop = '2px solid #c792ea';
                     totalRow.innerHTML = `
-                            <td colspan="3" style="padding: 10px; text-align: right; color: #4a148c;">GRAND TOTAL</td>
-                            <td style="color: #4a148c;">${grandTotalInvested.toFixed(2)}</td>
-                            <td style="color: #4a148c;">${grandTotalReturned.toFixed(2)}</td>
-                            <td colspan="2" style="color: ${grandPL >= 0 ? 'green' : 'red'}; font-size: 16px;">
-                                P/L: ${grandPL >= 0 ? '+' : ''}${grandPL.toFixed(2)} (${grandPLPercent >= 0 ? '+' : ''}${grandPLPercent.toFixed(2)}%)
-                            </td>
-                        `;
+            <td colspan="3" style="padding: 10px; text-align: right; color: #4a148c;">GRAND TOTAL</td>
+            <td style="color: #4a148c;">${grandTotalInvested.toFixed(2)}</td>
+            <td style="color: #4a148c;">${grandTotalReturned.toFixed(2)}</td>
+            <td colspan="2" style="color: ${grandPL >= 0 ? 'green' : 'red'}; font-size: 16px;">
+                P/L: ${grandPL >= 0 ? '+' : ''}${grandPL.toFixed(2)} (${grandPLPercent >= 0 ? '+' : ''}${grandPLPercent.toFixed(2)}%)
+            </td>
+        `;
                     tbody.appendChild(totalRow);
+
+                    // Calculate and render tax summary
+                    const taxSummary = calculateTaxSummary(trades);
+                    renderTaxSummary(taxSummary);
 
                     // Delete handlers
                     tbody.querySelectorAll(".delete-trade-btn").forEach(btn => {
@@ -7771,6 +7884,7 @@
 
                 } catch (err) {
                     tbody.innerHTML = `<tr><td colspan='7'>Error loading trades: ${err.message}</td></tr>`;
+                    document.getElementById("tax-summary-body").innerHTML = `<tr><td colspan='4' style='text-align: center; color: #dc2626;'>Error: ${err.message}</td></tr>`;
                 }
             }
 
