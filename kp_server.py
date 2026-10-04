@@ -1895,6 +1895,144 @@ def get_kp_scan():
             'stocks': []
         })
 
+@app.route('/api/kp-scan-2')
+def get_kp_scan_2():
+    import requests
+    from bs4 import BeautifulSoup
+    import yfinance as yf
+    
+    try:
+        # Get stocks from Chartink (KP SCAN 2 - relaxed conditions)
+        payload = {
+            'scan_clause': '( {cash} ( latest close > latest ema ( latest close , 200 ) and latest close > 1 day ago max ( 20 , daily high ) and latest volume > latest sma ( daily volume , 20 ) * 3 and latest close > 50 ) )'
+        }
+        
+        url = "https://chartink.com/screener/process"
+        
+        with requests.Session() as session:
+            # Get CSRF token
+            homepage = session.get(
+                "https://chartink.com/screener/kp-scan-2-2",
+                headers={'User-Agent': 'Mozilla/5.0'},
+                timeout=10
+            )
+            
+            soup = BeautifulSoup(homepage.content, 'html.parser')
+            csrf_meta = soup.find('meta', {'name': 'csrf-token'})
+            
+            if not csrf_meta:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to get CSRF token',
+                    'stocks': []
+                })
+            
+            csrf_token = csrf_meta['content']
+            
+            headers = {
+                'X-CSRF-TOKEN': csrf_token,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'User-Agent': 'Mozilla/5.0',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Referer': 'https://chartink.com/screener/kp-scan-2-2'
+            }
+            
+            # POST to API
+            response = session.post(url, data=payload, headers=headers, timeout=10)
+            data = response.json()
+            
+            if 'data' not in data:
+                return jsonify({
+                    'success': False,
+                    'error': 'No data in response',
+                    'stocks': []
+                })
+            
+            stocks = data['data']
+            
+            # For each stock, fetch 3-day low from Yahoo Finance
+            stocks_data = []
+            for stock in stocks:
+                symbol = stock.get('nsecode', '')
+                
+                try:
+                    # Fetch from Yahoo Finance
+                    yf_symbol = symbol + '.NS'
+                    yf_stock = yf.Ticker(yf_symbol)
+                    yf_df = yf_stock.history(period='5d')
+                    
+                    if not yf_df.empty:
+                        # Get 3-day low (stop loss)
+                        recent_lows = float(yf_df['Low'].iloc[-4:].min())
+                        stop_loss = round(recent_lows, 2)
+                        
+                        # Entry price (current close from Chartink)
+                        entry_price = round(float(stock.get('close', 0)), 2)
+                        
+                        # Calculate risk
+                        risk = entry_price - stop_loss
+                        risk_percent = round((risk / entry_price) * 100, 2) if entry_price > 0 else 0
+                        
+                        # Calculate target (2:1 reward)
+                        reward = 2 * risk
+                        target = round(entry_price + reward, 2)
+                        reward_percent = round((reward / entry_price) * 100, 2) if entry_price > 0 else 0
+                        
+                        # Risk:Reward ratio
+                        rr_ratio = round(reward / risk, 2) if risk > 0 else 0
+                        
+                        stocks_data.append({
+                            'sr': stock.get('sr', 0),
+                            'symbol': symbol,
+                            'name': stock.get('name', ''),
+                            'close': entry_price,
+                            'volume': stock.get('volume', 0),
+                            'per_chg': stock.get('per_chg', 0),
+                            'stop_loss': stop_loss,
+                            'target': target,
+                            'risk': round(risk, 2),
+                            'rr_ratio': rr_ratio
+                        })
+                    else:
+                        stocks_data.append({
+                            'sr': stock.get('sr', 0),
+                            'symbol': symbol,
+                            'name': stock.get('name', ''),
+                            'close': round(float(stock.get('close', 0)), 2),
+                            'volume': stock.get('volume', 0),
+                            'per_chg': stock.get('per_chg', 0),
+                            'stop_loss': 0,
+                            'target': 0,
+                            'risk': 0,
+                            'rr_ratio': 0
+                        })
+                        
+                except Exception as e:
+                    stocks_data.append({
+                        'sr': stock.get('sr', 0),
+                        'symbol': symbol,
+                        'name': stock.get('name', ''),
+                        'close': round(float(stock.get('close', 0)), 2),
+                        'volume': stock.get('volume', 0),
+                        'per_chg': stock.get('per_chg', 0),
+                        'stop_loss': 0,
+                        'target': 0,
+                        'risk': 0,
+                        'rr_ratio': 0
+                    })
+            
+            return jsonify({
+                'success': True,
+                'count': len(stocks_data),
+                'stocks': stocks_data
+            })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'stocks': []
+        })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
