@@ -253,6 +253,19 @@
                         border-color: #0f5a28;
                     }
 
+        .menu-bottom {
+            background: #4b5563;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+            .menu-bottom:hover {
+                background: #374151;
+            }
+
         .section-anchor {
             scroll-margin-top: calc(var(--menu-height) + 16px);
         }
@@ -1977,6 +1990,7 @@
                 <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
                 <a href="javascript:void(0)" onclick="showSection('newipoSection')">IPO</a>
                 <a href="javascript:void(0)" onclick="showSection('tradesSection')">Trades</a>
+                <a class="menu-bottom" href="#bottom" style="float: right;">↓ Bottom</a>
             </nav>
 
 
@@ -2486,7 +2500,45 @@
                                     <div id="kpStrategyList"></div>
                                 </div>
                             </div>
+                            <!-- KP Scan 2 Results -->
+                            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h3 style="margin: 0; color: #1f2937; font-size: 16px;">
+                                        🔍 KP Scan 2 Results
+                                    </h3>
+                                    <button type="button" onclick="loadKpScan2()" style="padding: 6px 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                        🔄 Refresh
+                                    </button>
+                                </div>
 
+                                <div id="kpScan2Status" style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">
+                                    Loading...
+                                </div>
+
+                                <div id="kpScan2Container" style="display: none;">
+                                    <div id="kpScan2List"></div>
+                                </div>
+                            </div>
+
+                            <!-- KP Scan 2 Strategy -->
+                            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h3 style="margin: 0; color: #1f2937; font-size: 16px;">
+                                        📈 KP Scan 2 - Trading Strategy
+                                    </h3>
+                                    <button type="button" onclick="copyKpStrategy2()" style="padding: 6px 12px; background: #7c3aed; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                                        📋 Copy Table
+                                    </button>
+                                </div>
+
+                                <div id="kpStrategy2Status" style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">
+                                    Calculating strategy...
+                                </div>
+
+                                <div id="kpStrategy2Container" style="display: none;">
+                                    <div id="kpStrategy2List"></div>
+                                </div>
+                            </div>
                         </div>
 
 
