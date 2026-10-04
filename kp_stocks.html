@@ -2467,6 +2467,21 @@
                                     <div id="kpScanList"></div>
                                 </div>
                             </div>
+                            <!-- KP Scan Strategy -->
+                            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                                <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">
+                                    📈 KP Scan - Trading Strategy
+                                </h3>
+
+                                <div id="kpStrategyStatus" style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">
+                                    Calculating strategy...
+                                </div>
+
+                                <div id="kpStrategyContainer" style="display: none;">
+                                    <div id="kpStrategyList"></div>
+                                </div>
+                            </div>
+
                         </div>
 
 
@@ -8541,6 +8556,120 @@
             document.addEventListener('DOMContentLoaded', function () {
                 loadKpScan();
             });
+
+
+            async function loadKpScan() {
+                const status = document.getElementById("kpScanStatus");
+                const container = document.getElementById("kpScanContainer");
+                const list = document.getElementById("kpScanList");
+                const strategyStatus = document.getElementById("kpStrategyStatus");
+                const strategyContainer = document.getElementById("kpStrategyContainer");
+                const strategyList = document.getElementById("kpStrategyList");
+
+                try {
+                    status.textContent = "Refreshing...";
+                    strategyStatus.textContent = "Calculating strategy...";
+
+                    const response = await fetch("/api/kp-scan");
+                    const data = await response.json();
+
+                    if (data.success && data.stocks.length > 0) {
+                        // Display main KP Scan table
+                        let html = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                        <thead>
+                            <tr style="background: #374151; color: white; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #4b5563;">#</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Close</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Volume</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+                        data.stocks.forEach((stock, index) => {
+                            const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
+                            const changeColor = stock.per_chg >= 0 ? '#059669' : '#dc2626';
+
+                            html += `
+                    <tr style="background: ${rowColor};">
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; text-align: center;">${stock.sr}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db;">
+                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${stock.volume.toLocaleString()}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: ${changeColor}; font-weight: 600;">${stock.per_chg}%</td>
+                    </tr>
+                `;
+                        });
+
+                        html += `</tbody></table></div>`;
+
+                        list.innerHTML = html;
+                        container.style.display = 'block';
+                        status.textContent = `Updated: ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} | ${data.count} stocks found`;
+
+                        // Display Strategy table
+                        let strategyHtml = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                        <thead>
+                            <tr style="background: #7c3aed; color: white; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Stock</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Entry</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">SL</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Target</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Risk</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">R:R</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+                        data.stocks.forEach((stock, index) => {
+                            const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
+
+                            strategyHtml += `
+                    <tr style="background: ${rowColor};">
+                        <td style="padding: 8px; border: 1px solid #d1d5db;">
+                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">₹${stock.stop_loss}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">₹${stock.target}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">₹${stock.risk}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #7c3aed; font-weight: 600;">1:${stock.rr_ratio}</td>
+                    </tr>
+                `;
+                        });
+
+                        strategyHtml += `</tbody></table></div>`;
+
+                        strategyList.innerHTML = strategyHtml;
+                        strategyContainer.style.display = 'block';
+                        strategyStatus.textContent = `Strategy calculated for ${data.count} stocks | Risk:Reward = 1:2`;
+
+                    } else {
+                        status.textContent = "No stocks match criteria today";
+                        container.style.display = 'none';
+                        strategyStatus.textContent = "No strategy data available";
+                        strategyContainer.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error("Error loading KP Scan:", error);
+                    status.textContent = "Failed to load KP Scan";
+                    container.style.display = 'none';
+                    strategyStatus.textContent = "Failed to calculate strategy";
+                    strategyContainer.style.display = 'none';
+                }
+            }
+
 
             const SCREENER_LIST = [
                 // POPULAR SECTION (First batch you gave)
