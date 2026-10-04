@@ -8779,6 +8779,184 @@
                 loadKpScan();
             });
 
+            // Load KP Scan 2
+            async function loadKpScan2() {
+                const status = document.getElementById("kpScan2Status");
+                const container = document.getElementById("kpScan2Container");
+                const list = document.getElementById("kpScan2List");
+                const strategyStatus = document.getElementById("kpStrategy2Status");
+                const strategyContainer = document.getElementById("kpStrategy2Container");
+                const strategyList = document.getElementById("kpStrategy2List");
+
+                try {
+                    status.textContent = "Refreshing...";
+                    strategyStatus.textContent = "Calculating strategy...";
+
+                    const response = await fetch("/api/kp-scan-2");
+                    const data = await response.json();
+
+                    if (data.success && data.stocks.length > 0) {
+                        // Display main KP Scan 2 table
+                        let html = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                        <thead>
+                            <tr style="background: #374151; color: white; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #4b5563;">#</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Close</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Volume</th>
+                                <th style="padding: 8px; border: 1px solid #4b5563;">Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+                        data.stocks.forEach((stock, index) => {
+                            const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
+                            const changeColor = stock.per_chg >= 0 ? '#059669' : '#dc2626';
+
+                            html += `
+                    <tr style="background: ${rowColor};">
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; text-align: center;">${stock.sr}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db;">
+                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${stock.volume.toLocaleString()}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: ${changeColor}; font-weight: 600;">${stock.per_chg}%</td>
+                    </tr>
+                `;
+                        });
+
+                        html += `</tbody></table></div>`;
+
+                        list.innerHTML = html;
+                        container.style.display = 'block';
+                        status.textContent = `Updated: ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} | ${data.count} stocks found`;
+
+                        // Display Strategy table
+                        let strategyHtml = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                        <thead>
+                            <tr style="background: #7c3aed; color: white; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Stock</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Entry</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">SL</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Target</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">Risk</th>
+                                <th style="padding: 8px; border: 1px solid #6d28d9;">R:R</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+                        data.stocks.forEach((stock, index) => {
+                            const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
+
+                            strategyHtml += `
+                    <tr style="background: ${rowColor};">
+                        <td style="padding: 8px; border: 1px solid #d1d5db;">
+                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">₹${stock.stop_loss}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">₹${stock.target}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">₹${stock.risk}</td>
+                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #7c3aed; font-weight: 600;">1:${stock.rr_ratio}</td>
+                    </tr>
+                `;
+                        });
+
+                        strategyHtml += `</tbody></table></div>`;
+
+                        strategyList.innerHTML = strategyHtml;
+                        strategyContainer.style.display = 'block';
+                        strategyStatus.textContent = `Strategy calculated for ${data.count} stocks | Risk:Reward = 1:2`;
+
+                    } else {
+                        status.textContent = "No stocks match criteria today";
+                        container.style.display = 'none';
+                        strategyStatus.textContent = "No strategy data available";
+                        strategyContainer.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error("Error loading KP Scan 2:", error);
+                    status.textContent = "Failed to load KP Scan 2";
+                    container.style.display = 'none';
+                    strategyStatus.textContent = "Failed to calculate strategy";
+                    strategyContainer.style.display = 'none';
+                }
+            }
+
+            // Copy KP Scan 2 Strategy
+            function copyKpStrategy2() {
+                const strategyContainer = document.getElementById("kpStrategy2Container");
+
+                if (strategyContainer.style.display === 'none') {
+                    alert("No strategy data to copy!");
+                    return;
+                }
+
+                const table = strategyContainer.querySelector("table");
+                if (!table) {
+                    alert("No table found!");
+                    return;
+                }
+
+                // Build formatted text
+                let text = "KP SCAN 2 - TRADING STRATEGY\n";
+                text += "=".repeat(100) + "\n\n";
+
+                const headers = ["Stock", "Entry", "SL", "Target", "Risk", "R:R"];
+                const colWidths = [15, 12, 10, 12, 10, 8];
+
+                text += "+" + "-".repeat(colWidths[0] + 2) + "+" + "-".repeat(colWidths[1] + 2) + "+" + "-".repeat(colWidths[2] + 2) + "+" + "-".repeat(colWidths[3] + 2) + "+" + "-".repeat(colWidths[4] + 2) + "+" + "-".repeat(colWidths[5] + 2) + "+\n";
+                text += "| " + headers[0].padEnd(colWidths[0]) + " | " + headers[1].padEnd(colWidths[1]) + " | " + headers[2].padEnd(colWidths[2]) + " | " + headers[3].padEnd(colWidths[3]) + " | " + headers[4].padEnd(colWidths[4]) + " | " + headers[5].padEnd(colWidths[5]) + " |\n";
+                text += "+" + "-".repeat(colWidths[0] + 2) + "+" + "-".repeat(colWidths[1] + 2) + "+" + "-".repeat(colWidths[2] + 2) + "+" + "-".repeat(colWidths[3] + 2) + "+" + "-".repeat(colWidths[4] + 2) + "+" + "-".repeat(colWidths[5] + 2) + "+\n";
+
+                const rows = [];
+                table.querySelectorAll("tbody tr").forEach(tr => {
+                    const cells = [];
+                    const tds = tr.querySelectorAll("td");
+                    const symbol = tds[0].querySelectorAll("div")[1]?.innerText.trim() || tds[0].innerText.trim();
+
+                    cells.push(symbol);
+                    cells.push(tds[1].innerText.trim().replace('₹', 'Rs.'));
+                    cells.push(tds[2].innerText.trim().replace('₹', 'Rs.'));
+                    cells.push(tds[3].innerText.trim().replace('₹', 'Rs.'));
+                    cells.push(tds[4].innerText.trim().replace('₹', 'Rs.'));
+                    cells.push(tds[5].innerText.trim());
+
+                    rows.push(cells);
+                });
+
+                rows.forEach(row => {
+                    text += "| " + row[0].padEnd(colWidths[0]) + " | " + row[1].padEnd(colWidths[1]) + " | " + row[2].padEnd(colWidths[2]) + " | " + row[3].padEnd(colWidths[3]) + " | " + row[4].padEnd(colWidths[4]) + " | " + row[5].padEnd(colWidths[5]) + " |\n";
+                });
+
+                text += "+" + "-".repeat(colWidths[0] + 2) + "+" + "-".repeat(colWidths[1] + 2) + "+" + "-".repeat(colWidths[2] + 2) + "+" + "-".repeat(colWidths[3] + 2) + "+" + "-".repeat(colWidths[4] + 2) + "+" + "-".repeat(colWidths[5] + 2) + "+\n";
+                text += "\n" + "=".repeat(100) + "\n";
+                text += `Generated: ${new Date().toLocaleString('en-IN')}\n`;
+                text += "=".repeat(100) + "\n";
+
+                navigator.clipboard.writeText(text).then(() => {
+                    alert("✅ Strategy table copied to clipboard!");
+                }).catch(err => {
+                    console.error("Failed to copy:", err);
+                    alert("❌ Failed to copy.");
+                });
+            }
+
+            // Auto-load KP Scan sections on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                loadKpScan();
+                loadKpScan2();  // ADD THIS LINE
+            });
+
 
             function copyKpStrategy() {
                 const strategyContainer = document.getElementById("kpStrategyContainer");
