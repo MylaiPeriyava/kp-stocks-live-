@@ -1881,7 +1881,8 @@ def get_kp_scan():
                         'risk': 0,
                         'rr_ratio': 0
                     })
-            
+            # Sort by percentage change (descending) - highest first            
+            stocks_data.sort(key=lambda x: x['per_chg'], reverse=True)
             return jsonify({
                 'success': True,
                 'count': len(stocks_data),
@@ -2020,6 +2021,9 @@ def get_kp_scan_2():
                         'risk': 0,
                         'rr_ratio': 0
                     })
+            # Sort by percentage change (descending) - highest first
+            stocks_data.sort(key=lambda x: x['per_chg'], reverse=True)
+            
             
             return jsonify({
                 'success': True,
