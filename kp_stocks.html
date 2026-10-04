@@ -8730,14 +8730,12 @@
 
             function copyKpStrategy() {
                 const strategyContainer = document.getElementById("kpStrategyContainer");
-                const statusDiv = document.getElementById("kpStrategyStatus");
 
-                if (strategyContainer.style.display === 'none' || !strategyContainer.innerText.trim()) {
+                if (strategyContainer.style.display === 'none') {
                     alert("No strategy data to copy!");
                     return;
                 }
 
-                // Get the table data
                 const table = strategyContainer.querySelector("table");
                 if (!table) {
                     alert("No table found!");
@@ -8749,43 +8747,39 @@
                 text += "           KP SCAN - TRADING STRATEGY\n";
                 text += "═══════════════════════════════════════════════════════════════\n\n";
 
-                // Get headers
-                const headers = [];
-                table.querySelectorAll("thead th").forEach(th => {
-                    headers.push(th.innerText.trim());
+                // Get all rows
+                const rows = [];
+                table.querySelectorAll("tbody tr").forEach(tr => {
+                    const cells = [];
+                    tr.querySelectorAll("td").forEach(td => {
+                        // Get all text content and clean it
+                        let cellText = td.innerText.trim();
+                        // Replace newlines with space (for multi-line cells like name + symbol)
+                        cellText = cellText.replace(/\n/g, ' ');
+                        // Replace ₹ with Rs.
+                        cellText = cellText.replace('₹', 'Rs.');
+                        cells.push(cellText);
+                    });
+                    rows.push(cells);
                 });
 
-                // Header line
-                text += "┌";
-                headers.forEach(() => text += "──────────────┬");
-                text = text.slice(0, -1) + "\n";
+                // Calculate column widths
+                const headers = ["Stock", "Entry", "SL", "Target", "Risk", "R:R"];
+                const colWidths = [40, 12, 12, 12, 12, 8]; // Fixed widths
 
                 // Header row
-                text += "│ ";
-                headers.forEach(h => {
-                    text += h.padEnd(13) + " │ ";
-                });
-                text = text.slice(0, -1) + "\n";
+                text += "┌" + "─".repeat(colWidths[0]) + "┬" + "─".repeat(colWidths[1]) + "┬" + "─".repeat(colWidths[2]) + "┬" + "─".repeat(colWidths[3]) + "┬" + "─".repeat(colWidths[4]) + "┬" + "─".repeat(colWidths[5]) + "┐\n";
 
-                // Header separator
-                text += "├";
-                headers.forEach(() => text += "──────────────┼");
-                text = text.slice(0, -1) + "\n";
+                text += "│ " + headers[0].padEnd(colWidths[0]) + " │ " + headers[1].padEnd(colWidths[1]) + " │ " + headers[2].padEnd(colWidths[2]) + " │ " + headers[3].padEnd(colWidths[3]) + " │ " + headers[4].padEnd(colWidths[4]) + " │ " + headers[5].padEnd(colWidths[5]) + " │\n";
+
+                text += "├" + "─".repeat(colWidths[0]) + "┼" + "─".repeat(colWidths[1]) + "┼" + "─".repeat(colWidths[2]) + "┼" + "─".repeat(colWidths[3]) + "┼" + "─".repeat(colWidths[4]) + "┼" + "─".repeat(colWidths[5]) + "┤\n";
 
                 // Data rows
-                table.querySelectorAll("tbody tr").forEach(tr => {
-                    text += "│ ";
-                    tr.querySelectorAll("td").forEach(td => {
-                        const cellText = td.innerText.trim().replace('₹', 'Rs.');
-                        text += cellText.padEnd(13) + " │ ";
-                    });
-                    text = text.slice(0, -1) + "\n";
+                rows.forEach(row => {
+                    text += "│ " + row[0].padEnd(colWidths[0]) + " │ " + row[1].padEnd(colWidths[1]) + " │ " + row[2].padEnd(colWidths[2]) + " │ " + row[3].padEnd(colWidths[3]) + " │ " + row[4].padEnd(colWidths[4]) + " │ " + row[5].padEnd(colWidths[5]) + " │\n";
                 });
 
-                // Footer
-                text += "└";
-                headers.forEach(() => text += "──────────────┴");
-                text = text.slice(0, -1) + "\n\n";
+                text += "└" + "─".repeat(colWidths[0]) + "┴" + "─".repeat(colWidths[1]) + "┴" + "─".repeat(colWidths[2]) + "┴" + "─".repeat(colWidths[3]) + "┴" + "─".repeat(colWidths[4]) + "┴" + "─".repeat(colWidths[5]) + "┘\n\n";
 
                 text += "═══════════════════════════════════════════════════════════════\n";
                 text += `Generated: ${new Date().toLocaleString('en-IN')}\n`;
@@ -8799,7 +8793,6 @@
                     alert("❌ Failed to copy. Please try again.");
                 });
             }
-
             const SCREENER_LIST = [
                 // POPULAR SECTION (First batch you gave)
                 { title: "Golden Crossover", url: "https://www.screener.in/screens/336509/golden-crossover" },
