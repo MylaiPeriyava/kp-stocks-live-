@@ -8537,6 +8537,11 @@
                 }
             }
 
+            // Auto-load KP Scan on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                loadKpScan();
+            });
+
             const SCREENER_LIST = [
                 // POPULAR SECTION (First batch you gave)
                 { title: "Golden Crossover", url: "https://www.screener.in/screens/336509/golden-crossover" },
