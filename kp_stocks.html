@@ -253,18 +253,17 @@
                         border-color: #0f5a28;
                     }
 
-        .menu-bottom {
-            background: #4b5563;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: 600;
-        }
+                .top-menu a.menu-bottom {
+                    color: #ffffff;
+                    background: var(--green);
+                    border-color: var(--green);
+                }
 
-            .menu-bottom:hover {
-                background: #374151;
-            }
+                    .top-menu a.menu-bottom:hover {
+                        background: #0f5a28;
+                        border-color: #0f5a28;
+                    }
+
 
         .section-anchor {
             scroll-margin-top: calc(var(--menu-height) + 16px);
@@ -1984,13 +1983,13 @@
                 <a href="javascript:void(0)" onclick="showSection('wishlistSection')">Wishlist</a>
                 <a href="javascript:void(0)" onclick="showSection('tradeCalcSection')">Trade Calc</a>
                 <a href="javascript:void(0)" onclick="showSection('chartSection')">Chart + RSI</a>
-                <a href="javascript:void(0)" onclick="showSection('manageSection')">Manage Holdings</a>
+                <a href="javascript:void(0)" onclick="showSection('manageSection')">Man. Holdings</a>
                 <a href="javascript:void(0)" onclick="showSection('targetSection')">Target Calc</a>
-                <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage Wishlist</a>
+                <a href="javascript:void(0)" onclick="showSection('wishlistManageSection')">Manage WL</a>
                 <a href="javascript:void(0)" onclick="showSection('wlPatternSection')">WL Pattern</a>
                 <a href="javascript:void(0)" onclick="showSection('newipoSection')">IPO</a>
                 <a href="javascript:void(0)" onclick="showSection('tradesSection')">Trades</a>
-                <a class="menu-bottom" href="#bottom" style="float: right;">↓ Bottom</a>
+                <a class="menu-bottom" href="#bottom" style="float: right;">↓ Bot</a>
             </nav>
 
 
@@ -2542,7 +2541,7 @@
                         </div>
 
 
-</section>
+                </section>
             </div>
 
             <!-- Position Calculator -->
@@ -4090,7 +4089,8 @@
                                     settings.stopLossPct,
                                     settings.sellGainPct  // ✅ ADDED
                                 ]
-                            })                        }
+                            })
+                        }
                     );
 
                     if (!response.ok) {
@@ -6409,43 +6409,43 @@
                 const overlay = document.createElement('div');
                 overlay.id = 'authOverlay';
                 overlay.innerHTML = `
-                  <div class="auth-box">
-                    <h2>Welcome to KP's Stocks</h2>
-                    <p>
-                      Enter your user name and password.
-                      Files: <strong>Holdings_USER.json</strong>, <strong>Rates_USER.txt</strong>, <strong>wishlist_USER.txt</strong>.
-                    </p>
+                          <div class="auth-box">
+                            <h2>Welcome to KP's Stocks</h2>
+                            <p>
+                              Enter your user name and password.
+                              Files: <strong>Holdings_USER.json</strong>, <strong>Rates_USER.txt</strong>, <strong>wishlist_USER.txt</strong>.
+                            </p>
 
-                    <div class="auth-input-row">
-                        <label for="authUserName">User Name</label>
-                        <input
-                        id="authUserName"
-                        type="text"
-                        placeholder="e.g. KP"
-                        onkeydown="if(event.key==='Enter') validateUserAndLoad()"
-                      >
-                    </div>
+                            <div class="auth-input-row">
+                                <label for="authUserName">User Name</label>
+                                <input
+                                id="authUserName"
+                                type="text"
+                                placeholder="e.g. KP"
+                                onkeydown="if(event.key==='Enter') validateUserAndLoad()"
+                              >
+                            </div>
 
-                    <div class="auth-input-row">
-                        <label for="authUserPwd">Password</label>
-                        <input
-                        id="authUserPwd"
-                        type="password"
-                        placeholder="Your password"
-                        onkeydown="if(event.key==='Enter') validateUserAndLoad()"
-                      >
-                    </div>
+                            <div class="auth-input-row">
+                                <label for="authUserPwd">Password</label>
+                                <input
+                                id="authUserPwd"
+                                type="password"
+                                placeholder="Your password"
+                                onkeydown="if(event.key==='Enter') validateUserAndLoad()"
+                              >
+                            </div>
 
-                    <div id="authError" class="auth-error">
-                        <strong>Invalid user name or password</strong>
-                        <p style="margin:0 0 8px;">Files not found:</p>
-                        <ul id="authErrorFiles"></ul>
-                    </div>
+                            <div id="authError" class="auth-error">
+                                <strong>Invalid user name or password</strong>
+                                <p style="margin:0 0 8px;">Files not found:</p>
+                                <ul id="authErrorFiles"></ul>
+                            </div>
 
-                    <button type="button" class="auth-submit-btn" onclick="validateUserAndLoad()">
-                      Continue
-                    </button>
-                  </div>
+                            <button type="button" class="auth-submit-btn" onclick="validateUserAndLoad()">
+                              Continue
+                            </button>
+                          </div>
 `;
                 document.body.insertBefore(overlay, document.body.firstChild);
 
@@ -7662,32 +7662,32 @@
 
                     // Header
                     table.innerHTML = `
-                            <thead>
-                                <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                                    <th style="padding: 10px 8px; text-align: left;">#</th>
-                                    <th style="padding: 10px 8px; text-align: left;">Company</th>
-                                    <th style="padding: 10px 8px; text-align: left;">Reason</th>
-                                    <th style="padding: 10px 8px; text-align: left;">Details</th>
-                                    <th style="padding: 10px 8px; text-align: center;">View</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${stocks.map((stock, index) => `
-                                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                                        <td style="padding: 10px 8px;">${index + 1}</td>
-                                        <td style="padding: 10px 8px; font-weight: 500;">${stock.symbol}</td>
-                                        <td style="padding: 10px 8px; color: #059669;">${stock.reason}</td>
-                                        <td style="padding: 10px 8px; font-size: 12px; color: #6b7280;">${stock.note}</td>
-                                        <td style="padding: 10px 8px; text-align: center;">
-                                            ${stock.company_url ?
+                                    <thead>
+                                        <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                            <th style="padding: 10px 8px; text-align: left;">#</th>
+                                            <th style="padding: 10px 8px; text-align: left;">Company</th>
+                                            <th style="padding: 10px 8px; text-align: left;">Reason</th>
+                                            <th style="padding: 10px 8px; text-align: left;">Details</th>
+                                            <th style="padding: 10px 8px; text-align: center;">View</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${stocks.map((stock, index) => `
+                                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 10px 8px;">${index + 1}</td>
+                                                <td style="padding: 10px 8px; font-weight: 500;">${stock.symbol}</td>
+                                                <td style="padding: 10px 8px; color: #059669;">${stock.reason}</td>
+                                                <td style="padding: 10px 8px; font-size: 12px; color: #6b7280;">${stock.note}</td>
+                                                <td style="padding: 10px 8px; text-align: center;">
+                                                    ${stock.company_url ?
                             `<a href="${stock.company_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">📈 View Details</a>` :
                             '<span style="color: #9ca3af;">N/A</span>'
                         }
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        `;
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                `;
 
                     listEl.appendChild(table);
 
@@ -7776,17 +7776,17 @@
                     const tr = document.createElement("tr");
                     tr.style.backgroundColor = '#f9fafb';
                     tr.innerHTML = `
-            <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">FY ${fyKey}</td>
-            <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${data.stcg >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">
-                ${data.stcg >= 0 ? '+' : ''}₹${data.stcg.toFixed(2)}
-            </td>
-            <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${data.ltcg >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">
-                ${data.ltcg >= 0 ? '+' : ''}₹${data.ltcg.toFixed(2)}
-            </td>
-            <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${totalGain >= 0 ? '#059669' : '#dc2626'}; font-weight: 600; font-size: 15px;">
-                ${totalGain >= 0 ? '+' : ''}₹${totalGain.toFixed(2)}
-            </td>
-        `;
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">FY ${fyKey}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${data.stcg >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">
+                        ${data.stcg >= 0 ? '+' : ''}₹${data.stcg.toFixed(2)}
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${data.ltcg >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">
+                        ${data.ltcg >= 0 ? '+' : ''}₹${data.ltcg.toFixed(2)}
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; color: ${totalGain >= 0 ? '#059669' : '#dc2626'}; font-weight: 600; font-size: 15px;">
+                        ${totalGain >= 0 ? '+' : ''}₹${totalGain.toFixed(2)}
+                    </td>
+                `;
                     tbody.appendChild(tr);
                 });
             }
@@ -7862,10 +7862,10 @@
                         monthHeaderRow.style.backgroundColor = '#f5f8fc';
                         monthHeaderRow.style.fontWeight = 'bold';
                         monthHeaderRow.innerHTML = `
-                <td colspan="7" style="padding: 6px; color: #173b63; border-bottom: 1px solid #d7e3f0;">
-                    ${monthLabel}
-                </td>
-            `;
+                        <td colspan="7" style="padding: 6px; color: #173b63; border-bottom: 1px solid #d7e3f0;">
+                            ${monthLabel}
+                        </td>
+                    `;
                         tbody.appendChild(monthHeaderRow);
 
                         // Individual trades
@@ -7873,18 +7873,18 @@
                             const plPercent = t.invested > 0 ? (t.pl / t.invested) * 100 : 0;
                             const tr = document.createElement("tr");
                             tr.innerHTML = `
-                    <td>${t.buyDate || ""}</td>
-                    <td>${t.sellDate || ""}</td>
-                    <td>${t.symbol || ""}</td>
-                    <td>${t.invested.toFixed(2)}</td>
-                    <td>${t.returned.toFixed(2)}</td>
-                    <td style="color:${t.pl >= 0 ? 'green' : 'red'}">
-                        ${t.pl >= 0 ? '+' : ''}${t.pl.toFixed(2)} (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
-                    </td>
-                    <td>
-                        <button data-trade-id="${t.id}" class="delete-trade-btn" style="padding: 4px 8px; font-size: 12px;">Delete</button>
-                    </td>
-                `;
+                            <td>${t.buyDate || ""}</td>
+                            <td>${t.sellDate || ""}</td>
+                            <td>${t.symbol || ""}</td>
+                            <td>${t.invested.toFixed(2)}</td>
+                            <td>${t.returned.toFixed(2)}</td>
+                            <td style="color:${t.pl >= 0 ? 'green' : 'red'}">
+                                ${t.pl >= 0 ? '+' : ''}${t.pl.toFixed(2)} (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
+                            </td>
+                            <td>
+                                <button data-trade-id="${t.id}" class="delete-trade-btn" style="padding: 4px 8px; font-size: 12px;">Delete</button>
+                            </td>
+                        `;
                             tbody.appendChild(tr);
                         });
 
@@ -7894,15 +7894,15 @@
                         monthSummaryRow.style.fontWeight = 'bold';
                         monthSummaryRow.style.fontSize = '13px';
                         monthSummaryRow.innerHTML = `
-                <td colspan="3" style="padding: 8px; text-align: right; color: #173b63;">
-                    ${monthLabel} Total:
-                </td>
-                <td style="color: #173b63;">${group.monthInvested.toFixed(2)}</td>
-                <td style="color: #173b63;">${group.monthReturned.toFixed(2)}</td>
-                <td colspan="2" style="color: ${group.monthPL >= 0 ? 'green' : 'red'}">
-                    P/L: ${group.monthPL >= 0 ? '+' : ''}${group.monthPL.toFixed(2)} (${monthPLPercent >= 0 ? '+' : ''}${monthPLPercent.toFixed(2)}%)
-                </td>
-            `;
+                        <td colspan="3" style="padding: 8px; text-align: right; color: #173b63;">
+                            ${monthLabel} Total:
+                        </td>
+                        <td style="color: #173b63;">${group.monthInvested.toFixed(2)}</td>
+                        <td style="color: #173b63;">${group.monthReturned.toFixed(2)}</td>
+                        <td colspan="2" style="color: ${group.monthPL >= 0 ? 'green' : 'red'}">
+                            P/L: ${group.monthPL >= 0 ? '+' : ''}${group.monthPL.toFixed(2)} (${monthPLPercent >= 0 ? '+' : ''}${monthPLPercent.toFixed(2)}%)
+                        </td>
+                    `;
                         tbody.appendChild(monthSummaryRow);
 
                         // Spacer row
@@ -7921,13 +7921,13 @@
                     totalRow.style.fontSize = '15px';
                     totalRow.style.borderTop = '2px solid #c792ea';
                     totalRow.innerHTML = `
-            <td colspan="3" style="padding: 10px; text-align: right; color: #4a148c;">GRAND TOTAL</td>
-            <td style="color: #4a148c;">${grandTotalInvested.toFixed(2)}</td>
-            <td style="color: #4a148c;">${grandTotalReturned.toFixed(2)}</td>
-            <td colspan="2" style="color: ${grandPL >= 0 ? 'green' : 'red'}; font-size: 16px;">
-                P/L: ${grandPL >= 0 ? '+' : ''}${grandPL.toFixed(2)} (${grandPLPercent >= 0 ? '+' : ''}${grandPLPercent.toFixed(2)}%)
-            </td>
-        `;
+                    <td colspan="3" style="padding: 10px; text-align: right; color: #4a148c;">GRAND TOTAL</td>
+                    <td style="color: #4a148c;">${grandTotalInvested.toFixed(2)}</td>
+                    <td style="color: #4a148c;">${grandTotalReturned.toFixed(2)}</td>
+                    <td colspan="2" style="color: ${grandPL >= 0 ? 'green' : 'red'}; font-size: 16px;">
+                        P/L: ${grandPL >= 0 ? '+' : ''}${grandPL.toFixed(2)} (${grandPLPercent >= 0 ? '+' : ''}${grandPLPercent.toFixed(2)}%)
+                    </td>
+                `;
                     tbody.appendChild(totalRow);
 
                     // Calculate and render tax summary
@@ -8048,10 +8048,10 @@
                     const data = analysis[threshold.toString()] || { count: 0, total: 0, gain_percentage: 0 };
                     const color = data.gain_percentage >= 90 ? '#16a34a' : data.gain_percentage >= 70 ? '#2563eb' : '#dc2626';
                     html += `<tr>
-                            <td style="padding: 10px; font-weight: bold; text-align: center;">≥ ${threshold}x</td>
-                            <td style="padding: 10px; text-align: center; font-weight: bold;">${data.count} / ${data.total}</td>
-                            <td style="padding: 10px; text-align: center; font-weight: bold; color: ${color};">${data.gain_percentage}%</td>
-                        </tr>`;
+                                    <td style="padding: 10px; font-weight: bold; text-align: center;">≥ ${threshold}x</td>
+                                    <td style="padding: 10px; text-align: center; font-weight: bold;">${data.count} / ${data.total}</td>
+                                    <td style="padding: 10px; text-align: center; font-weight: bold; color: ${color};">${data.gain_percentage}%</td>
+                                </tr>`;
                 });
 
                 html += '</tbody></table></div>';
@@ -8154,24 +8154,24 @@
                         // UPDATED: Use company_url for IPOMarkets link
                         const companyLink = ipo.company_url ?
                             `<a href="${ipo.company_url}" target="_blank" style="color: ${textColor || '#0d6efd'}; text-decoration: none; font-weight: bold;">
-                                    ${ipo.company || '-'}
-                                </a>` :
+                                            ${ipo.company || '-'}
+                                        </a>` :
                             `<span style="color: ${textColor || '#6c757d'}; font-weight: bold;">
-                                    ${ipo.company || '-'}
-                                </span>`;
+                                            ${ipo.company || '-'}
+                                        </span>`;
 
                         tr.innerHTML = `
-                                <td>${companyLink}</td>
-                                <td>${ipo.listing_date || '-'}</td>
-                                <td class="text-end">₹${bidPrice}</td>
-                                <td class="text-end">₹${listedPrice}</td>
-                                <td class="text-end" style="color: ${listingGainClass}; font-weight: bold;">
-                                    ${listingGain}
-                                </td>
-                                <td class="text-end">${subscription}</td>
-                                <td class="text-end">${gmp}</td>
-                                <td class="text-center">${statusBadge}</td>
-                            `;
+                                        <td>${companyLink}</td>
+                                        <td>${ipo.listing_date || '-'}</td>
+                                        <td class="text-end">₹${bidPrice}</td>
+                                        <td class="text-end">₹${listedPrice}</td>
+                                        <td class="text-end" style="color: ${listingGainClass}; font-weight: bold;">
+                                            ${listingGain}
+                                        </td>
+                                        <td class="text-end">${subscription}</td>
+                                        <td class="text-end">${gmp}</td>
+                                        <td class="text-center">${statusBadge}</td>
+                                    `;
 
                         tbody.appendChild(tr);
                     });
@@ -8484,21 +8484,21 @@
                         dateSpan.textContent = "Today";
 
                         let html = `
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #1f2937;">
-                        <thead>
-                            <tr style="background: #374151; color: white; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">CMP</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Entry</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">SL</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Target</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Upside</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #1f2937;">
+                                <thead>
+                                    <tr style="background: #374151; color: white; text-align: left;">
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">CMP</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Entry</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">SL</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Target</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Upside</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
 
                         data.stocks.forEach((stock, index) => {
                             const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
@@ -8512,18 +8512,18 @@
                             const actionColor = stock.action.toLowerCase() === 'buy' ? '#059669' : '#dc2626';
 
                             html += `
-                    <tr style="background: ${rowColor};">
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #111827;">${stockDisplay}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 500;">${stock.cmp}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">${stock.entry}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">${stock.stop_loss}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.target}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.upside}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center;">
-                            <span style="background: ${actionColor}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">${stock.action}</span>
-                        </td>
-                    </tr>
-                `;
+                            <tr style="background: ${rowColor};">
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #111827;">${stockDisplay}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 500;">${stock.cmp}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">${stock.entry}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">${stock.stop_loss}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.target}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">${stock.upside}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; text-align: center;">
+                                    <span style="background: ${actionColor}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">${stock.action}</span>
+                                </td>
+                            </tr>
+                        `;
                         });
 
                         html += `</tbody></table></div>`;
@@ -8584,70 +8584,70 @@
                         }
 
                         let html = `
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <tr style="background: #f3f4f6;">
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Stock</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #1f2937;">${data.symbol}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Status</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb;">
-                            <span style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                                ${statusIcon} ${statusText}
-                            </span>
-                            <span style="margin-left: 10px; color: #6b7280; font-size: 12px;">
-                                (Today: ${data.today_change}%)
-                            </span>
-                        </td>
-                    </tr>
-            `;
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <tr style="background: #f3f4f6;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Stock</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; color: #1f2937;">${data.symbol}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Status</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">
+                                    <span style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                        ${statusIcon} ${statusText}
+                                    </span>
+                                    <span style="margin-left: 10px; color: #6b7280; font-size: 12px;">
+                                        (Today: ${data.today_change}%)
+                                    </span>
+                                </td>
+                            </tr>
+                    `;
 
                         if (!data.is_extender) {
                             html += `
-                    <tr style="background: #f9fafb;">
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Entry Price</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; font-size: 16px;">₹${data.entry_price}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #dc2626;">Stop Loss</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #dc2626; font-weight: 600; font-size: 16px;">₹${data.stop_loss}</td>
-                    </tr>
-                    <tr style="background: #f9fafb;">
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #059669;">Target</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #059669; font-weight: 600; font-size: 16px;">₹${data.target}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Risk</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">₹${data.risk} (${data.risk_percent}%)</td>
-                    </tr>
-                    <tr style="background: #f9fafb;">
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Reward</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">₹${data.reward} (${data.reward_percent}%)</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Risk:Reward</td>
-                        <td style="padding: 10px; border: 1px solid #e5e7eb; color: #7c3aed; font-weight: 600;">1:${data.rr_ratio}</td>
-                    </tr>
-                `;
+                            <tr style="background: #f9fafb;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Entry Price</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; font-size: 16px;">₹${data.entry_price}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #dc2626;">Stop Loss</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; color: #dc2626; font-weight: 600; font-size: 16px;">₹${data.stop_loss}</td>
+                            </tr>
+                            <tr style="background: #f9fafb;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #059669;">Target</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; color: #059669; font-weight: 600; font-size: 16px;">₹${data.target}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Risk</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">₹${data.risk} (${data.risk_percent}%)</td>
+                            </tr>
+                            <tr style="background: #f9fafb;">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Reward</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">₹${data.reward} (${data.reward_percent}%)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #1f2937;">Risk:Reward</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; color: #7c3aed; font-weight: 600;">1:${data.rr_ratio}</td>
+                            </tr>
+                        `;
 
                             // Add warning message if in caution zone
                             if (data.is_warning) {
                                 html += `
-                        <tr>
-                            <td colspan="2" style="padding: 12px; border: 1px solid #e5e7eb; background: #fef3c7; color: #92400e; text-align: center; font-weight: 600;">
-                                ⚠️ Stock is up ${data.today_change}% today. Near extended zone - be cautious!
-                            </td>
-                        </tr>
-                    `;
+                                <tr>
+                                    <td colspan="2" style="padding: 12px; border: 1px solid #e5e7eb; background: #fef3c7; color: #92400e; text-align: center; font-weight: 600;">
+                                        ⚠️ Stock is up ${data.today_change}% today. Near extended zone - be cautious!
+                                    </td>
+                                </tr>
+                            `;
                             }
                         } else {
                             html += `
-                    <tr>
-                        <td colspan="2" style="padding: 12px; border: 1px solid #e5e7eb; background: #fef2f2; color: #dc2626; text-align: center; font-weight: 600;">
-                            ❌ Stock has rallied ${data.today_change}% today. Wait for pullback!
-                        </td>
-                    </tr>
-                `;
+                            <tr>
+                                <td colspan="2" style="padding: 12px; border: 1px solid #e5e7eb; background: #fef2f2; color: #dc2626; text-align: center; font-weight: 600;">
+                                    ❌ Stock has rallied ${data.today_change}% today. Wait for pullback!
+                                </td>
+                            </tr>
+                        `;
                         }
 
                         html += `</table>`;
@@ -8680,36 +8680,36 @@
                     if (data.success && data.stocks.length > 0) {
                         // Display main KP Scan table
                         let html = `
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
-                        <thead>
-                            <tr style="background: #374151; color: white; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #4b5563;">#</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Close</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Volume</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Change</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                                <thead>
+                                    <tr style="background: #374151; color: white; text-align: left;">
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">#</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Close</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Volume</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
 
                         data.stocks.forEach((stock, index) => {
                             const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
                             const changeColor = stock.per_chg >= 0 ? '#059669' : '#dc2626';
 
                             html += `
-                    <tr style="background: ${rowColor};">
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; text-align: center;">${stock.sr}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db;">
-                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
-                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${stock.volume.toLocaleString()}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: ${changeColor}; font-weight: 600;">${stock.per_chg}%</td>
-                    </tr>
-                `;
+                            <tr style="background: ${rowColor};">
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; text-align: center;">${stock.sr}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">
+                                    <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                                    <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                                </td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${stock.volume.toLocaleString()}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: ${changeColor}; font-weight: 600;">${stock.per_chg}%</td>
+                            </tr>
+                        `;
                         });
 
                         html += `</tbody></table></div>`;
@@ -8720,37 +8720,37 @@
 
                         // Display Strategy table
                         let strategyHtml = `
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
-                        <thead>
-                            <tr style="background: #7c3aed; color: white; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Stock</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Entry</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">SL</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Target</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Risk</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">R:R</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                                <thead>
+                                    <tr style="background: #7c3aed; color: white; text-align: left;">
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Stock</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Entry</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">SL</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Target</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Risk</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">R:R</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
 
                         data.stocks.forEach((stock, index) => {
                             const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
 
                             strategyHtml += `
-                    <tr style="background: ${rowColor};">
-                        <td style="padding: 8px; border: 1px solid #d1d5db;">
-                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
-                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">₹${stock.stop_loss}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">₹${stock.target}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">₹${stock.risk}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #7c3aed; font-weight: 600;">1:${stock.rr_ratio}</td>
-                    </tr>
-                `;
+                            <tr style="background: ${rowColor};">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">
+                                    <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                                    <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                                </td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">₹${stock.stop_loss}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">₹${stock.target}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">₹${stock.risk}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #7c3aed; font-weight: 600;">1:${stock.rr_ratio}</td>
+                            </tr>
+                        `;
                         });
 
                         strategyHtml += `</tbody></table></div>`;
@@ -8798,36 +8798,36 @@
                     if (data.success && data.stocks.length > 0) {
                         // Display main KP Scan 2 table
                         let html = `
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
-                        <thead>
-                            <tr style="background: #374151; color: white; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #4b5563;">#</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Close</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Volume</th>
-                                <th style="padding: 8px; border: 1px solid #4b5563;">Change</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                                <thead>
+                                    <tr style="background: #374151; color: white; text-align: left;">
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">#</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Stock</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Close</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Volume</th>
+                                        <th style="padding: 8px; border: 1px solid #4b5563;">Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
 
                         data.stocks.forEach((stock, index) => {
                             const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
                             const changeColor = stock.per_chg >= 0 ? '#059669' : '#dc2626';
 
                             html += `
-                    <tr style="background: ${rowColor};">
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; text-align: center;">${stock.sr}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db;">
-                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
-                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${stock.volume.toLocaleString()}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: ${changeColor}; font-weight: 600;">${stock.per_chg}%</td>
-                    </tr>
-                `;
+                            <tr style="background: ${rowColor};">
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; text-align: center;">${stock.sr}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">
+                                    <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                                    <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                                </td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${stock.volume.toLocaleString()}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: ${changeColor}; font-weight: 600;">${stock.per_chg}%</td>
+                            </tr>
+                        `;
                         });
 
                         html += `</tbody></table></div>`;
@@ -8838,37 +8838,37 @@
 
                         // Display Strategy table
                         let strategyHtml = `
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
-                        <thead>
-                            <tr style="background: #7c3aed; color: white; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Stock</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Entry</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">SL</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Target</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">Risk</th>
-                                <th style="padding: 8px; border: 1px solid #6d28d9;">R:R</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #1f2937;">
+                                <thead>
+                                    <tr style="background: #7c3aed; color: white; text-align: left;">
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Stock</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Entry</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">SL</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Target</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">Risk</th>
+                                        <th style="padding: 8px; border: 1px solid #6d28d9;">R:R</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
 
                         data.stocks.forEach((stock, index) => {
                             const rowColor = index % 2 === 0 ? '#f9fafb' : 'white';
 
                             strategyHtml += `
-                    <tr style="background: ${rowColor};">
-                        <td style="padding: 8px; border: 1px solid #d1d5db;">
-                            <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
-                            <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">₹${stock.stop_loss}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">₹${stock.target}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">₹${stock.risk}</td>
-                        <td style="padding: 8px; border: 1px solid #d1d5db; color: #7c3aed; font-weight: 600;">1:${stock.rr_ratio}</td>
-                    </tr>
-                `;
+                            <tr style="background: ${rowColor};">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">
+                                    <div style="font-weight: 600; color: #1f2937;">${stock.name}</div>
+                                    <div style="font-size: 11px; color: #6b7280;">${stock.symbol}</div>
+                                </td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #1f2937; font-weight: 600;">₹${stock.close}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #dc2626; font-weight: 600;">₹${stock.stop_loss}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #059669; font-weight: 600;">₹${stock.target}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">₹${stock.risk}</td>
+                                <td style="padding: 8px; border: 1px solid #d1d5db; color: #7c3aed; font-weight: 600;">1:${stock.rr_ratio}</td>
+                            </tr>
+                        `;
                         });
 
                         strategyHtml += `</tbody></table></div>`;
@@ -9266,6 +9266,8 @@
 
 
         </script>
+        <!-- Bottom anchor for scroll -->
+        <div id="bottom" style="height: 1px;"></div>
     </body>
 </html>
 <!-- === END OF kp_stocks.html (PART 2 OF 2) === -->
