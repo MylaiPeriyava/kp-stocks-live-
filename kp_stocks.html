@@ -2227,26 +2227,6 @@
                                     💡 P/L % shown is price-only (buy price vs current price).
                                     Actual profit after buy & sell charges will be slightly lower.
                                 </div>
-                                <!-- KP Scan Results -->
-                                <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                        <h3 style="margin: 0; color: #1f2937; font-size: 16px;">
-                                            🔍 KP Scan Results
-                                        </h3>
-                                        <button type="button" onclick="loadKpScan()" style="padding: 6px 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                                            🔄 Refresh
-                                        </button>
-                                    </div>
-
-                                    <div id="kpScanStatus" style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">
-                                        Loading...
-                                    </div>
-
-                                    <div id="kpScanContainer" style="display: none;">
-                                        <div id="kpScanList"></div>
-                                    </div>
-                                </div>
-
                             </div>
                         </div>
 
@@ -2466,6 +2446,25 @@
                             <div id="calculatorResult" style="display: none;">
                                 <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb;">
                                     <div id="calculatorTable"></div>
+                                </div>
+                            </div>
+                            <!-- KP Scan Results -->
+                            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h3 style="margin: 0; color: #1f2937; font-size: 16px;">
+                                        🔍 KP Scan Results
+                                    </h3>
+                                    <button type="button" onclick="loadKpScan()" style="padding: 6px 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                        🔄 Refresh
+                                    </button>
+                                </div>
+
+                                <div id="kpScanStatus" style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">
+                                    Loading...
+                                </div>
+
+                                <div id="kpScanContainer" style="display: none;">
+                                    <div id="kpScanList"></div>
                                 </div>
                             </div>
                         </div>
