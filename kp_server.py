@@ -1754,6 +1754,86 @@ def calculate_stock():
         })
 
 
+@app.route('/api/kp-scan')
+def get_kp_scan():
+    import requests
+    from bs4 import BeautifulSoup
+    
+    try:
+        # Your screener formula (ALL 5 CONDITIONS)
+        payload = {
+            'scan_clause': '( {cash} ( latest close > latest ema ( latest close , 200 ) and latest close > 1 day ago max ( 20 , daily high ) and latest volume > latest sma ( daily volume , 20 ) * 3 and latest close > 50 and latest close <= 1 day ago min ( 3, daily low ) * 1.09 ) )'
+        }
+        
+        url = "https://chartink.com/screener/process"
+        
+        with requests.Session() as session:
+            # Get CSRF token
+            homepage = session.get(
+                "https://chartink.com/screener/kp-scan-19",
+                headers={'User-Agent': 'Mozilla/5.0'},
+                timeout=10
+            )
+            
+            soup = BeautifulSoup(homepage.content, 'html.parser')
+            csrf_meta = soup.find('meta', {'name': 'csrf-token'})
+            
+            if not csrf_meta:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to get CSRF token',
+                    'stocks': []
+                })
+            
+            csrf_token = csrf_meta['content']
+            
+            headers = {
+                'X-CSRF-TOKEN': csrf_token,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'User-Agent': 'Mozilla/5.0',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Referer': 'https://chartink.com/screener/kp-scan-19'
+            }
+            
+            # POST to API
+            response = session.post(url, data=payload, headers=headers, timeout=10)
+            data = response.json()
+            
+            if 'data' not in data:
+                return jsonify({
+                    'success': False,
+                    'error': 'No data in response',
+                    'stocks': []
+                })
+            
+            stocks = data['data']
+            
+            # Format for display
+            stocks_data = []
+            for stock in stocks:
+                stocks_data.append({
+                    'sr': stock.get('sr', 0),
+                    'symbol': stock.get('nsecode', ''),
+                    'name': stock.get('name', ''),
+                    'close': stock.get('close', 0),
+                    'volume': stock.get('volume', 0),
+                    'per_chg': stock.get('per_chg', 0)
+                })
+            
+            return jsonify({
+                'success': True,
+                'count': len(stocks_data),
+                'stocks': stocks_data
+            })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'stocks': []
+        })
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)
 
